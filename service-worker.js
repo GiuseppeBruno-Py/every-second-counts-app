@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v2';
+const CACHE_NAME = 'compasso-pages-v3';
 const APP_SHELL = [
   './',
   './index.html',
