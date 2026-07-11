@@ -1,0 +1,25 @@
+{
+  "id": "compasso-every-second-counts",
+  "name": "Compasso — Every Second Counts",
+  "short_name": "Compasso",
+  "description": "Leituras, estudos, metas e notas conectados em um único sistema pessoal.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f3f2ee",
+  "theme_color": "#252521",
+  "categories": ["productivity", "education", "utilities"],
+  "icons": [
+    { "src": "./compasso-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./compasso-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./compasso-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Leituras", "short_name": "Leituras", "url": "./?view=reading", "icons": [{ "src": "./compasso-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Estudos", "short_name": "Estudos", "url": "./?view=study", "icons": [{ "src": "./compasso-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Metas", "short_name": "Metas", "url": "./?view=goal", "icons": [{ "src": "./compasso-icon-192.png", "sizes": "192x192" }] },
+    { "name": "Notas", "short_name": "Notas", "url": "./?view=notes", "icons": [{ "src": "./compasso-icon-192.png", "sizes": "192x192" }] }
+  ]
+}

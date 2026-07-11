@@ -1,0 +1,12 @@
+Compasso-Every-Second-Counts.zip
+Compasso-GitHub-Pages.zip
+iniciar-compasso.bat
+COMO-INSTALAR.md
+COMO-ATUALIZAR.md
+*.json
+backups/
+dados-pessoais/
+.env
+.env.*
+.DS_Store
+Thumbs.db

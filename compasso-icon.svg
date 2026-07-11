@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Ícone do Compasso</title>
+  <desc id="desc">Uma bússola combinada com o ponteiro de segundos de um relógio.</desc>
+  <rect width="1024" height="1024" rx="230" fill="#252521"/>
+  <circle cx="512" cy="512" r="334" fill="#302f2a" stroke="#4b4942" stroke-width="20"/>
+  <path d="M512 178v54M512 792v54M178 512h54M792 512h54" stroke="#f8f6f0" stroke-width="22" stroke-linecap="round"/>
+  <path d="M275 275l38 38M711 711l38 38M749 275l-38 38M313 711l-38 38" stroke="#77736c" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="512" cy="512" r="238" fill="none" stroke="#b8b0ff" stroke-width="12" stroke-dasharray="1230 266" stroke-linecap="round" transform="rotate(-36 512 512)"/>
+  <path d="M512 512 646 272l-55 277-79-37Z" fill="#b8b0ff"/>
+  <path d="m512 512-134 240 55-277 79 37Z" fill="#f8f6f0"/>
+  <path d="M512 512 689 362" fill="none" stroke="#dc7e3f" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="512" cy="512" r="32" fill="#dc7e3f" stroke="#252521" stroke-width="14"/>
+  <circle cx="689" cy="362" r="15" fill="#dc7e3f"/>
+</svg>
