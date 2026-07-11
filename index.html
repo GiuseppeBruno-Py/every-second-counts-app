@@ -253,6 +253,15 @@
     .item-card[data-domain="reading"] .progress > span { background: var(--orange); }
     .item-card[data-domain="study"] .progress > span { background: var(--violet); }
     .item-card[data-domain="goal"] .progress > span { background: var(--green); }
+    .book-cover { width: 58px; height: 82px; border-radius: 9px; object-fit: cover; background: #efeee9; box-shadow: 0 4px 12px rgba(37,37,33,.14); flex: 0 0 auto; }
+    .cover-field { display: none; }
+    .cover-field.show { display: grid; }
+    .cover-editor { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #f8f7f3; }
+    .cover-preview { width: 58px; height: 82px; border-radius: 9px; object-fit: cover; background: #e9e7e1; display: none; }
+    .cover-preview.show { display: block; }
+    .cover-actions { display: grid; gap: 7px; }
+    .cover-actions input { max-width: 100%; font-size: 10px; }
+    .cover-hint { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.45; }
     .card-actions { display: flex; gap: 7px; margin-top: 13px; }
     .card-actions button { flex: 1; border: 1px solid var(--line); background: transparent; border-radius: 8px; min-height: 31px; font-size: 9px; font-weight: 700; cursor: pointer; }
     .card-actions button:hover { background: #f5f4ef; }
@@ -552,6 +561,7 @@
         </div>
         <div class="field"><label for="titleField">Título</label><input id="titleField" name="title" required maxlength="90" placeholder="Ex.: Curso de arquitetura de dados"></div>
         <div class="field"><label for="metaField">Contexto</label><input id="metaField" name="meta" maxlength="100" placeholder="Autor, curso, horizonte ou fonte"></div>
+        <div class="field cover-field" id="coverField"><label for="coverInput">Capa do livro</label><div class="cover-editor"><img class="cover-preview" id="coverPreview" alt="Prévia da capa"><div class="cover-actions"><input id="coverInput" type="file" accept="image/jpeg,image/png,image/webp"><button class="quiet-btn" type="button" id="removeCover">Remover capa</button><p class="cover-hint">A imagem será reduzida e ficará somente no seu navegador e nos seus backups.</p></div></div></div>
         <div class="field"><label for="noteField">Próxima evidência</label><textarea id="noteField" name="note" maxlength="220" placeholder="Qual resultado concreto mostra que você avançou?"></textarea></div>
         <div class="field"><label id="metricHeading">Progresso por páginas</label><div class="metric-box"><div class="field-row"><div class="field"><label for="currentUnitField" id="currentUnitLabel">Página atual</label><input id="currentUnitField" type="number" min="0" step="1" inputmode="decimal" placeholder="0"></div><div class="field"><label for="totalUnitField" id="totalUnitLabel">Total de páginas</label><input id="totalUnitField" type="number" min="0" step="1" inputmode="decimal" placeholder="0"></div></div><div class="metric-preview"><div class="metric-preview-main"><span class="metric-summary" id="metricSummary">Defina o total para calcular o progresso</span><div class="progress"><span id="metricProgressBar" style="width:0%"></span></div></div><strong class="metric-percent" id="metricPercent">0%</strong></div><p class="metric-help" id="metricHelp">Use o total de páginas da sua edição.</p></div><input id="progressField" name="progress" type="hidden" value="0"></div>
       </div>
@@ -563,6 +573,7 @@
 
   <script>
     const STORAGE_KEY = 'compasso.app.v1';
+    let pendingCover = '';
     const initialData = {
       reading: [
         { id:'example-reading', title:'Exemplo de leitura', meta:'Autor · edição pessoal', note:'Registrar a próxima ideia importante.', progress:40, status:'active', icon:'book', currentPages:120, totalPages:300 }
@@ -740,7 +751,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       if (!items.length) { grid.innerHTML = `<div class="empty-state">${icon('search')}<strong>Nenhum item encontrado</strong>Ajuste o filtro ou adicione um novo item.</div>`; return; }
       grid.innerHTML = items.map(item => { const metric = metricInfo(item, domain); return `
         <article class="item-card" data-domain="${domain}">
-          <div class="item-top"><div class="item-icon ${domainColors[domain]}">${icon(item.icon || domainIcons[domain])}</div><button class="more-btn" data-edit="${domain}:${item.id}" aria-label="Editar ${escapeHtml(item.title)}">${icon('more')}</button></div>
+          <div class="item-top">${domain === 'reading' && item.coverImage ? `<img class="book-cover" src="${item.coverImage}" alt="Capa de ${escapeHtml(item.title)}">` : `<div class="item-icon ${domainColors[domain]}">${icon(item.icon || domainIcons[domain])}</div>`}<button class="more-btn" data-edit="${domain}:${item.id}" aria-label="Editar ${escapeHtml(item.title)}">${icon('more')}</button></div>
           <h3>${escapeHtml(item.title)}</h3><div class="item-meta">${escapeHtml(item.meta || 'Sem contexto definido')}</div>
           ${item.note ? `<p class="item-note">${escapeHtml(item.note)}</p>` : ''}
           <div class="item-metric">${icon(metric.config.icon)}<span>${escapeHtml(metricDescription(item, domain))}</span></div>
@@ -912,10 +923,41 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       document.getElementById('titleField').value = item?.title || '';
       document.getElementById('metaField').value = item?.meta || '';
       document.getElementById('noteField').value = item?.note || '';
+      pendingCover = item?.coverImage || '';
+      updateCoverEditor(domain);
       configureMetricEditor(domain, item);
       document.getElementById('deleteBtn').classList.toggle('show', Boolean(item));
       document.getElementById('itemDialog').showModal();
       setTimeout(() => document.getElementById('titleField').focus(), 50);
+    }
+
+    function updateCoverEditor(domain = document.getElementById('domainField').value) {
+      const isReading = domain === 'reading';
+      document.getElementById('coverField').classList.toggle('show', isReading);
+      const preview = document.getElementById('coverPreview');
+      preview.src = pendingCover || '';
+      preview.classList.toggle('show', Boolean(pendingCover));
+      document.getElementById('removeCover').style.display = pendingCover ? '' : 'none';
+    }
+
+    function resizeCover(file) {
+      return new Promise((resolve, reject) => {
+        if (!file.type.startsWith('image/')) return reject(new Error('invalid'));
+        const image = new Image();
+        const url = URL.createObjectURL(file);
+        image.onload = () => {
+          const maxWidth = 420, maxHeight = 630;
+          const scale = Math.min(1, maxWidth / image.width, maxHeight / image.height);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(image.width * scale));
+          canvas.height = Math.max(1, Math.round(image.height * scale));
+          canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          resolve(canvas.toDataURL('image/jpeg', .78));
+        };
+        image.onerror = () => { URL.revokeObjectURL(url); reject(new Error('invalid')); };
+        image.src = url;
+      });
     }
 
     function configureMetricEditor(domain, item = null) {
@@ -1003,10 +1045,17 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     ['reading','study','goal'].forEach(domain => document.getElementById(`${domain}Search`).addEventListener('input', e => { state.search[domain] = e.target.value; renderGrid(domain); }));
     document.getElementById('currentUnitField').addEventListener('input', updateMetricPreview);
     document.getElementById('totalUnitField').addEventListener('input', updateMetricPreview);
-    document.getElementById('domainField').addEventListener('change', event => configureMetricEditor(event.target.value));
     document.getElementById('closeDialog').addEventListener('click', closeDialog);
     document.getElementById('cancelDialog').addEventListener('click', closeDialog);
     document.getElementById('itemDialog').addEventListener('click', e => { if (e.target === e.currentTarget) closeDialog(); });
+    document.getElementById('domainField').addEventListener('change', event => { configureMetricEditor(event.target.value); updateCoverEditor(event.target.value); });
+    document.getElementById('coverInput').addEventListener('change', async event => {
+      const file = event.target.files[0]; if (!file) return;
+      try { pendingCover = await resizeCover(file); updateCoverEditor('reading'); showToast('Capa pronta para salvar'); }
+      catch { showToast('Não foi possível carregar esta imagem'); }
+      event.target.value = '';
+    });
+    document.getElementById('removeCover').addEventListener('click', () => { pendingCover = ''; updateCoverEditor('reading'); });
 
     document.getElementById('itemForm').addEventListener('submit', event => {
       event.preventDefault();
@@ -1019,6 +1068,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
         note: document.getElementById('noteField').value.trim(), status: document.getElementById('statusField').value,
         progress: clamp(document.getElementById('progressField').value), icon: domainIcons[domain]
       };
+      if (domain === 'reading') payload.coverImage = pendingCover;
       payload[config.currentKey] = currentValue;
       payload[config.totalKey] = totalValue;
       if (!payload.title) return;
