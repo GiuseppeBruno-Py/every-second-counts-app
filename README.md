@@ -35,6 +35,7 @@ O percentual e o restante são calculados automaticamente.
 
 - Dashboard com visão consolidada das frentes ativas.
 - Visão **Hoje** com plano diário curto e próximas ações.
+- Criação manual de ações independentes ou vinculadas a uma frente.
 - Fila inteligente baseada no foco semanal e nas frentes ativas.
 - Leituras físicas acompanhadas por página atual e total da edição.
 - Leituras digitais acompanhadas pelo percentual exibido no Kindle.
@@ -45,6 +46,7 @@ O percentual e o restante são calculados automaticamente.
 - Evidências estruturadas vinculadas às sessões concluídas.
 - Active Recall com perguntas derivadas de evidências e notas.
 - Modo de prática com resposta oculta, edição e histórico de tentativas.
+- Revisão espaçada com fila de cards devidos e autoavaliação em quatro níveis.
 - Histórico de sessões por item e histórico global pesquisável.
 - Métricas de tempo focado, dias ativos, consistência e sequências.
 - Tendência das últimas oito semanas e ranking por investimento.
@@ -170,7 +172,7 @@ O desenvolvimento segue o fluxo:
 | --- | --- | --- |
 | 0 · Fundação local-first | IndexedDB, migração do `localStorage`, schema versionado, backup e restauração | ✅ Concluída |
 | 1 · Execução guiada | Hoje, sessões, próximas ações, evidências, metas/foco conectados e revisão semanal | ✅ Concluída |
-| 2 · Aprendizagem ativa | Active Recall, revisão espaçada, assuntos fracos, caderno de erros, síntese de livros e planejado vs. realizado | 🟡 Em andamento: Active Recall concluído |
+| 2 · Aprendizagem ativa | Active Recall, revisão espaçada, assuntos fracos, caderno de erros, síntese de livros e planejado vs. realizado | 🟡 Em andamento: Active Recall e revisão espaçada concluídos |
 | 3 · Integrações | Google Drive, Markdown/Obsidian, Anki, Kindle/Readwise e calendário | 🟡 Parcial: vault Markdown concluído |
 | 4 · IA contextual | RAG sobre dados locais, geração de perguntas e avaliação de explicações | 📋 Planejada |
 
@@ -185,7 +187,6 @@ O desenvolvimento segue o fluxo:
 
 ### Próximos incrementos
 
-- Fase 2.2: fila de revisão espaçada com autoavaliação.
 - Fase 2.3: painel de assuntos fracos e caderno de erros.
 - Fase 2.4: planejado vs. realizado e síntese orientada de livros.
 - Fase 3: sincronização opcional entre dispositivos pelo Google Drive, com IDs permanentes, `updatedAt` e merge por registro.
