@@ -79,6 +79,7 @@ O percentual e o restante são calculados automaticamente.
 - Versão mínima e contingências editáveis “Se X, então Y” em cada ação, com templates, ordenação e registro da variante nas sessões.
 - Modo Deep Work em tela focada, com preparação, cronômetro recuperável, captura de distrações, pausas/interrupções e métricas locais orientadas a resultados.
 - Rituais reutilizáveis para estudo, programação, leitura, escrita e planejamento, com vínculo explícito, checklist por sessão e snapshots históricos versionados.
+- Interface consolidada com entrada única “Executar”, botões reconhecíveis por cor, opções secundárias agrupadas e níveis Essencial, Conhecimento e Avançado.
 - Busca contextual local sobre frentes, notas, evidências, Active Recall e caderno de erros, com ranking e fontes rastreáveis.
 - Geração local de rascunhos de perguntas a partir do contexto recuperado, com revisão obrigatória antes de salvar.
 - Avaliação orientativa de explicações por cobertura de conceitos e estrutura, com registro de lacunas no caderno de erros.

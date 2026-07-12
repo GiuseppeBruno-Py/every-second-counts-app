@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v33';
+const CACHE_NAME = 'compasso-pages-v34';
 const APP_SHELL = [
   './',
   './index.html',
@@ -11,6 +11,8 @@ const APP_SHELL = [
   './deep-work-feature.js',
   './ritual-model.js',
   './ritual-feature.js',
+  './ux-consolidation-model.js',
+  './ux-consolidation-feature.js',
   './energy-model.js',
   './energy-feature.js',
   './flow-model.js',
@@ -67,6 +69,8 @@ const KNOWLEDGE_GRAPH_LIFECYCLE_MARKER = '/* Compasso · Ciclo de vida do grafo 
 const MARKDOWN_VAULT_MARKER = '/* Compasso · Importação e exportação do vault em Markdown';
 const MARKDOWN_VAULT_HARDENING_MARKER = '/* Compasso · Compatibilidade do vault Markdown';
 const ANKI_OBSIDIAN_MARKER = '/* Compasso · Exportacao Anki e refinamento Obsidian';
+const UX_MODEL_MARKER = 'CompassoUxModel';
+const UX_MARKER = '/* Compasso · Consolidação da experiência e hierarquia visual';
 const CONTEXT_RAG_MARKER = '/* Compasso · RAG local sobre dados do usuario';
 const CONTEXT_LEARNING_MARKER = '/* Compasso · Perguntas contextuais e avaliacao de explicacoes';
 
@@ -136,7 +140,7 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, todayCode, sessionsCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
+  const [html, todayCode, sessionsCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, uxModelCode, uxCode] = await Promise.all([
     response.text(),
     readCachedText('./today-feature.js'),
     readCachedText('./sessions-feature.js'),
@@ -165,7 +169,9 @@ async function enhanceHtmlResponse(response) {
     readCachedText('./knowledge-graph-lifecycle.js'),
     readCachedText('./markdown-vault-feature.js'),
     readCachedText('./markdown-vault-hardening.js'),
-    readCachedText('./anki-obsidian-feature.js')
+    readCachedText('./anki-obsidian-feature.js'),
+    readCachedText('./ux-consolidation-model.js'),
+    readCachedText('./ux-consolidation-feature.js')
   ]);
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
@@ -190,6 +196,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-knowledge-graph', 'v1');
   headers.set('x-compasso-markdown-vault', 'v1');
   headers.set('x-compasso-anki-obsidian', 'v1');
+  headers.set('x-compasso-ux-consolidation', 'v1');
 
   const withStorage = integrateIndexedDb(html);
   const withToday = integrateFeature(withStorage, todayCode, TODAY_MARKER);
@@ -219,7 +226,9 @@ async function enhanceHtmlResponse(response) {
   const withKnowledgeGraphLifecycle = integrateFeature(withKnowledgeGraph, knowledgeGraphLifecycleCode, KNOWLEDGE_GRAPH_LIFECYCLE_MARKER);
   const withMarkdownVault = integrateFeature(withKnowledgeGraphLifecycle, markdownVaultCode, MARKDOWN_VAULT_MARKER);
   const withMarkdownVaultHardening = integrateFeature(withMarkdownVault, markdownVaultHardeningCode, MARKDOWN_VAULT_HARDENING_MARKER);
-  const enhanced = integrateFeature(withMarkdownVaultHardening, ankiObsidianCode, ANKI_OBSIDIAN_MARKER);
+  const withAnkiObsidian = integrateFeature(withMarkdownVaultHardening, ankiObsidianCode, ANKI_OBSIDIAN_MARKER);
+  const withUxModel = integrateFeature(withAnkiObsidian, uxModelCode, UX_MODEL_MARKER);
+  const enhanced = integrateFeature(withUxModel, uxCode, UX_MARKER);
 
   return new Response(enhanced, {
     status: response.status,
