@@ -1,10 +1,11 @@
-const CACHE_NAME = 'compasso-pages-v6';
+const CACHE_NAME = 'compasso-pages-v7';
 const APP_SHELL = [
   './',
   './index.html',
   './storage.js',
   './sessions-feature.js',
   './evidence-feature.js',
+  './weekly-review-feature.js',
   './manifest.webmanifest',
   './compasso-icon.svg',
   './compasso.ico',
@@ -15,6 +16,7 @@ const APP_SHELL = [
 const STORAGE_KEY = 'compasso.app.v1';
 const SESSIONS_MARKER = '/* Compasso · Sessões de leitura e estudo';
 const EVIDENCE_MARKER = '/* Compasso · Evidências de sessão';
+const WEEKLY_REVIEW_MARKER = '/* Compasso · Revisão semanal guiada por evidências';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -82,20 +84,23 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, sessionsCode, evidenceCode] = await Promise.all([
+  const [html, sessionsCode, evidenceCode, weeklyReviewCode] = await Promise.all([
     response.text(),
     readCachedText('./sessions-feature.js'),
-    readCachedText('./evidence-feature.js')
+    readCachedText('./evidence-feature.js'),
+    readCachedText('./weekly-review-feature.js')
   ]);
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
   headers.set('x-compasso-storage', 'indexeddb-v1');
   headers.set('x-compasso-sessions', 'v1');
   headers.set('x-compasso-evidence', 'v1');
+  headers.set('x-compasso-weekly-review', 'v1');
 
   const withStorage = integrateIndexedDb(html);
   const withSessions = integrateFeature(withStorage, sessionsCode, SESSIONS_MARKER);
-  const enhanced = integrateFeature(withSessions, evidenceCode, EVIDENCE_MARKER);
+  const withEvidence = integrateFeature(withSessions, evidenceCode, EVIDENCE_MARKER);
+  const enhanced = integrateFeature(withEvidence, weeklyReviewCode, WEEKLY_REVIEW_MARKER);
 
   return new Response(enhanced, {
     status: response.status,
