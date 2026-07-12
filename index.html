@@ -240,6 +240,15 @@
     .item-card h3 { margin: 16px 0 5px; font: 800 14px/1.35 "Manrope", sans-serif; letter-spacing: -.025em; }
     .item-meta { color: var(--muted); font-size: 10px; line-height: 1.4; min-height: 28px; }
     .item-note { color: #67645e; font-size: 10px; line-height: 1.5; margin: 8px 0 0; }
+    .cognitive-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    .cognitive-badge { border-radius: 999px; padding: 4px 8px; background: #f0efea; color: #66635d; font-size: 9px; font-weight: 700; }
+    .cognitive-badge.deep { background: var(--violet-soft); color: var(--violet); }
+    .cognitive-badge.shallow { background: var(--blue-soft); color: var(--blue); }
+    .cognitive-badge.recovery { background: var(--green-soft); color: var(--green); }
+    .cognitive-fields { border: 1px solid var(--line); border-radius: 13px; padding: 14px; display: grid; gap: 12px; background: #f8f7f3; }
+    .cognitive-fields summary { cursor: pointer; font-size: 11px; font-weight: 800; color: var(--ink); }
+    .cognitive-filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin: -7px 0 15px; }
+    .cognitive-filter-row select { min-width: 150px; height: 35px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-strong); padding: 0 9px; color: var(--muted); font-size: 10px; }
     .item-bottom { margin-top: auto; padding-top: 17px; }
     .status-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
     .status { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 4px 8px; font-size: 9px; font-weight: 700; }
@@ -566,6 +575,18 @@
         <div class="field reading-field" id="readingFormatField"><label for="readingFormat">Formato da leitura</label><select id="readingFormat"><option value="physical">Livro físico</option><option value="kindle">Kindle / digital</option></select></div>
         <div class="field cover-field" id="coverField"><label for="coverInput">Capa do livro</label><div class="cover-editor"><img class="cover-preview" id="coverPreview" alt="Prévia da capa"><div class="cover-actions"><input id="coverInput" type="file" accept="image/jpeg,image/png,image/webp"><button class="quiet-btn" type="button" id="removeCover">Remover capa</button><p class="cover-hint">A imagem será reduzida e ficará somente no seu navegador e nos seus backups.</p></div></div></div>
         <div class="field"><label for="noteField">Próxima evidência</label><textarea id="noteField" name="note" maxlength="220" placeholder="Qual resultado concreto mostra que você avançou?"></textarea></div>
+        <details class="cognitive-fields" id="cognitiveFields">
+          <summary>Perfil cognitivo (opcional)</summary>
+          <div class="field-row">
+            <div class="field"><label for="workTypeField">Tipo de trabalho</label><select id="workTypeField"><option value="">Não definido</option><option value="deep">Profundo</option><option value="shallow">Superficial</option><option value="recovery">Recuperação</option></select></div>
+            <div class="field"><label for="cognitiveDemandField">Demanda cognitiva</label><select id="cognitiveDemandField"><option value="">Não definida</option><option value="low">Baixa</option><option value="medium">Média</option><option value="high">Alta</option></select></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="requiredEnergyField">Energia necessária</label><select id="requiredEnergyField"><option value="">Não definida</option><option value="low">Baixa</option><option value="medium">Média</option><option value="high">Alta</option></select></div>
+            <div class="field"><label for="estimatedMinutesField">Duração estimada</label><input id="estimatedMinutesField" type="number" min="1" max="1440" step="1" inputmode="numeric" placeholder="Minutos"></div>
+          </div>
+          <div class="field"><label for="expectedOutcomeField">Resultado esperado</label><input id="expectedOutcomeField" maxlength="160" placeholder="Ex.: notebook executável com testes passando"></div>
+        </details>
         <div class="field"><label id="metricHeading">Progresso por páginas</label><div class="metric-box"><div class="field-row"><div class="field"><label for="currentUnitField" id="currentUnitLabel">Página atual</label><input id="currentUnitField" type="number" min="0" step="1" inputmode="decimal" placeholder="0"></div><div class="field" id="totalUnitWrap"><label for="totalUnitField" id="totalUnitLabel">Total de páginas</label><input id="totalUnitField" type="number" min="0" step="1" inputmode="decimal" placeholder="0"></div></div><div class="metric-preview"><div class="metric-preview-main"><span class="metric-summary" id="metricSummary">Defina o total para calcular o progresso</span><div class="progress"><span id="metricProgressBar" style="width:0%"></span></div></div><strong class="metric-percent" id="metricPercent">0%</strong></div><p class="metric-help" id="metricHelp">Use o total de páginas da sua edição.</p></div><input id="progressField" name="progress" type="hidden" value="0"></div>
       </div>
       <div class="modal-foot"><button type="button" class="danger-btn" id="deleteBtn">Excluir item</button><div class="right"><button type="button" class="quiet-btn" id="cancelDialog">Cancelar</button><button type="submit" class="primary-btn"><svg><use href="#i-check"/></svg>Salvar</button></div></div>
@@ -625,11 +646,17 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     const domainLabels = { reading: 'Leitura', study: 'Estudo', goal: 'Meta' };
     const domainIcons = { reading: 'book', study: 'study', goal: 'target' };
     const domainColors = { reading: 'orange', study: 'violet', goal: 'green' };
+    const cognitiveOptions = {
+      workType: { deep:'Profundo', shallow:'Superficial', recovery:'Recuperação' },
+      cognitiveDemand: { low:'Demanda baixa', medium:'Demanda média', high:'Demanda alta' },
+      requiredEnergy: { low:'Energia baixa', medium:'Energia média', high:'Energia alta' }
+    };
     const state = {
       data: loadData(),
       view: 'overview',
       filters: { reading: 'all', study: 'all', goal: 'all' },
       search: { reading: '', study: '', goal: '' },
+      cognitiveFilters: { reading:{workType:'', cognitiveDemand:''}, study:{workType:'', cognitiveDemand:''}, goal:{workType:'', cognitiveDemand:''} },
       editingId: null,
       selectedNoteId: null,
       selectedFolderId: 'f-inbox',
@@ -680,6 +707,11 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     function normalizeData(data) {
       ['reading','study','goal'].forEach(domain => {
         (data[domain] || []).forEach(item => {
+          item.workType = cognitiveOptions.workType[item.workType] ? item.workType : null;
+          item.cognitiveDemand = cognitiveOptions.cognitiveDemand[item.cognitiveDemand] ? item.cognitiveDemand : null;
+          item.requiredEnergy = cognitiveOptions.requiredEnergy[item.requiredEnergy] ? item.requiredEnergy : null;
+          item.estimatedMinutes = Number.isInteger(Number(item.estimatedMinutes)) && Number(item.estimatedMinutes) > 0 ? Math.min(1440, Number(item.estimatedMinutes)) : null;
+          item.expectedOutcome = typeof item.expectedOutcome === 'string' ? item.expectedOutcome.trim().slice(0,160) : '';
           if (domain === 'reading' && !item.readingFormat) item.readingFormat = 'physical';
           const config = metricConfig(domain, item.readingFormat || 'physical');
           if (config.isPercent) item[config.totalKey] = 100;
@@ -749,11 +781,19 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
         const count = status === 'all' ? state.data[domain].length : state.data[domain].filter(i => i.status === status).length;
         return `<button class="filter ${state.filters[domain] === status ? 'active' : ''}" data-domain="${domain}" data-filter="${status}">${statusLabels[status]} · ${count}</button>`;
       }).join('');
+      let cognitiveRow = document.querySelector(`[data-cognitive-filters="${domain}"]`);
+      if (!cognitiveRow) {
+        cognitiveRow = document.createElement('div'); cognitiveRow.className = 'cognitive-filter-row'; cognitiveRow.dataset.cognitiveFilters = domain;
+        document.querySelector(`[data-filters="${domain}"]`).after(cognitiveRow);
+      }
+      const selected = state.cognitiveFilters[domain];
+      cognitiveRow.innerHTML = `<select data-cognitive-filter="workType" data-domain="${domain}" aria-label="Filtrar por tipo de trabalho"><option value="">Todos os tipos</option>${Object.entries(cognitiveOptions.workType).map(([value,label]) => `<option value="${value}" ${selected.workType === value ? 'selected' : ''}>${label}</option>`).join('')}</select><select data-cognitive-filter="cognitiveDemand" data-domain="${domain}" aria-label="Filtrar por demanda cognitiva"><option value="">Toda demanda</option>${Object.entries(cognitiveOptions.cognitiveDemand).map(([value,label]) => `<option value="${value}" ${selected.cognitiveDemand === value ? 'selected' : ''}>${label}</option>`).join('')}</select>`;
     }
 
     function renderGrid(domain) {
       const query = state.search[domain].toLowerCase().trim();
-      const items = state.data[domain].filter(item => (state.filters[domain] === 'all' || item.status === state.filters[domain]) && (!query || `${item.title} ${item.meta} ${item.note}`.toLowerCase().includes(query)));
+      const cognitiveFilter = state.cognitiveFilters[domain];
+      const items = state.data[domain].filter(item => (state.filters[domain] === 'all' || item.status === state.filters[domain]) && (!cognitiveFilter.workType || item.workType === cognitiveFilter.workType) && (!cognitiveFilter.cognitiveDemand || item.cognitiveDemand === cognitiveFilter.cognitiveDemand) && (!query || `${item.title} ${item.meta} ${item.note} ${item.expectedOutcome}`.toLowerCase().includes(query)));
       const grid = document.getElementById(`${domain}Grid`);
       if (!items.length) { grid.innerHTML = `<div class="empty-state">${icon('search')}<strong>Nenhum item encontrado</strong>Ajuste o filtro ou adicione um novo item.</div>`; return; }
       grid.innerHTML = items.map(item => { const metric = metricInfo(item, domain); return `
@@ -761,6 +801,8 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
           <div class="item-top">${domain === 'reading' && item.coverImage ? `<img class="book-cover" src="${item.coverImage}" alt="Capa de ${escapeHtml(item.title)}">` : `<div class="item-icon ${domainColors[domain]}">${icon(item.icon || domainIcons[domain])}</div>`}<button class="more-btn" data-edit="${domain}:${item.id}" aria-label="Editar ${escapeHtml(item.title)}">${icon('more')}</button></div>
           <h3>${escapeHtml(item.title)}</h3><div class="item-meta">${escapeHtml(item.meta || 'Sem contexto definido')}</div>
           ${item.note ? `<p class="item-note">${escapeHtml(item.note)}</p>` : ''}
+          ${(item.workType || item.cognitiveDemand || item.requiredEnergy || item.estimatedMinutes) ? `<div class="cognitive-badges">${item.workType ? `<span class="cognitive-badge ${item.workType}">${cognitiveOptions.workType[item.workType]}</span>` : ''}${item.cognitiveDemand ? `<span class="cognitive-badge">${cognitiveOptions.cognitiveDemand[item.cognitiveDemand]}</span>` : ''}${item.requiredEnergy ? `<span class="cognitive-badge">${cognitiveOptions.requiredEnergy[item.requiredEnergy]}</span>` : ''}${item.estimatedMinutes ? `<span class="cognitive-badge">${item.estimatedMinutes} min</span>` : ''}</div>` : ''}
+          ${item.expectedOutcome ? `<p class="item-note"><strong>Resultado:</strong> ${escapeHtml(item.expectedOutcome)}</p>` : ''}
           <div class="item-metric">${icon(metric.config.icon)}<span>${escapeHtml(metricDescription(item, domain))}</span></div>
           <div class="item-bottom"><div class="status-row"><span class="status ${item.status}">${statusLabels[item.status]}</span><strong>${metric.hasTarget ? '' : '~'}${metric.progress}%</strong></div><div class="progress"><span style="width:${metric.progress}%"></span></div>
           <div class="card-actions"><button data-note="${domain}:${item.id}">Abrir nota</button><button data-edit="${domain}:${item.id}">Progresso</button>${item.status !== 'done' ? `<button data-complete="${domain}:${item.id}">Concluir</button>` : `<button data-reopen="${domain}:${item.id}">Reabrir</button>`}</div></div>
@@ -930,6 +972,12 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       document.getElementById('titleField').value = item?.title || '';
       document.getElementById('metaField').value = item?.meta || '';
       document.getElementById('noteField').value = item?.note || '';
+      document.getElementById('workTypeField').value = item?.workType || '';
+      document.getElementById('cognitiveDemandField').value = item?.cognitiveDemand || '';
+      document.getElementById('requiredEnergyField').value = item?.requiredEnergy || '';
+      document.getElementById('estimatedMinutesField').value = item?.estimatedMinutes || '';
+      document.getElementById('expectedOutcomeField').value = item?.expectedOutcome || '';
+      document.getElementById('cognitiveFields').open = Boolean(item?.workType || item?.cognitiveDemand || item?.requiredEnergy || item?.estimatedMinutes || item?.expectedOutcome);
       document.getElementById('readingFormat').value = item?.readingFormat || 'physical';
       document.getElementById('readingFormatField').classList.toggle('show', domain === 'reading');
       pendingCover = item?.coverImage || '';
@@ -1031,6 +1079,12 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       if (event.target.closest('[data-action="weekly"]')) { switchView('overview'); document.getElementById('focusCard').scrollIntoView({behavior:'smooth', block:'center'}); }
       if (!event.target.closest('#settingsMenu') && !event.target.closest('#settingsBtn')) document.getElementById('settingsMenu').classList.remove('open');
     });
+    document.addEventListener('change', event => {
+      const filter = event.target.closest('[data-cognitive-filter]');
+      if (!filter) return;
+      state.cognitiveFilters[filter.dataset.domain][filter.dataset.cognitiveFilter] = filter.value;
+      renderGrid(filter.dataset.domain);
+    });
 
     document.getElementById('quickAdd').addEventListener('click', () => state.view === 'notes' ? createNote() : openDialog(state.view === 'overview' ? 'reading' : state.view));
     document.getElementById('newNoteTreeBtn').addEventListener('click', () => createNote());
@@ -1081,7 +1135,12 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       const payload = {
         title: document.getElementById('titleField').value.trim(), meta: document.getElementById('metaField').value.trim(),
         note: document.getElementById('noteField').value.trim(), status: document.getElementById('statusField').value,
-        progress: clamp(document.getElementById('progressField').value), icon: domainIcons[domain]
+        progress: clamp(document.getElementById('progressField').value), icon: domainIcons[domain],
+        workType: document.getElementById('workTypeField').value || null,
+        cognitiveDemand: document.getElementById('cognitiveDemandField').value || null,
+        requiredEnergy: document.getElementById('requiredEnergyField').value || null,
+        estimatedMinutes: document.getElementById('estimatedMinutesField').value ? Math.min(1440, Math.max(1, Math.round(Number(document.getElementById('estimatedMinutesField').value)))) : null,
+        expectedOutcome: document.getElementById('expectedOutcomeField').value.trim().slice(0,160)
       };
       if (domain === 'reading') { payload.coverImage = pendingCover; payload.readingFormat = readingFormat; }
       payload[config.currentKey] = currentValue;
