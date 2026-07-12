@@ -34,6 +34,8 @@ O percentual e o restante são calculados automaticamente.
 ## Funcionalidades
 
 - Dashboard com visão consolidada das frentes ativas.
+- Visão **Hoje** com plano diário curto e próximas ações.
+- Fila inteligente baseada no foco semanal e nas frentes ativas.
 - Leituras físicas acompanhadas por página atual e total da edição.
 - Leituras digitais acompanhadas pelo percentual exibido no Kindle.
 - Estudos acompanhados por horas concluídas e planejadas.
@@ -41,6 +43,8 @@ O percentual e o restante são calculados automaticamente.
 - Sessões de leitura e estudo com início, pausa, retomada e encerramento.
 - Recuperação da sessão ativa após fechar ou recarregar o PWA.
 - Evidências estruturadas vinculadas às sessões concluídas.
+- Active Recall com perguntas derivadas de evidências e notas.
+- Modo de prática com resposta oculta, edição e histórico de tentativas.
 - Histórico de sessões por item e histórico global pesquisável.
 - Métricas de tempo focado, dias ativos, consistência e sequências.
 - Tendência das últimas oito semanas e ranking por investimento.
@@ -97,11 +101,17 @@ index.html
 storage.js
 └── persistência IndexedDB com contingência local
 
+today-feature.js
+└── plano diário e próximas ações conectadas às sessões
+
 sessions-feature.js
 └── sessões de leitura e estudo
 
 evidence-feature.js
 └── evidências vinculadas às sessões
+
+recall-feature.js
+└── perguntas de Active Recall derivadas de evidências e notas
 
 weekly-review-feature.js
 └── revisão semanal guiada
@@ -150,10 +160,36 @@ http://localhost:4173
 
 Novos commits na branch `main` são publicados pelo GitHub Pages. O service worker detecta a nova versão e substitui o cache anterior.
 
-## Roadmap
+## Roadmap orientado ao ciclo de aprendizagem
 
-- Melhorias adicionais de acessibilidade e experiência mobile.
-- Sincronização opcional entre dispositivos.
+O desenvolvimento segue o fluxo:
+
+**Planejar → Executar → Registrar evidência → Recuperar → Refletir → Ajustar**
+
+| Fase | Entrega | Estado |
+| --- | --- | --- |
+| 0 · Fundação local-first | IndexedDB, migração do `localStorage`, schema versionado, backup e restauração | ✅ Concluída |
+| 1 · Execução guiada | Hoje, sessões, próximas ações, evidências, metas/foco conectados e revisão semanal | ✅ Concluída |
+| 2 · Aprendizagem ativa | Active Recall, revisão espaçada, assuntos fracos, caderno de erros, síntese de livros e planejado vs. realizado | 🟡 Em andamento: Active Recall concluído |
+| 3 · Integrações | Google Drive, Markdown/Obsidian, Anki, Kindle/Readwise e calendário | 🟡 Parcial: vault Markdown concluído |
+| 4 · IA contextual | RAG sobre dados locais, geração de perguntas e avaliação de explicações | 📋 Planejada |
+
+### Fluxo já disponível
+
+1. Defina a **Próxima evidência** em uma leitura, estudo ou meta.
+2. Selecione prioridades na **Revisão semanal**.
+3. Transforme essas prioridades em ações na visão **Hoje**.
+4. Inicie uma sessão de leitura ou estudo.
+5. Registre progresso e evidência ao encerrar.
+6. Analise consistência e feche a semana com decisões para o próximo ciclo.
+
+### Próximos incrementos
+
+- Fase 2.2: fila de revisão espaçada com autoavaliação.
+- Fase 2.3: painel de assuntos fracos e caderno de erros.
+- Fase 2.4: planejado vs. realizado e síntese orientada de livros.
+- Fase 3: sincronização opcional entre dispositivos pelo Google Drive, com IDs permanentes, `updatedAt` e merge por registro.
+- Evolução contínua de acessibilidade e experiência mobile.
 
 ---
 
