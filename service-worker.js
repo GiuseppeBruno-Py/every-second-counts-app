@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v15';
+const CACHE_NAME = 'compasso-pages-v16';
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const APP_SHELL = [
   './sessions-feature.js',
   './evidence-feature.js',
   './recall-feature.js',
+  './weakness-feature.js',
   './weekly-review-feature.js',
   './analytics-feature.js',
   './dictionary-relations-feature.js',
@@ -26,6 +27,7 @@ const SESSIONS_MARKER = '/* Compasso · Sessões de leitura e estudo';
 const TODAY_MARKER = '/* Compasso · Hoje e próximas ações';
 const EVIDENCE_MARKER = '/* Compasso · Evidências de sessão';
 const RECALL_MARKER = '/* Compasso · Active Recall a partir de evidências e notas';
+const WEAKNESS_MARKER = '/* Compasso · Assuntos fracos e caderno de erros';
 const WEEKLY_REVIEW_MARKER = '/* Compasso · Revisão semanal guiada por evidências';
 const ANALYTICS_MARKER = '/* Compasso · Métricas de consistência e histórico global de sessões';
 const DICTIONARY_MARKER = '/* Compasso · Dicionário visual de relações';
@@ -100,12 +102,13 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, todayCode, sessionsCode, evidenceCode, recallCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode] = await Promise.all([
+  const [html, todayCode, sessionsCode, evidenceCode, recallCode, weaknessCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode] = await Promise.all([
     response.text(),
     readCachedText('./today-feature.js'),
     readCachedText('./sessions-feature.js'),
     readCachedText('./evidence-feature.js'),
     readCachedText('./recall-feature.js'),
+    readCachedText('./weakness-feature.js'),
     readCachedText('./weekly-review-feature.js'),
     readCachedText('./analytics-feature.js'),
     readCachedText('./dictionary-relations-feature.js'),
@@ -121,6 +124,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-sessions', 'v1');
   headers.set('x-compasso-evidence', 'v1');
   headers.set('x-compasso-recall', 'v1');
+  headers.set('x-compasso-weakness', 'v1');
   headers.set('x-compasso-weekly-review', 'v1');
   headers.set('x-compasso-analytics', 'v1');
   headers.set('x-compasso-dictionary', 'v1');
@@ -132,7 +136,8 @@ async function enhanceHtmlResponse(response) {
   const withSessions = integrateFeature(withToday, sessionsCode, SESSIONS_MARKER);
   const withEvidence = integrateFeature(withSessions, evidenceCode, EVIDENCE_MARKER);
   const withRecall = integrateFeature(withEvidence, recallCode, RECALL_MARKER);
-  const withWeeklyReview = integrateFeature(withRecall, weeklyReviewCode, WEEKLY_REVIEW_MARKER);
+  const withWeakness = integrateFeature(withRecall, weaknessCode, WEAKNESS_MARKER);
+  const withWeeklyReview = integrateFeature(withWeakness, weeklyReviewCode, WEEKLY_REVIEW_MARKER);
   const withAnalytics = integrateFeature(withWeeklyReview, analyticsCode, ANALYTICS_MARKER);
   const withDictionary = integrateFeature(withAnalytics, dictionaryCode, DICTIONARY_MARKER);
   const withKnowledgeGraph = integrateFeature(withDictionary, knowledgeGraphCode, KNOWLEDGE_GRAPH_MARKER);
