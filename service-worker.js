@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v31';
+const CACHE_NAME = 'compasso-pages-v32';
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const APP_SHELL = [
   './sessions-feature.js',
   './contingency-model.js',
   './contingency-feature.js',
+  './deep-work-model.js',
+  './deep-work-feature.js',
   './energy-model.js',
   './energy-feature.js',
   './flow-model.js',
@@ -38,6 +40,8 @@ const STORAGE_KEY = 'compasso.app.v1';
 const SESSIONS_MARKER = '/* Compasso · Sessões de leitura e estudo';
 const CONTINGENCY_MODEL_MARKER = 'CompassoContingencyModel';
 const CONTINGENCY_MARKER = '/* Compasso · Contingências Se X então Y e versão mínima';
+const DEEP_WORK_MODEL_MARKER = 'CompassoDeepWorkModel';
+const DEEP_WORK_MARKER = '/* Compasso · Modo Deep Work para sessões focadas';
 const ENERGY_MODEL_MARKER = 'CompassoEnergyModel';
 const ENERGY_MARKER = '/* Compasso · Energia percebida e mapa pessoal por horario';
 const FLOW_MODEL_MARKER = 'CompassoFlowModel';
@@ -128,12 +132,14 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, todayCode, sessionsCode, contingencyModelCode, contingencyCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
+  const [html, todayCode, sessionsCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
     response.text(),
     readCachedText('./today-feature.js'),
     readCachedText('./sessions-feature.js'),
     readCachedText('./contingency-model.js'),
     readCachedText('./contingency-feature.js'),
+    readCachedText('./deep-work-model.js'),
+    readCachedText('./deep-work-feature.js'),
     readCachedText('./energy-model.js'),
     readCachedText('./energy-feature.js'),
     readCachedText('./flow-model.js'),
@@ -161,6 +167,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-today', 'v1');
   headers.set('x-compasso-sessions', 'v1');
   headers.set('x-compasso-contingencies', 'v1');
+  headers.set('x-compasso-deep-work', 'v1');
   headers.set('x-compasso-energy', 'v1');
   headers.set('x-compasso-flow-matching', 'v1');
   headers.set('x-compasso-evidence', 'v1');
@@ -182,7 +189,9 @@ async function enhanceHtmlResponse(response) {
   const withSessions = integrateFeature(withToday, sessionsCode, SESSIONS_MARKER);
   const withContingencyModel = integrateFeature(withSessions, contingencyModelCode, CONTINGENCY_MODEL_MARKER);
   const withContingencies = integrateFeature(withContingencyModel, contingencyCode, CONTINGENCY_MARKER);
-  const withEnergyModel = integrateFeature(withContingencies, energyModelCode, ENERGY_MODEL_MARKER);
+  const withDeepWorkModel = integrateFeature(withContingencies, deepWorkModelCode, DEEP_WORK_MODEL_MARKER);
+  const withDeepWork = integrateFeature(withDeepWorkModel, deepWorkCode, DEEP_WORK_MARKER);
+  const withEnergyModel = integrateFeature(withDeepWork, energyModelCode, ENERGY_MODEL_MARKER);
   const withEnergy = integrateFeature(withEnergyModel, energyCode, ENERGY_MARKER);
   const withFlowModel = integrateFeature(withEnergy, flowModelCode, FLOW_MODEL_MARKER);
   const withFlow = integrateFeature(withFlowModel, flowCode, FLOW_MARKER);
