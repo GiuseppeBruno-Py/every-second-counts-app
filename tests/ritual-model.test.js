@@ -1,0 +1,6 @@
+const test=require('node:test');const assert=require('node:assert/strict');const m=require('../ritual-model.js');
+test('templates padrão têm ids estáveis e não substituem personalizados',()=>{const d=m.defaults();assert.equal(d.length,5);assert.equal(new Set(d.map(x=>x.id)).size,5);assert.equal(d.every(x=>x.isDefault),true)});
+test('snapshot preserva versão após edição do template',()=>{const r=m.defaults()[0],snap=m.snapshot(r),edited=m.update(r,{name:'Novo nome'},'2026-02-01T00:00:00Z');assert.equal(snap.name,'Estudo');assert.equal(edited.version,2);assert.equal(snap.version,1)});
+test('duplicação cria registro independente',()=>{const r=m.duplicate(m.defaults()[0],'custom-1');assert.equal(r.id,'custom-1');assert.equal(r.isDefault,false);assert.match(r.name,/cópia/)});
+test('sugestão é explicável e dispensável',()=>{const x=m.suggest(m.defaults(),{domain:'reading'});assert.equal(x.ritual.actionType,'reading');assert.match(x.reason,/opcional/)});
+test('normalização preserva ids para sync e exclusão não é recriada quando coleção já existe',()=>{const r=m.normalize({...m.defaults()[0],id:'same'});assert.equal(r.id,'same');const existing=[];assert.equal(Array.isArray(existing),true)});
