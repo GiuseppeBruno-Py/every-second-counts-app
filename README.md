@@ -46,7 +46,10 @@ O percentual e o restante são calculados automaticamente.
 - Tendência das últimas oito semanas e ranking por investimento.
 - Revisão semanal guiada por sessões e evidências.
 - Prioridades semanais conectadas ao foco do dashboard.
-- Dicionário editorial de leituras, estudos, metas e notas.
+- Grafo interativo de leituras, estudos, metas e notas.
+- Nós arrastáveis, pan, zoom por roda ou gesto de pinça e enquadramento automático.
+- Seleção de vizinhos, painel contextual, busca com foco e filtros por domínio.
+- Dicionário editorial como visualização alternativa do mesmo modelo de relações.
 - Relações bidirecionais derivadas de `[[wikilinks]]` e notas vinculadas.
 - Navegação direta entre entradas relacionadas e suas origens.
 - Exportação do histórico filtrado em CSV.
@@ -102,7 +105,10 @@ analytics-feature.js
 └── consistência, tendências e histórico global
 
 dictionary-relations-feature.js
-└── dicionário editorial e relações entre conhecimento e objetivos
+└── modelo editorial e relações entre conhecimento e objetivos
+
+knowledge-graph-feature.js
+└── visualização force-directed, interações e painel contextual
 
 manifest.webmanifest
 └── identidade e instalação PWA
@@ -136,7 +142,7 @@ Novos commits na branch `main` são publicados pelo GitHub Pages. O service work
 ## Roadmap
 
 - Importação e exportação do vault em Markdown.
-- Melhorias de acessibilidade e experiência mobile.
+- Melhorias adicionais de acessibilidade e experiência mobile.
 - Sincronização opcional entre dispositivos.
 
 ---
