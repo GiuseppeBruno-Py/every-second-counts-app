@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v29';
+const CACHE_NAME = 'compasso-pages-v30';
 const APP_SHELL = [
   './',
   './index.html',
@@ -16,6 +16,8 @@ const APP_SHELL = [
   './drive-sync-feature.js',
   './drive-reconcile-feature.js',
   './weekly-review-feature.js',
+  './weekly-plan-model.js',
+  './weekly-plan-feature.js',
   './analytics-feature.js',
   './dictionary-relations-feature.js',
   './knowledge-graph-feature.js',
@@ -44,6 +46,8 @@ const OUTCOMES_MARKER = '/* Compasso · Planejado vs. realizado e síntese orien
 const DRIVE_SYNC_MARKER = '/* Compasso · OAuth Google Drive e base de sincronização';
 const DRIVE_RECONCILE_MARKER = '/* Compasso · Conciliacao visual do Google Drive';
 const WEEKLY_REVIEW_MARKER = '/* Compasso · Revisão semanal guiada por evidências';
+const WEEKLY_PLAN_MODEL_MARKER = 'CompassoWeeklyPlanModel';
+const WEEKLY_PLAN_MARKER = '/* Compasso · Planejamento semanal guiado por resultados';
 const ANALYTICS_MARKER = '/* Compasso · Métricas de consistência e histórico global de sessões';
 const DICTIONARY_MARKER = '/* Compasso · Dicionário visual de relações';
 const KNOWLEDGE_GRAPH_MARKER = '/* Compasso · Grafo interativo de conhecimento';
@@ -120,7 +124,7 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, todayCode, sessionsCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
+  const [html, todayCode, sessionsCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
     response.text(),
     readCachedText('./today-feature.js'),
     readCachedText('./sessions-feature.js'),
@@ -135,6 +139,8 @@ async function enhanceHtmlResponse(response) {
     readCachedText('./drive-sync-feature.js'),
     readCachedText('./drive-reconcile-feature.js'),
     readCachedText('./weekly-review-feature.js'),
+    readCachedText('./weekly-plan-model.js'),
+    readCachedText('./weekly-plan-feature.js'),
     readCachedText('./analytics-feature.js'),
     readCachedText('./dictionary-relations-feature.js'),
     readCachedText('./knowledge-graph-feature.js'),
@@ -157,6 +163,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-drive-sync', 'drive-merge-v2');
   headers.set('x-compasso-drive-reconcile', 'v1');
   headers.set('x-compasso-weekly-review', 'v1');
+  headers.set('x-compasso-weekly-plan', 'v1');
   headers.set('x-compasso-analytics', 'v1');
   headers.set('x-compasso-dictionary', 'v1');
   headers.set('x-compasso-knowledge-graph', 'v1');
@@ -177,7 +184,9 @@ async function enhanceHtmlResponse(response) {
   const withDriveSync = integrateFeature(withOutcomes, driveSyncCode, DRIVE_SYNC_MARKER);
   const withDriveReconcile = integrateFeature(withDriveSync, driveReconcileCode, DRIVE_RECONCILE_MARKER);
   const withWeeklyReview = integrateFeature(withDriveReconcile, weeklyReviewCode, WEEKLY_REVIEW_MARKER);
-  const withAnalytics = integrateFeature(withWeeklyReview, analyticsCode, ANALYTICS_MARKER);
+  const withWeeklyPlanModel = integrateFeature(withWeeklyReview, weeklyPlanModelCode, WEEKLY_PLAN_MODEL_MARKER);
+  const withWeeklyPlan = integrateFeature(withWeeklyPlanModel, weeklyPlanCode, WEEKLY_PLAN_MARKER);
+  const withAnalytics = integrateFeature(withWeeklyPlan, analyticsCode, ANALYTICS_MARKER);
   const withDictionary = integrateFeature(withAnalytics, dictionaryCode, DICTIONARY_MARKER);
   const withKnowledgeGraph = integrateFeature(withDictionary, knowledgeGraphCode, KNOWLEDGE_GRAPH_MARKER);
   const withKnowledgeGraphLifecycle = integrateFeature(withKnowledgeGraph, knowledgeGraphLifecycleCode, KNOWLEDGE_GRAPH_LIFECYCLE_MARKER);

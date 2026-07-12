@@ -59,6 +59,7 @@ O percentual e o restante são calculados automaticamente.
 - Métricas de tempo focado, dias ativos, consistência e sequências.
 - Tendência das últimas oito semanas e ranking por investimento.
 - Revisão semanal guiada por sessões e evidências.
+- Wizard semanal em 10 etapas, orientado por 2–3 resultados observáveis.
 - Prioridades semanais conectadas ao foco do dashboard.
 - Grafo interativo de leituras, estudos, metas e notas.
 - Nós arrastáveis, pan, zoom por roda ou gesto de pinça e enquadramento automático.
@@ -157,6 +158,12 @@ drive-reconcile-feature.js
 weekly-review-feature.js
 └── revisão semanal guiada
 
+weekly-plan-model.js
+└── semana/timezone, migração, riscos e distribuição determinística
+
+weekly-plan-feature.js
+└── wizard persistente de resultados, ações, contingências e confirmação
+
 analytics-feature.js
 └── consistência, tendências e histórico global
 
@@ -246,6 +253,7 @@ O desenvolvimento segue o fluxo:
 - Revalidação pós-rollback: ✅ Fase 1 republicada sobre a base estável da PWA, sem restaurar versões antigas dos demais módulos.
 - SCRUM-2 / Fase 2: ✅ check-ins opcionais antes/depois das sessões, histórico editável, mapa por horário com amostra mínima e sincronização da coleção `energyCheckins`.
 - SCRUM-3 / Fase 3: ✅ Flow Matching determinístico por energia, tempo, contexto e concentração, com até três recomendações explicáveis, escolha manual preservada e métricas locais.
+- SCRUM-4 / Fase 4: ✅ planejamento semanal em 10 etapas, com 2–3 resultados antes das ações, autosave, retomada, riscos, contingências, preparação e confirmação explícita.
 
 #### Fórmula do Flow Matching
 
