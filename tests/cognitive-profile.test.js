@@ -24,6 +24,20 @@ test('profile filters are wired', () => {
   assert.match(html, /item\.cognitiveDemand === cognitiveFilter\.cognitiveDemand/);
 });
 
+test('all supported values and compact badges are available', () => {
+  for (const value of ['deep', 'shallow', 'recovery', 'low', 'medium', 'high']) {
+    assert.match(html, new RegExp(`value="${value}"`));
+  }
+  assert.match(html, /class="cognitive-badge/);
+  assert.match(html, /item\.estimatedMinutes/);
+  assert.match(html, /item\.expectedOutcome/);
+});
+
+test('legacy normalization never infers low demand or energy', () => {
+  assert.match(html, /item\.requiredEnergy = cognitiveOptions\.requiredEnergy/);
+  assert.doesNotMatch(html, /item\.(?:cognitiveDemand|requiredEnergy)\s*=\s*['"]low['"]/);
+});
+
 test('inline application script is valid JavaScript', () => {
   assert.ok(inlineScript);
   assert.doesNotThrow(() => new Function(inlineScript));
