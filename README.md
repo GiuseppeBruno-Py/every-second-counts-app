@@ -54,6 +54,10 @@ O percentual e o restante são calculados automaticamente.
 - Navegação direta entre entradas relacionadas e suas origens.
 - Exportação do histórico filtrado em CSV.
 - Atlas de notas com pastas e arquivos Markdown.
+- Importação e exportação do Atlas como vault Markdown em ZIP ou pasta.
+- Manifesto opcional para preservar IDs, tags, pastas e vínculos em round-trip.
+- Importação segura por mesclagem, cópia isolada ou substituição somente do Atlas.
+- Compatibilidade com vaults Markdown externos e frontmatter YAML básico.
 - Editor dividido entre escrita e visualização.
 - Tags, links `[[wikilinks]]` e notas vinculadas a itens de progresso.
 - Filtros, busca e estados de andamento.
@@ -68,7 +72,8 @@ O Compasso segue uma abordagem **local-first**:
 - O repositório contém somente dados de demonstração genéricos.
 - Leituras, notas, estudos, metas, sessões, evidências e revisões ficam no armazenamento local do navegador.
 - Nenhum dado pessoal é enviado ao GitHub ou a um servidor externo.
-- Backups JSON e relatórios CSV são exportados apenas quando o usuário solicita.
+- Backups JSON, vaults Markdown e relatórios CSV são exportados apenas quando o usuário solicita.
+- A análise de ZIPs e pastas Markdown ocorre integralmente no navegador.
 
 > Limpar os dados do navegador pode remover o conteúdo local. Exporte backups periodicamente.
 
@@ -110,6 +115,12 @@ dictionary-relations-feature.js
 knowledge-graph-feature.js
 └── visualização force-directed, interações e painel contextual
 
+markdown-vault-feature.js
+└── exportação ZIP/pasta, leitura de vault e estratégias de importação
+
+markdown-vault-hardening.js
+└── preservação de pastas vazias e coerência dos controles assíncronos
+
 manifest.webmanifest
 └── identidade e instalação PWA
 
@@ -141,7 +152,6 @@ Novos commits na branch `main` são publicados pelo GitHub Pages. O service work
 
 ## Roadmap
 
-- Importação e exportação do vault em Markdown.
 - Melhorias adicionais de acessibilidade e experiência mobile.
 - Sincronização opcional entre dispositivos.
 
