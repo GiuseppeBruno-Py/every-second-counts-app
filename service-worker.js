@@ -1,8 +1,9 @@
-const CACHE_NAME = 'compasso-pages-v4';
+const CACHE_NAME = 'compasso-pages-v5';
 const APP_SHELL = [
   './',
   './index.html',
   './storage.js',
+  './sessions-feature.js',
   './manifest.webmanifest',
   './compasso-icon.svg',
   './compasso.ico',
@@ -11,6 +12,7 @@ const APP_SHELL = [
 ];
 
 const STORAGE_KEY = 'compasso.app.v1';
+const SESSIONS_MARKER = '/* Compasso · Sessões de leitura e estudo';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -51,15 +53,46 @@ function integrateIndexedDb(html) {
   return integrated;
 }
 
+function integrateSessions(html, featureCode) {
+  if (!featureCode || html.includes(SESSIONS_MARKER)) return html;
+  const bootstrapPoint = '    renderAll();\n    const requestedView';
+  if (!html.includes(bootstrapPoint)) return html;
+  return html.replace(
+    bootstrapPoint,
+    `    ${featureCode}\n\n    renderAll();\n    const requestedView`
+  );
+}
+
+async function readCachedText(path) {
+  const cached = await caches.match(path, { ignoreSearch: true });
+  if (cached) return cached.text();
+  try {
+    const response = await fetch(path);
+    if (!response.ok) return '';
+    const copy = response.clone();
+    caches.open(CACHE_NAME).then(cache => cache.put(path, copy));
+    return response.text();
+  } catch {
+    return '';
+  }
+}
+
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const html = await response.text();
+  const [html, sessionsCode] = await Promise.all([
+    response.text(),
+    readCachedText('./sessions-feature.js')
+  ]);
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
   headers.set('x-compasso-storage', 'indexeddb-v1');
+  headers.set('x-compasso-sessions', 'v1');
 
-  return new Response(integrateIndexedDb(html), {
+  const withStorage = integrateIndexedDb(html);
+  const enhanced = integrateSessions(withStorage, sessionsCode);
+
+  return new Response(enhanced, {
     status: response.status,
     statusText: response.statusText,
     headers
