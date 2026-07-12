@@ -37,6 +37,7 @@ O percentual e o restante são calculados automaticamente.
 - Visão **Hoje** com plano diário curto e próximas ações.
 - Criação manual de ações independentes ou vinculadas a uma frente.
 - Fila inteligente baseada no foco semanal e nas frentes ativas.
+- Flow Matching com até três recomendações explicáveis por energia, tempo, contexto e concentração.
 - Leituras físicas acompanhadas por página atual e total da edição.
 - Leituras digitais acompanhadas pelo percentual exibido no Kindle.
 - Estudos acompanhados por horas concluídas e planejadas.
@@ -128,6 +129,12 @@ energy-feature.js
 
 energy-model.js
 └── validação e agregação determinística, testável e independente da interface
+
+flow-model.js
+└── filtros, pontuação, desempate e reason codes do Flow Matching
+
+flow-feature.js
+└── fluxo “O que consigo fazer agora?”, perfil de execução e métricas locais
 
 evidence-feature.js
 └── evidências vinculadas às sessões
@@ -238,6 +245,11 @@ O desenvolvimento segue o fluxo:
 - SCRUM-1 / Fase 1: ✅ classificação cognitiva opcional nas ações, badges compactos, filtros por tipo/demanda e persistência no mesmo modelo usado por backup e sincronização. Valores ausentes permanecem “não definidos”, inclusive em dados legados.
 - Revalidação pós-rollback: ✅ Fase 1 republicada sobre a base estável da PWA, sem restaurar versões antigas dos demais módulos.
 - SCRUM-2 / Fase 2: ✅ check-ins opcionais antes/depois das sessões, histórico editável, mapa por horário com amostra mínima e sincronização da coleção `energyCheckins`.
+- SCRUM-3 / Fase 3: ✅ Flow Matching determinístico por energia, tempo, contexto e concentração, com até três recomendações explicáveis, escolha manual preservada e métricas locais.
+
+#### Fórmula do Flow Matching
+
+Primeiro são excluídas ações incompatíveis com estado, tempo, energia, contexto ou concentração. As restantes recebem pontos limitados por foco semanal, prioridade, prazo, compatibilidade de energia/demanda, encaixe no tempo e ausência de avanço recente. Prazos contribuem com no máximo 15 pontos; dados ausentes geram penalidade explícita de 5 pontos por campo. Empates são resolvidos por chave estável da ação.
 - Fase 3.5: importação Kindle/Readwise e integração inicial com calendário.
 - Fase 4.1: ✅ índice RAG local sobre frentes, notas, evidências, Active Recall e erros, com busca, filtros, ranking e abertura da fonte.
 - Fase 4.2: ✅ geração assistida de perguntas a partir do contexto recuperado, com revisão humana antes de salvar.
