@@ -70,6 +70,7 @@ O percentual e o restante são calculados automaticamente.
 - Importação segura por mesclagem, cópia isolada ou substituição somente do Atlas.
 - Exportação Markdown refinada para Obsidian com frontmatter YAML, aliases, tags, vínculos e índice inicial.
 - OAuth do Google Drive configurado para sincronização opcional via `appDataFolder`.
+- Perfil cognitivo opcional nas ações: trabalho profundo/superficial/recuperação, demanda, energia, duração e resultado esperado, com filtros e compatibilidade retroativa.
 - Conciliação visual do Google Drive com comparação local/remota e decisão explícita por local, Drive ou mescla.
 - Busca contextual local sobre frentes, notas, evidências, Active Recall e caderno de erros, com ranking e fontes rastreáveis.
 - Geração local de rascunhos de perguntas a partir do contexto recuperado, com revisão obrigatória antes de salvar.
@@ -223,6 +224,10 @@ O desenvolvimento segue o fluxo:
 - Fase 3.2: ✅ sincronização manual e automática via `compasso-sync.json` no `appDataFolder`, com IDs permanentes, `updatedAt`, tombstones para exclusões e merge por registro.
 - Fase 3.3: ✅ exportação TSV compatível com Anki e vault Markdown refinado para Obsidian com frontmatter, tags, aliases, vínculos e índice.
 - Fase 3.4: ✅ conciliação visual do Google Drive, com comparação local/remoto e resolução explícita por versão local, versão do Drive ou mescla.
+
+### Roadmap Produtividade / Deep Work
+
+- SCRUM-1 / Fase 1: ✅ classificação cognitiva opcional nas ações, badges compactos, filtros por tipo/demanda e persistência no mesmo modelo usado por backup e sincronização. Valores ausentes permanecem “não definidos”, inclusive em dados legados.
 - Fase 3.5: importação Kindle/Readwise e integração inicial com calendário.
 - Fase 4.1: ✅ índice RAG local sobre frentes, notas, evidências, Active Recall e erros, com busca, filtros, ranking e abertura da fonte.
 - Fase 4.2: ✅ geração assistida de perguntas a partir do contexto recuperado, com revisão humana antes de salvar.
