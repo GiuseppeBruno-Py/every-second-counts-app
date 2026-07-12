@@ -68,11 +68,15 @@ function analyticsSearchText(session) {
   ].filter(Boolean).join(' ').toLowerCase();
 }
 
-function analyticsFilteredSessions() {
+function analyticsPeriodSessions() {
   const start = analyticsPeriodStart();
-  const query = analyticsRuntime.query.trim().toLowerCase();
   return analyticsCompletedSessions()
-    .filter(session => !start || analyticsSessionDate(session) >= start)
+    .filter(session => !start || analyticsSessionDate(session) >= start);
+}
+
+function analyticsHistorySessions() {
+  const query = analyticsRuntime.query.trim().toLowerCase();
+  return analyticsPeriodSessions()
     .filter(session => !query || analyticsSearchText(session).includes(query));
 }
 
@@ -180,7 +184,8 @@ function analyticsItemRanking(sessions) {
 }
 
 function analyticsDomainStats(sessions) {
-  return ['reading', 'study'].map(domain => {
+  const domains = analyticsRuntime.domain === 'all' ? ['reading', 'study'] : [analyticsRuntime.domain];
+  return domains.map(domain => {
     const domainSessions = sessions.filter(session => session.domain === domain);
     return {
       domain,
@@ -227,7 +232,7 @@ function installAnalyticsUi() {
           <section class="analytics-panel"><div class="analytics-panel-head"><div><div class="eyebrow">Concentração</div><h3>Itens com mais investimento</h3><p>Ranking pelo tempo efetivo de sessão.</p></div></div><div class="analytics-rank-list" id="analyticsRanking"></div></section>
         </div>
         <div class="analytics-grid">
-          <section class="analytics-panel"><div class="analytics-panel-head"><div><div class="eyebrow">Distribuição</div><h3>Leitura versus estudo</h3><p>Compare sessões, tempo e evidências por domínio.</p></div></div><div class="analytics-domain-list" id="analyticsDomains"></div></section>
+          <section class="analytics-panel"><div class="analytics-panel-head"><div><div class="eyebrow">Distribuição</div><h3>Atividade por domínio</h3><p>Compare sessões, tempo e evidências no período.</p></div></div><div class="analytics-domain-list" id="analyticsDomains"></div></section>
           <section class="analytics-panel"><div class="analytics-panel-head"><div><div class="eyebrow">Interpretação</div><h3>Leitura do seu ritmo</h3><p>Um diagnóstico simples baseado no período filtrado.</p></div></div><div class="insight" id="analyticsInsight" style="margin-top:0"></div></section>
         </div>
         <section class="analytics-panel"><div class="analytics-panel-head"><div><div class="eyebrow">Histórico global</div><h3>Todas as sessões em um só lugar</h3><p>Pesquise por item, objetivo, reflexão ou evidência.</p></div><div class="analytics-history-tools"><div class="analytics-search">${icon('search')}<input id="analyticsSearch" placeholder="Buscar no histórico..."></div><button class="secondary-btn" type="button" id="analyticsExport">${icon('export')}Exportar CSV</button></div></div><div class="analytics-history-list" id="analyticsHistory"></div><div class="analytics-load" id="analyticsLoadWrap"><button class="quiet-btn" type="button" id="analyticsLoadMore">Mostrar mais</button></div></section>
@@ -236,15 +241,15 @@ function installAnalyticsUi() {
   `);
 }
 
-function renderAnalyticsKpis(filtered, allDomainSessions) {
-  const totalDuration = filtered.reduce((sum, session) => sum + positiveNumber(session.durationMs), 0);
-  const activeDays = analyticsActiveDayKeys(filtered).length;
+function renderAnalyticsKpis(periodSessions, allDomainSessions) {
+  const totalDuration = periodSessions.reduce((sum, session) => sum + positiveNumber(session.durationMs), 0);
+  const activeDays = analyticsActiveDayKeys(periodSessions).length;
   const currentStreak = analyticsCurrentStreak(allDomainSessions);
   const bestStreak = analyticsBestStreak(allDomainSessions);
-  const consistency = analyticsConsistencyRate(filtered);
-  const average = analyticsAverageDuration(filtered);
+  const consistency = analyticsConsistencyRate(periodSessions);
+  const average = analyticsAverageDuration(periodSessions);
   const kpis = [
-    { label: 'Sessões', value: filtered.length, note: `média de ${analyticsDurationLabel(average)}` },
+    { label: 'Sessões', value: periodSessions.length, note: `média de ${analyticsDurationLabel(average)}` },
     { label: 'Tempo focado', value: analyticsDurationLabel(totalDuration), note: 'tempo efetivo sem pausas' },
     { label: 'Dias ativos', value: activeDays, note: `${consistency}% dos dias do período` },
     { label: 'Sequência atual', value: `${currentStreak}d`, note: `melhor sequência: ${bestStreak} dias` },
@@ -261,14 +266,14 @@ function renderAnalyticsTrend(allDomainSessions) {
   const total = buckets.reduce((sum, bucket) => sum + bucket.durationMs, 0);
   document.getElementById('analyticsTrendBadge').textContent = analyticsDurationLabel(total);
   document.getElementById('analyticsTrend').innerHTML = buckets.map(bucket => {
-    const height = Math.max(5, Math.round((bucket.durationMs / maxDuration) * 100));
+    const height = bucket.durationMs > 0 ? Math.max(5, Math.round((bucket.durationMs / maxDuration) * 100)) : 0;
     const label = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(bucket.start);
     return `<div class="analytics-week" title="${bucket.sessions} sessões · ${analyticsDurationLabel(bucket.durationMs)} · ${bucket.activeDays} dias ativos"><b>${analyticsDurationLabel(bucket.durationMs)}</b><div class="analytics-week-bar"><span style="height:${height}%"></span></div><small>${escapeHtml(label)}</small></div>`;
   }).join('');
 }
 
-function renderAnalyticsRanking(filtered) {
-  const ranking = analyticsItemRanking(filtered);
+function renderAnalyticsRanking(periodSessions) {
+  const ranking = analyticsItemRanking(periodSessions);
   const container = document.getElementById('analyticsRanking');
   if (!ranking.length) {
     container.innerHTML = '<div class="analytics-empty">Ainda não há sessões no período selecionado.</div>';
@@ -277,23 +282,23 @@ function renderAnalyticsRanking(filtered) {
   container.innerHTML = ranking.map(entry => `<article class="analytics-rank-row"><div class="analytics-rank-icon ${domainColors[entry.domain] || 'violet'}">${icon(domainIcons[entry.domain] || 'target')}</div><div><strong>${escapeHtml(entry.item?.title || 'Item removido')}</strong><span>${entry.sessions} ${entry.sessions === 1 ? 'sessão' : 'sessões'} · ${entry.evidence} ${entry.evidence === 1 ? 'evidência' : 'evidências'}</span></div><em>${analyticsDurationLabel(entry.durationMs)}</em></article>`).join('');
 }
 
-function renderAnalyticsDomains(filtered) {
-  const stats = analyticsDomainStats(filtered);
+function renderAnalyticsDomains(periodSessions) {
+  const stats = analyticsDomainStats(periodSessions);
   const maxDuration = Math.max(...stats.map(stat => stat.durationMs), 1);
   document.getElementById('analyticsDomains').innerHTML = stats.map(stat => {
-    const width = Math.round((stat.durationMs / maxDuration) * 100);
+    const width = stat.durationMs > 0 ? Math.round((stat.durationMs / maxDuration) * 100) : 0;
     const color = stat.domain === 'reading' ? 'var(--orange)' : 'var(--violet)';
     return `<article class="analytics-domain-row"><header><div><strong>${escapeHtml(domainLabels[stat.domain])}</strong><span>${stat.sessions} sessões · ${stat.evidence} evidências</span></div><strong>${analyticsDurationLabel(stat.durationMs)}</strong></header><div class="progress"><span style="width:${width}%;background:${color}"></span></div></article>`;
   }).join('');
 }
 
-function renderAnalyticsInsight(filtered, allDomainSessions) {
-  const consistency = analyticsConsistencyRate(filtered);
-  const average = analyticsAverageDuration(filtered);
+function renderAnalyticsInsight(periodSessions, allDomainSessions) {
+  const consistency = analyticsConsistencyRate(periodSessions);
+  const average = analyticsAverageDuration(periodSessions);
   const currentStreak = analyticsCurrentStreak(allDomainSessions);
-  const evidenceCount = filtered.reduce((sum, session) => sum + analyticsEvidenceForSession(session.id).length, 0);
+  const evidenceCount = periodSessions.reduce((sum, session) => sum + analyticsEvidenceForSession(session.id).length, 0);
   let message;
-  if (!filtered.length) message = '<strong>Sem base suficiente:</strong> conclua sessões para que o Compasso consiga interpretar seu ritmo.';
+  if (!periodSessions.length) message = '<strong>Sem base suficiente:</strong> conclua sessões para que o Compasso consiga interpretar seu ritmo.';
   else if (consistency >= 60) message = `<strong>Ritmo forte:</strong> você esteve ativo em ${consistency}% dos dias do período. Proteja esse padrão sem aumentar volume de forma automática.`;
   else if (consistency >= 30) message = `<strong>Ritmo funcional:</strong> há execução recorrente, mas ainda existem lacunas. Sessões menores e mais frequentes podem ser mais sustentáveis que blocos esporádicos.`;
   else message = `<strong>Ritmo concentrado:</strong> o avanço ocorreu em poucos dias. Verifique se isso é uma escolha consciente ou efeito de falta de espaço protegido na rotina.`;
@@ -308,9 +313,9 @@ function analyticsProgressLabel(session) {
   return delta > 0 ? `+${formatNumber(delta)} ${config.unit}` : 'sem avanço informado';
 }
 
-function renderAnalyticsHistory(filtered) {
+function renderAnalyticsHistory(historySessions) {
   const container = document.getElementById('analyticsHistory');
-  const visible = filtered.slice(0, analyticsRuntime.limit);
+  const visible = historySessions.slice(0, analyticsRuntime.limit);
   if (!visible.length) {
     container.innerHTML = '<div class="analytics-empty">Nenhuma sessão corresponde aos filtros atuais.</div>';
     document.getElementById('analyticsLoadWrap').hidden = true;
@@ -324,27 +329,28 @@ function renderAnalyticsHistory(filtered) {
     return `<article class="analytics-history-row"><div><header><b>${escapeHtml(item?.title || 'Item removido')}</b><span>${escapeHtml(domainLabels[session.domain] || session.domain)}</span></header>${session.intent ? `<p><strong>Objetivo:</strong> ${escapeHtml(session.intent)}</p>` : ''}${session.reflection ? `<p><strong>Observação:</strong> ${escapeHtml(session.reflection)}</p>` : ''}${evidenceHtml}</div><aside><time>${escapeHtml(date)}</time><strong>${analyticsDurationLabel(session.durationMs)}</strong><p>${escapeHtml(analyticsProgressLabel(session))}</p></aside></article>`;
   }).join('');
   const wrap = document.getElementById('analyticsLoadWrap');
-  wrap.hidden = visible.length >= filtered.length;
-  document.getElementById('analyticsLoadMore').textContent = `Mostrar mais (${filtered.length - visible.length})`;
+  wrap.hidden = visible.length >= historySessions.length;
+  document.getElementById('analyticsLoadMore').textContent = `Mostrar mais (${historySessions.length - visible.length})`;
 }
 
 function renderAnalytics() {
   if (!document.getElementById('analyticsView')) return;
-  const filtered = analyticsFilteredSessions();
+  const periodSessions = analyticsPeriodSessions();
+  const historySessions = analyticsHistorySessions();
   const allDomainSessions = analyticsCompletedSessions();
-  renderAnalyticsKpis(filtered, allDomainSessions);
+  renderAnalyticsKpis(periodSessions, allDomainSessions);
   renderAnalyticsTrend(allDomainSessions);
-  renderAnalyticsRanking(filtered);
-  renderAnalyticsDomains(filtered);
-  renderAnalyticsInsight(filtered, allDomainSessions);
-  renderAnalyticsHistory(filtered);
+  renderAnalyticsRanking(periodSessions);
+  renderAnalyticsDomains(periodSessions);
+  renderAnalyticsInsight(periodSessions, allDomainSessions);
+  renderAnalyticsHistory(historySessions);
   document.querySelectorAll('[data-analytics-period]').forEach(button => button.classList.toggle('active', button.dataset.analyticsPeriod === analyticsRuntime.period));
   document.getElementById('analyticsDomain').value = analyticsRuntime.domain;
   document.getElementById('analyticsSearch').value = analyticsRuntime.query;
 }
 
 function exportAnalyticsCsv() {
-  const sessions = analyticsFilteredSessions();
+  const sessions = analyticsHistorySessions();
   if (!sessions.length) {
     showToast('Não há sessões para exportar');
     return;
@@ -394,7 +400,7 @@ document.addEventListener('click', event => {
   }
   if (event.target.closest('#analyticsLoadMore')) {
     analyticsRuntime.limit += 40;
-    renderAnalyticsHistory(analyticsFilteredSessions());
+    renderAnalyticsHistory(analyticsHistorySessions());
   }
   if (event.target.closest('#analyticsExport')) exportAnalyticsCsv();
 });
@@ -408,5 +414,5 @@ document.getElementById('analyticsDomain').addEventListener('change', event => {
 document.getElementById('analyticsSearch').addEventListener('input', event => {
   analyticsRuntime.query = event.target.value;
   analyticsRuntime.limit = 40;
-  renderAnalyticsHistory(analyticsFilteredSessions());
+  renderAnalyticsHistory(analyticsHistorySessions());
 });
