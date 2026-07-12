@@ -49,6 +49,8 @@ O percentual e o restante são calculados automaticamente.
 - Revisão espaçada com fila de cards devidos e autoavaliação em quatro níveis.
 - Diagnóstico automático de assuntos fracos baseado no histórico de recuperação.
 - Caderno de erros com causa, correção, próxima ação e acompanhamento de resolução.
+- Planejado vs. realizado semanal com ações, sessões, tempo e evidências.
+- Síntese orientada de livros com geração de nota Markdown vinculada.
 - Histórico de sessões por item e histórico global pesquisável.
 - Métricas de tempo focado, dias ativos, consistência e sequências.
 - Tendência das últimas oito semanas e ranking por investimento.
@@ -120,6 +122,9 @@ recall-feature.js
 weakness-feature.js
 └── assuntos fracos e caderno de erros acionável
 
+outcomes-feature.js
+└── planejado vs. realizado e sínteses orientadas de livros
+
 weekly-review-feature.js
 └── revisão semanal guiada
 
@@ -177,7 +182,7 @@ O desenvolvimento segue o fluxo:
 | --- | --- | --- |
 | 0 · Fundação local-first | IndexedDB, migração do `localStorage`, schema versionado, backup e restauração | ✅ Concluída |
 | 1 · Execução guiada | Hoje, sessões, próximas ações, evidências, metas/foco conectados e revisão semanal | ✅ Concluída |
-| 2 · Aprendizagem ativa | Active Recall, revisão espaçada, assuntos fracos, caderno de erros, síntese de livros e planejado vs. realizado | 🟡 Em andamento: até assuntos fracos e caderno de erros concluído |
+| 2 · Aprendizagem ativa | Active Recall, revisão espaçada, assuntos fracos, caderno de erros, síntese de livros e planejado vs. realizado | ✅ Concluída |
 | 3 · Integrações | Google Drive, Markdown/Obsidian, Anki, Kindle/Readwise e calendário | 🟡 Parcial: vault Markdown concluído |
 | 4 · IA contextual | RAG sobre dados locais, geração de perguntas e avaliação de explicações | 📋 Planejada |
 
@@ -192,7 +197,6 @@ O desenvolvimento segue o fluxo:
 
 ### Próximos incrementos
 
-- Fase 2.4: planejado vs. realizado e síntese orientada de livros.
 - Fase 3: sincronização opcional entre dispositivos pelo Google Drive, com IDs permanentes, `updatedAt` e merge por registro.
 - Evolução contínua de acessibilidade e experiência mobile.
 
