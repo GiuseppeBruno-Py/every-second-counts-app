@@ -1,7 +1,21 @@
 /* Compasso · Compatibilidade do vault Markdown
- * Preserva pastas vazias descritas no manifesto e mantém o estado visual
- * dos controles coerente durante operações assíncronas.
+ * Preserva pastas vazias, normaliza corretamente a raiz do vault e mantém
+ * o estado visual dos controles coerente durante operações assíncronas.
  */
+
+const vaultCleanInputFilesBase = vaultCleanInputFiles;
+vaultCleanInputFiles = function(files) {
+  const normalized = files
+    .map(file => ({ ...file, path: String(file.path || '').replace(/^\/+/, '').replace(/\\/g, '/') }))
+    .filter(file => file.path && !file.path.endsWith('/') && !file.path.includes('/__MACOSX/') && !file.path.startsWith('__MACOSX/'));
+  const manifest = normalized.find(file => file.path === '.compasso/manifest.json' || file.path.endsWith('/.compasso/manifest.json'));
+  if (!manifest) return vaultCleanInputFilesBase(files);
+  if (manifest.path === '.compasso/manifest.json') return normalized;
+  const suffix = '/.compasso/manifest.json';
+  const root = manifest.path.slice(0, -suffix.length);
+  if (!root || root.includes('/')) return normalized;
+  return normalized.map(file => ({ ...file, path: file.path.startsWith(`${root}/`) ? file.path.slice(root.length + 1) : file.path }));
+};
 
 const vaultBuildImportModelBase = vaultBuildImportModel;
 vaultBuildImportModel = function(inputFiles, sourceName) {
