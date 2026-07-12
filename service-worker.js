@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v9';
+const CACHE_NAME = 'compasso-pages-v11';
 const APP_SHELL = [
   './',
   './index.html',
@@ -8,6 +8,8 @@ const APP_SHELL = [
   './weekly-review-feature.js',
   './analytics-feature.js',
   './dictionary-relations-feature.js',
+  './knowledge-graph-feature.js',
+  './knowledge-graph-lifecycle.js',
   './manifest.webmanifest',
   './compasso-icon.svg',
   './compasso.ico',
@@ -21,6 +23,8 @@ const EVIDENCE_MARKER = '/* Compasso · Evidências de sessão';
 const WEEKLY_REVIEW_MARKER = '/* Compasso · Revisão semanal guiada por evidências';
 const ANALYTICS_MARKER = '/* Compasso · Métricas de consistência e histórico global de sessões';
 const DICTIONARY_MARKER = '/* Compasso · Dicionário visual de relações';
+const KNOWLEDGE_GRAPH_MARKER = '/* Compasso · Grafo interativo de conhecimento';
+const KNOWLEDGE_GRAPH_LIFECYCLE_MARKER = '/* Compasso · Ciclo de vida do grafo interativo';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -88,13 +92,15 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, sessionsCode, evidenceCode, weeklyReviewCode, analyticsCode, dictionaryCode] = await Promise.all([
+  const [html, sessionsCode, evidenceCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode] = await Promise.all([
     response.text(),
     readCachedText('./sessions-feature.js'),
     readCachedText('./evidence-feature.js'),
     readCachedText('./weekly-review-feature.js'),
     readCachedText('./analytics-feature.js'),
-    readCachedText('./dictionary-relations-feature.js')
+    readCachedText('./dictionary-relations-feature.js'),
+    readCachedText('./knowledge-graph-feature.js'),
+    readCachedText('./knowledge-graph-lifecycle.js')
   ]);
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
@@ -104,13 +110,16 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-weekly-review', 'v1');
   headers.set('x-compasso-analytics', 'v1');
   headers.set('x-compasso-dictionary', 'v1');
+  headers.set('x-compasso-knowledge-graph', 'v1');
 
   const withStorage = integrateIndexedDb(html);
   const withSessions = integrateFeature(withStorage, sessionsCode, SESSIONS_MARKER);
   const withEvidence = integrateFeature(withSessions, evidenceCode, EVIDENCE_MARKER);
   const withWeeklyReview = integrateFeature(withEvidence, weeklyReviewCode, WEEKLY_REVIEW_MARKER);
   const withAnalytics = integrateFeature(withWeeklyReview, analyticsCode, ANALYTICS_MARKER);
-  const enhanced = integrateFeature(withAnalytics, dictionaryCode, DICTIONARY_MARKER);
+  const withDictionary = integrateFeature(withAnalytics, dictionaryCode, DICTIONARY_MARKER);
+  const withKnowledgeGraph = integrateFeature(withDictionary, knowledgeGraphCode, KNOWLEDGE_GRAPH_MARKER);
+  const enhanced = integrateFeature(withKnowledgeGraph, knowledgeGraphLifecycleCode, KNOWLEDGE_GRAPH_LIFECYCLE_MARKER);
 
   return new Response(enhanced, {
     status: response.status,
