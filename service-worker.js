@@ -1,9 +1,10 @@
-const CACHE_NAME = 'compasso-pages-v5';
+const CACHE_NAME = 'compasso-pages-v6';
 const APP_SHELL = [
   './',
   './index.html',
   './storage.js',
   './sessions-feature.js',
+  './evidence-feature.js',
   './manifest.webmanifest',
   './compasso-icon.svg',
   './compasso.ico',
@@ -13,6 +14,7 @@ const APP_SHELL = [
 
 const STORAGE_KEY = 'compasso.app.v1';
 const SESSIONS_MARKER = '/* Compasso · Sessões de leitura e estudo';
+const EVIDENCE_MARKER = '/* Compasso · Evidências de sessão';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -53,8 +55,8 @@ function integrateIndexedDb(html) {
   return integrated;
 }
 
-function integrateSessions(html, featureCode) {
-  if (!featureCode || html.includes(SESSIONS_MARKER)) return html;
+function integrateFeature(html, featureCode, marker) {
+  if (!featureCode || html.includes(marker)) return html;
   const bootstrapPoint = '    renderAll();\n    const requestedView';
   if (!html.includes(bootstrapPoint)) return html;
   return html.replace(
@@ -80,17 +82,20 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, sessionsCode] = await Promise.all([
+  const [html, sessionsCode, evidenceCode] = await Promise.all([
     response.text(),
-    readCachedText('./sessions-feature.js')
+    readCachedText('./sessions-feature.js'),
+    readCachedText('./evidence-feature.js')
   ]);
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
   headers.set('x-compasso-storage', 'indexeddb-v1');
   headers.set('x-compasso-sessions', 'v1');
+  headers.set('x-compasso-evidence', 'v1');
 
   const withStorage = integrateIndexedDb(html);
-  const enhanced = integrateSessions(withStorage, sessionsCode);
+  const withSessions = integrateFeature(withStorage, sessionsCode, SESSIONS_MARKER);
+  const enhanced = integrateFeature(withSessions, evidenceCode, EVIDENCE_MARKER);
 
   return new Response(enhanced, {
     status: response.status,
