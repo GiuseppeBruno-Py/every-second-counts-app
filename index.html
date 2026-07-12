@@ -705,8 +705,14 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       return `Defina ${m.config.currentLabel.toLowerCase()} e ${m.config.totalLabel.toLowerCase()}`;
     }
     function normalizeData(data) {
+      const candidate = data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+      const envelope = candidate.data && typeof candidate.data === 'object' && !Array.isArray(candidate.data) ? candidate.data : null;
+      const normalized = envelope && !['reading','study','goal'].some(domain => Array.isArray(candidate[domain])) ? envelope : candidate;
+
       ['reading','study','goal'].forEach(domain => {
-        (data[domain] || []).forEach(item => {
+        normalized[domain] = Array.isArray(normalized[domain]) ? normalized[domain] : [];
+        normalized[domain] = normalized[domain].filter(item => item && typeof item === 'object' && !Array.isArray(item));
+        normalized[domain].forEach(item => {
           item.workType = cognitiveOptions.workType[item.workType] ? item.workType : null;
           item.cognitiveDemand = cognitiveOptions.cognitiveDemand[item.cognitiveDemand] ? item.cognitiveDemand : null;
           item.requiredEnergy = cognitiveOptions.requiredEnergy[item.requiredEnergy] ? item.requiredEnergy : null;
@@ -721,11 +727,15 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
           if (metric.hasTarget) item.progress = metric.progress;
         });
       });
-      return data;
+
+      normalized.focus = Array.isArray(normalized.focus) ? normalized.focus.filter(value => typeof value === 'string') : [];
+      normalized.folders = Array.isArray(normalized.folders) ? normalized.folders.filter(item => item && typeof item === 'object') : structuredClone(initialData.folders);
+      normalized.notes = Array.isArray(normalized.notes) ? normalized.notes.filter(item => item && typeof item === 'object') : [];
+      return normalized;
     }
-    function average(items) { return items.length ? Math.round(items.reduce((sum, item) => sum + clamp(item.progress), 0) / items.length) : 0; }
-    function activeItems(domain) { return state.data[domain].filter(i => i.status === 'active'); }
-    function allItems() { return ['reading','study','goal'].flatMap(d => state.data[d].map(i => ({...i, domain:d}))); }
+    function average(items) { return Array.isArray(items) && items.length ? Math.round(items.reduce((sum, item) => sum + clamp(item.progress), 0) / items.length) : 0; }
+    function activeItems(domain) { return (Array.isArray(state.data?.[domain]) ? state.data[domain] : []).filter(i => i.status === 'active'); }
+    function allItems() { return ['reading','study','goal'].flatMap(d => (Array.isArray(state.data?.[d]) ? state.data[d] : []).map(i => ({...i, domain:d}))); }
     function escapeHtml(value = '') { return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 
     function renderAll() {
@@ -738,7 +748,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
 
     function renderBadges() {
       ['reading','study','goal'].forEach(d => document.getElementById(`${d}Badge`).textContent = activeItems(d).length);
-      document.getElementById('notesBadge').textContent = state.data.notes.length;
+      document.getElementById('notesBadge').textContent = Array.isArray(state.data.notes) ? state.data.notes.length : 0;
     }
 
     function renderOverview() {
