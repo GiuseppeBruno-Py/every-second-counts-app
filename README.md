@@ -46,6 +46,9 @@ O percentual e o restante são calculados automaticamente.
 - Tendência das últimas oito semanas e ranking por investimento.
 - Revisão semanal guiada por sessões e evidências.
 - Prioridades semanais conectadas ao foco do dashboard.
+- Dicionário editorial de leituras, estudos, metas e notas.
+- Relações bidirecionais derivadas de `[[wikilinks]]` e notas vinculadas.
+- Navegação direta entre entradas relacionadas e suas origens.
 - Exportação do histórico filtrado em CSV.
 - Atlas de notas com pastas e arquivos Markdown.
 - Editor dividido entre escrita e visualização.
@@ -98,6 +101,9 @@ weekly-review-feature.js
 analytics-feature.js
 └── consistência, tendências e histórico global
 
+dictionary-relations-feature.js
+└── dicionário editorial e relações entre conhecimento e objetivos
+
 manifest.webmanifest
 └── identidade e instalação PWA
 
@@ -129,7 +135,6 @@ Novos commits na branch `main` são publicados pelo GitHub Pages. O service work
 
 ## Roadmap
 
-- Relações visuais entre notas e objetivos.
 - Importação e exportação do vault em Markdown.
 - Melhorias de acessibilidade e experiência mobile.
 - Sincronização opcional entre dispositivos.
