@@ -187,7 +187,7 @@ O desenvolvimento segue o fluxo:
 | 0 · Fundação local-first | IndexedDB, migração do `localStorage`, schema versionado, backup e restauração | ✅ Concluída |
 | 1 · Execução guiada | Hoje, sessões, próximas ações, evidências, metas/foco conectados e revisão semanal | ✅ Concluída |
 | 2 · Aprendizagem ativa | Active Recall, revisão espaçada, assuntos fracos, caderno de erros, síntese de livros e planejado vs. realizado | ✅ Concluída |
-| 3 · Integrações | Google Drive, Markdown/Obsidian, Anki, Kindle/Readwise e calendário | 🟡 Em andamento: vault Markdown + OAuth Drive |
+| 3 · Integrações | Google Drive, Markdown/Obsidian, Anki, Kindle/Readwise e calendário | 🟡 Em andamento: vault Markdown + sincronização Drive |
 | 4 · IA contextual | RAG sobre dados locais, geração de perguntas e avaliação de explicações | 📋 Planejada |
 
 ### Fluxo já disponível
@@ -201,8 +201,9 @@ O desenvolvimento segue o fluxo:
 
 ### Próximos incrementos
 
-- Fase 3.1: OAuth Google Drive configurado com Client ID público e escopo `drive.appdata`.
-- Fase 3.2: criar/ler `compasso-sync.json` no `appDataFolder`, com IDs permanentes, `updatedAt` e merge por registro.
+- Fase 3.1: ✅ OAuth Google Drive configurado com Client ID público e escopo `drive.appdata`.
+- Fase 3.2: ✅ sincronização manual e automática via `compasso-sync.json` no `appDataFolder`, com IDs permanentes, `updatedAt`, tombstones para exclusões e merge por registro.
+- Fase 3.3: exportação compatível com Anki e refinamento da integração Markdown/Obsidian.
 - Evolução contínua de acessibilidade e experiência mobile.
 
 ---
