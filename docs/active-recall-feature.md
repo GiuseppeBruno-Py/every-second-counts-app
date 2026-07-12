@@ -40,9 +40,9 @@ Os cards ficam em `state.data.reviewItems`:
 }
 ```
 
-## Limite desta fase
+## Evolução da fase 2.2
 
-A Fase 2.1 registra práticas, mas ainda não calcula intervalos nem datas de vencimento. Agendamento, autoavaliação e fila de revisões devidas pertencem à Fase 2.2.
+Cada prática agora exige uma autoavaliação: **Errei**, **Difícil**, **Bom** ou **Fácil**. A resposta atualiza o intervalo, a próxima data e o histórico do card. Somente perguntas devidas entram na fila principal.
 
 ## Critérios de aceite
 
@@ -51,5 +51,7 @@ A Fase 2.1 registra práticas, mas ainda não calcula intervalos nem datas de ve
 - Perguntas manuais também são aceitas.
 - A resposta permanece oculta até a tentativa.
 - A prática atualiza `reviewCount` e `lastReviewedAt`.
+- A autoavaliação calcula `intervalDays` e `dueAt`.
+- O histórico preserva as últimas 100 avaliações por card.
 - Cards podem ser editados e excluídos.
 - Backups antigos sem `reviewItems` continuam funcionando.
