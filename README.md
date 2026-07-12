@@ -76,6 +76,7 @@ O percentual e o restante são calculados automaticamente.
 - OAuth do Google Drive configurado para sincronização opcional via `appDataFolder`.
 - Perfil cognitivo opcional nas ações: trabalho profundo/superficial/recuperação, demanda, energia, duração e resultado esperado, com filtros e compatibilidade retroativa.
 - Conciliação visual do Google Drive com comparação local/remota e decisão explícita por local, Drive ou mescla.
+- Versão mínima e contingências editáveis “Se X, então Y” em cada ação, com templates, ordenação e registro da variante nas sessões.
 - Busca contextual local sobre frentes, notas, evidências, Active Recall e caderno de erros, com ranking e fontes rastreáveis.
 - Geração local de rascunhos de perguntas a partir do contexto recuperado, com revisão obrigatória antes de salvar.
 - Avaliação orientativa de explicações por cobertura de conceitos e estrutura, com registro de lacunas no caderno de erros.
