@@ -126,17 +126,7 @@ function enhanceSessionCards(domain) {
   });
 }
 
-const renderGridWithoutSessions = renderGrid;
-renderGrid = function(domain) {
-  renderGridWithoutSessions(domain);
-  enhanceSessionCards(domain);
-};
-
-const renderAllWithoutSessions = renderAll;
-renderAll = function() {
-  renderAllWithoutSessions();
-  renderSessionBanner();
-};
+CompassoFeatures.register('sessions',{order:20,afterGrid:enhanceSessionCards,afterRender:renderSessionBanner});
 
 function openSessionStart(domain, itemId) {
   const active = sessionActive();
