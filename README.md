@@ -24,7 +24,8 @@ Cada área utiliza uma unidade concreta:
 
 | Área | Unidade de progresso | Exemplo |
 | --- | --- | --- |
-| Leituras | Páginas | 120 de 300 páginas |
+| Leituras físicas | Páginas | 120 de 300 páginas |
+| Leituras digitais | Percentual | 42% no Kindle |
 | Estudos | Horas | 4 de 10 horas |
 | Metas | Dias | 7 de 30 dias |
 
@@ -33,9 +34,19 @@ O percentual e o restante são calculados automaticamente.
 ## Funcionalidades
 
 - Dashboard com visão consolidada das frentes ativas.
-- Leituras acompanhadas por página atual e total da edição.
+- Leituras físicas acompanhadas por página atual e total da edição.
+- Leituras digitais acompanhadas pelo percentual exibido no Kindle.
 - Estudos acompanhados por horas concluídas e planejadas.
 - Metas acompanhadas por dias executados e planejados.
+- Sessões de leitura e estudo com início, pausa, retomada e encerramento.
+- Recuperação da sessão ativa após fechar ou recarregar o PWA.
+- Evidências estruturadas vinculadas às sessões concluídas.
+- Histórico de sessões por item e histórico global pesquisável.
+- Métricas de tempo focado, dias ativos, consistência e sequências.
+- Tendência das últimas oito semanas e ranking por investimento.
+- Revisão semanal guiada por sessões e evidências.
+- Prioridades semanais conectadas ao foco do dashboard.
+- Exportação do histórico filtrado em CSV.
 - Atlas de notas com pastas e arquivos Markdown.
 - Editor dividido entre escrita e visualização.
 - Tags, links `[[wikilinks]]` e notas vinculadas a itens de progresso.
@@ -49,9 +60,9 @@ O percentual e o restante são calculados automaticamente.
 O Compasso segue uma abordagem **local-first**:
 
 - O repositório contém somente dados de demonstração genéricos.
-- Leituras, notas, estudos e metas ficam no armazenamento local do navegador.
+- Leituras, notas, estudos, metas, sessões, evidências e revisões ficam no armazenamento local do navegador.
 - Nenhum dado pessoal é enviado ao GitHub ou a um servidor externo.
-- Backups JSON são exportados apenas quando o usuário solicita.
+- Backups JSON e relatórios CSV são exportados apenas quando o usuário solicita.
 
 > Limpar os dados do navegador pode remover o conteúdo local. Exporte backups periodicamente.
 
@@ -68,19 +79,33 @@ Ao migrar de uma instalação local, exporte o backup JSON antigo e importe-o um
 
 ```text
 index.html
-├── interface e estilos
+├── interface principal
 ├── modelo de progresso
-├── editor Markdown
-└── persistência local
+└── editor Markdown
+
+storage.js
+└── persistência IndexedDB com contingência local
+
+sessions-feature.js
+└── sessões de leitura e estudo
+
+evidence-feature.js
+└── evidências vinculadas às sessões
+
+weekly-review-feature.js
+└── revisão semanal guiada
+
+analytics-feature.js
+└── consistência, tendências e histórico global
 
 manifest.webmanifest
 └── identidade e instalação PWA
 
 service-worker.js
-└── cache e funcionamento offline
+└── composição do app shell, cache e funcionamento offline
 ```
 
-O projeto não exige framework, banco de dados ou processo de build. A aplicação é entregue como arquivos estáticos pelo GitHub Pages.
+O projeto não exige framework, banco de dados remoto ou processo de build. A aplicação é entregue como arquivos estáticos pelo GitHub Pages.
 
 ## Executar localmente
 
@@ -104,11 +129,10 @@ Novos commits na branch `main` são publicados pelo GitHub Pages. O service work
 
 ## Roadmap
 
-- Revisão semanal guiada por evidências.
-- Métricas de consistência e histórico de sessões.
 - Relações visuais entre notas e objetivos.
 - Importação e exportação do vault em Markdown.
 - Melhorias de acessibilidade e experiência mobile.
+- Sincronização opcional entre dispositivos.
 
 ---
 
