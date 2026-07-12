@@ -89,7 +89,7 @@ finishSession = function() {
   finishSessionWithoutEvidence();
   if (previousStatus !== 'completed' && session.status === 'completed') {
     state.data.evidence.unshift(evidence);
-    window.CompassoStorage.save(STORAGE_KEY, state.data);
+    saveData('Sessão concluída com evidência');
   }
 };
 
@@ -139,7 +139,7 @@ deleteSession = function(id) {
   const after = state.data.sessions.some(session => session.id === id);
   if (before && !after) {
     state.data.evidence = state.data.evidence.filter(item => item.sessionId !== id);
-    window.CompassoStorage.save(STORAGE_KEY, state.data);
+    saveData('Sessão e evidência excluídas');
   }
 };
 
