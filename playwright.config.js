@@ -1,0 +1,2 @@
+const {defineConfig,devices}=require('@playwright/test');
+module.exports=defineConfig({testDir:'./tests/browser',timeout:15000,fullyParallel:false,retries:1,workers:1,use:{baseURL:process.env.APP_URL||'http://127.0.0.1:4173',trace:'retain-on-failure'},webServer:process.env.APP_URL?undefined:{command:'python3 -m http.server 4173 -d .test-dist',port:4173,reuseExistingServer:true},projects:[{name:'chromium',use:{...devices['Desktop Chrome']}},{name:'mobile',use:{...devices['Pixel 7']}}]});

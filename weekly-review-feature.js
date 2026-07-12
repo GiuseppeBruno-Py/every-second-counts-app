@@ -318,11 +318,7 @@ function saveWeeklyReview() {
 installWeeklyReviewStyles();
 installWeeklyReviewUi();
 
-const renderAllWithoutWeeklyReview = renderAll;
-renderAll = function() {
-  renderAllWithoutWeeklyReview();
-  renderWeeklyReview();
-};
+CompassoFeatures.register('weekly-review',{order:60,afterRender:renderWeeklyReview});
 
 document.getElementById('weeklyReviewForm').addEventListener('submit', event => {
   event.preventDefault();

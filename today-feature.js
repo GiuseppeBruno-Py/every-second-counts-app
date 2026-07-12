@@ -117,8 +117,7 @@ function todaySave(message) {
 
 todayInstallStyles();
 todayInstallUi();
-const renderAllWithoutToday = renderAll;
-renderAll = function() { renderAllWithoutToday(); renderToday(); };
+CompassoFeatures.register('today',{order:10,afterRender:renderToday});
 
 document.getElementById('todayForm').addEventListener('submit', event => { event.preventDefault(); saveTodayCustomAction(); });
 document.addEventListener('click', event => {

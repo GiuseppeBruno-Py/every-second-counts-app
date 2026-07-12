@@ -1,8 +1,9 @@
-const CACHE_NAME = 'compasso-pages-v34';
+const CACHE_NAME = 'compasso-pages-v35';
 const APP_SHELL = [
   './',
   './index.html',
   './storage.js',
+  './feature-runtime.js',
   './today-feature.js',
   './sessions-feature.js',
   './contingency-model.js',
@@ -41,6 +42,7 @@ const APP_SHELL = [
 ];
 
 const STORAGE_KEY = 'compasso.app.v1';
+const FEATURE_RUNTIME_MARKER = '/* Compasso · Runtime central de features e eventos';
 const SESSIONS_MARKER = '/* Compasso · Sessões de leitura e estudo';
 const CONTINGENCY_MODEL_MARKER = 'CompassoContingencyModel';
 const CONTINGENCY_MARKER = '/* Compasso · Contingências Se X então Y e versão mínima';
@@ -77,7 +79,10 @@ const CONTEXT_LEARNING_MARKER = '/* Compasso · Perguntas contextuais e avaliaca
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
+      .then(cache => Promise.all(APP_SHELL.map(async path => {
+        try { const response = await fetch(path); if (response.ok) await cache.put(path, response); }
+        catch { /* módulos opcionais não impedem a instalação do núcleo */ }
+      })))
       .then(() => self.skipWaiting())
   );
 });
@@ -140,8 +145,9 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, todayCode, sessionsCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, uxModelCode, uxCode] = await Promise.all([
+  const [html, featureRuntimeCode, todayCode, sessionsCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, uxModelCode, uxCode] = await Promise.all([
     response.text(),
+    readCachedText('./feature-runtime.js'),
     readCachedText('./today-feature.js'),
     readCachedText('./sessions-feature.js'),
     readCachedText('./contingency-model.js'),
@@ -176,6 +182,7 @@ async function enhanceHtmlResponse(response) {
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
   headers.set('x-compasso-storage', 'indexeddb-v1');
+  headers.set('x-compasso-feature-runtime', 'v1');
   headers.set('x-compasso-today', 'v1');
   headers.set('x-compasso-sessions', 'v1');
   headers.set('x-compasso-contingencies', 'v1');
@@ -199,7 +206,8 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-ux-consolidation', 'v1');
 
   const withStorage = integrateIndexedDb(html);
-  const withToday = integrateFeature(withStorage, todayCode, TODAY_MARKER);
+  const withFeatureRuntime = integrateFeature(withStorage, featureRuntimeCode, FEATURE_RUNTIME_MARKER);
+  const withToday = integrateFeature(withFeatureRuntime, todayCode, TODAY_MARKER);
   const withSessions = integrateFeature(withToday, sessionsCode, SESSIONS_MARKER);
   const withContingencyModel = integrateFeature(withSessions, contingencyModelCode, CONTINGENCY_MODEL_MARKER);
   const withContingencies = integrateFeature(withContingencyModel, contingencyCode, CONTINGENCY_MARKER);
