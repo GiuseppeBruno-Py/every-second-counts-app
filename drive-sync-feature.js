@@ -28,6 +28,21 @@ function syncFingerprint(record) {
   return JSON.stringify(copy);
 }
 
+function friendlyDriveError(error) {
+  const message = String(error?.message || error || 'Falha ao sincronizar');
+  if (/API has not been used|accessNotConfigured|SERVICE_DISABLED|disabled/i.test(message)) {
+    return {
+      message: 'A API do Google Drive ainda não está ativada neste projeto.',
+      actionUrl: 'https://console.cloud.google.com/apis/library/drive.googleapis.com?project=705631729283',
+      actionLabel: 'Ativar API do Drive'
+    };
+  }
+  if (/insufficient.*scope|insufficientPermissions/i.test(message)) {
+    return { message: 'A permissão do Drive expirou. Renove o acesso e tente novamente.' };
+  }
+  return { message: message.length > 180 ? `${message.slice(0, 177)}…` : message };
+}
+
 function ensureSyncMetadata(data, touchChanged = false) {
   const now = syncNowIso();
   data._sync = data._sync && typeof data._sync === 'object' ? data._sync : {};
@@ -172,7 +187,7 @@ async function syncGoogleDrive({ silent = false } = {}) {
     renderAll();
     if (!silent) showToast(file ? 'Dados conciliados com o Google Drive' : 'Backup criado no Google Drive');
   } catch (error) {
-    driveSyncState.lastError = error?.message || 'Falha ao sincronizar';
+    driveSyncState.lastError = friendlyDriveError(error);
     if (!silent) showToast('Não foi possível sincronizar com o Drive');
   } finally {
     driveSyncState.syncing = false;
@@ -309,7 +324,11 @@ function renderDriveSyncPanel() {
       <span>Escopo: <b>appDataFolder</b></span>
     </div>
     <p>${nextAction}</p>
-    ${driveSyncState.lastError ? `<p class="drive-sync-error">${escapeHtml(driveSyncState.lastError)}</p>` : ''}
+    ${driveSyncState.lastError ? `
+      <div class="drive-sync-error" role="alert">
+        <p>${escapeHtml(driveSyncState.lastError.message || driveSyncState.lastError)}</p>
+        ${driveSyncState.lastError.actionUrl ? `<a href="${escapeHtml(driveSyncState.lastError.actionUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(driveSyncState.lastError.actionLabel)}</a>` : ''}
+      </div>` : ''}
     <div class="drive-sync-actions">
       <button type="button" id="driveConnectBtn">${connected ? 'Renovar acesso' : 'Conectar Drive'}</button>
       <button type="button" id="driveSyncBtn" ${connected && !driveSyncState.syncing ? '' : 'disabled'}>${driveSyncState.syncing ? 'Sincronizando…' : 'Sincronizar agora'}</button>
@@ -340,16 +359,19 @@ function installDriveSyncStyles() {
   const style = document.createElement('style');
   style.id = 'driveSyncStyles';
   style.textContent = `
-    .drive-sync-panel { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px 12px; display: grid; gap: 8px; min-width: 260px; background: #f7f6f1; }
+    #settingsMenu { width: min(320px, calc(100vw - 24px)); max-width: calc(100vw - 24px); overflow-x: hidden; }
+    .drive-sync-panel { box-sizing: border-box; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px 12px; display: grid; gap: 8px; width: 100%; min-width: 0; max-width: 100%; overflow: hidden; background: #f7f6f1; }
     .drive-sync-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
     .drive-sync-head strong { display: block; font-size: 12px; }
     .drive-sync-head span:not(.status) { color: var(--muted); font-size: 10px; }
     .drive-sync-panel .status { font-size: 9px; white-space: nowrap; }
-    .drive-sync-meta { display: grid; gap: 3px; color: var(--muted); font-size: 10px; }
+    .drive-sync-meta { display: grid; gap: 3px; min-width: 0; color: var(--muted); font-size: 10px; }
+    .drive-sync-meta span, .drive-sync-panel p { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
     .drive-sync-panel p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
-    .drive-sync-panel .drive-sync-error { color: var(--red); }
+    .drive-sync-panel .drive-sync-error { display: grid; gap: 6px; min-width: 0; color: var(--red); }
+    .drive-sync-error a { justify-self: start; color: var(--red); font-size: 10px; font-weight: 700; text-decoration: underline; }
     .drive-sync-actions { display: flex; flex-wrap: wrap; gap: 7px; }
-    .drive-sync-actions button { min-height: 30px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-strong); cursor: pointer; font-size: 10px; font-weight: 700; padding: 0 9px; }
+    .drive-sync-actions button { flex: 1 1 120px; min-width: 0; min-height: 30px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-strong); cursor: pointer; font-size: 10px; font-weight: 700; padding: 0 9px; }
     .drive-sync-actions button:first-child { border-color: #262622; background: #262622; color: #fff; }
     .drive-sync-actions button:disabled { cursor: not-allowed; opacity: .5; }
   `;
