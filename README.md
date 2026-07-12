@@ -42,6 +42,8 @@ O percentual e o restante são calculados automaticamente.
 - Estudos acompanhados por horas concluídas e planejadas.
 - Metas acompanhadas por dias executados e planejados.
 - Sessões de leitura e estudo com início, pausa, retomada e encerramento.
+- Check-ins opcionais de energia antes e depois das sessões, com dificuldade percebida.
+- Mapa pessoal de energia por manhã, tarde, noite e madrugada, sempre exibindo tamanho da amostra.
 - Recuperação da sessão ativa após fechar ou recarregar o PWA.
 - Evidências estruturadas vinculadas às sessões concluídas.
 - Active Recall com perguntas derivadas de evidências e notas.
@@ -120,6 +122,12 @@ today-feature.js
 
 sessions-feature.js
 └── sessões de leitura e estudo
+
+energy-feature.js
+└── check-ins opcionais e mapa local de energia por faixa horária
+
+energy-model.js
+└── validação e agregação determinística, testável e independente da interface
 
 evidence-feature.js
 └── evidências vinculadas às sessões
@@ -229,6 +237,7 @@ O desenvolvimento segue o fluxo:
 
 - SCRUM-1 / Fase 1: ✅ classificação cognitiva opcional nas ações, badges compactos, filtros por tipo/demanda e persistência no mesmo modelo usado por backup e sincronização. Valores ausentes permanecem “não definidos”, inclusive em dados legados.
 - Revalidação pós-rollback: ✅ Fase 1 republicada sobre a base estável da PWA, sem restaurar versões antigas dos demais módulos.
+- SCRUM-2 / Fase 2: ✅ check-ins opcionais antes/depois das sessões, histórico editável, mapa por horário com amostra mínima e sincronização da coleção `energyCheckins`.
 - Fase 3.5: importação Kindle/Readwise e integração inicial com calendário.
 - Fase 4.1: ✅ índice RAG local sobre frentes, notas, evidências, Active Recall e erros, com busca, filtros, ranking e abertura da fonte.
 - Fase 4.2: ✅ geração assistida de perguntas a partir do contexto recuperado, com revisão humana antes de salvar.
