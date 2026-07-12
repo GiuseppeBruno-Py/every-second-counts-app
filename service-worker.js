@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v28';
+const CACHE_NAME = 'compasso-pages-v29';
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const APP_SHELL = [
   './sessions-feature.js',
   './energy-model.js',
   './energy-feature.js',
+  './flow-model.js',
+  './flow-feature.js',
   './evidence-feature.js',
   './recall-feature.js',
   './weakness-feature.js',
@@ -32,6 +34,8 @@ const STORAGE_KEY = 'compasso.app.v1';
 const SESSIONS_MARKER = '/* Compasso · Sessões de leitura e estudo';
 const ENERGY_MODEL_MARKER = 'CompassoEnergyModel';
 const ENERGY_MARKER = '/* Compasso · Energia percebida e mapa pessoal por horario';
+const FLOW_MODEL_MARKER = 'CompassoFlowModel';
+const FLOW_MARKER = '/* Compasso · Flow Matching deterministico';
 const TODAY_MARKER = '/* Compasso · Hoje e próximas ações';
 const EVIDENCE_MARKER = '/* Compasso · Evidências de sessão';
 const RECALL_MARKER = '/* Compasso · Active Recall a partir de evidências e notas';
@@ -116,12 +120,14 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, todayCode, sessionsCode, energyModelCode, energyCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
+  const [html, todayCode, sessionsCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
     response.text(),
     readCachedText('./today-feature.js'),
     readCachedText('./sessions-feature.js'),
     readCachedText('./energy-model.js'),
     readCachedText('./energy-feature.js'),
+    readCachedText('./flow-model.js'),
+    readCachedText('./flow-feature.js'),
     readCachedText('./evidence-feature.js'),
     readCachedText('./recall-feature.js'),
     readCachedText('./weakness-feature.js'),
@@ -143,6 +149,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-today', 'v1');
   headers.set('x-compasso-sessions', 'v1');
   headers.set('x-compasso-energy', 'v1');
+  headers.set('x-compasso-flow-matching', 'v1');
   headers.set('x-compasso-evidence', 'v1');
   headers.set('x-compasso-recall', 'v1');
   headers.set('x-compasso-weakness', 'v1');
@@ -161,7 +168,9 @@ async function enhanceHtmlResponse(response) {
   const withSessions = integrateFeature(withToday, sessionsCode, SESSIONS_MARKER);
   const withEnergyModel = integrateFeature(withSessions, energyModelCode, ENERGY_MODEL_MARKER);
   const withEnergy = integrateFeature(withEnergyModel, energyCode, ENERGY_MARKER);
-  const withEvidence = integrateFeature(withEnergy, evidenceCode, EVIDENCE_MARKER);
+  const withFlowModel = integrateFeature(withEnergy, flowModelCode, FLOW_MODEL_MARKER);
+  const withFlow = integrateFeature(withFlowModel, flowCode, FLOW_MARKER);
+  const withEvidence = integrateFeature(withFlow, evidenceCode, EVIDENCE_MARKER);
   const withRecall = integrateFeature(withEvidence, recallCode, RECALL_MARKER);
   const withWeakness = integrateFeature(withRecall, weaknessCode, WEAKNESS_MARKER);
   const withOutcomes = integrateFeature(withWeakness, outcomesCode, OUTCOMES_MARKER);
