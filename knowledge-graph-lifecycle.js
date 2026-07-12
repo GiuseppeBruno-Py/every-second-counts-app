@@ -1,5 +1,5 @@
 /* Compasso · Ciclo de vida do grafo interativo
- * Reenquadra a visualização quando a área oculta se torna visível.
+ * Reenquadra a visualização e limpa estados residuais de gestos touch.
  */
 
 document.addEventListener('click', event => {
@@ -18,3 +18,18 @@ window.addEventListener('orientationchange', () => {
     graphFit();
   }, 180);
 });
+
+const graphLifecycleSvg = document.getElementById('knowledgeGraphSvg');
+if (graphLifecycleSvg) {
+  graphLifecycleSvg.addEventListener('pointerdown', () => {
+    setTimeout(() => {
+      if (typeof graphRuntime === 'undefined' || graphRuntime.pointers.size < 2) return;
+      graphRuntime.nodes.forEach(node => { node.fixed = false; });
+    }, 0);
+  }, true);
+
+  graphLifecycleSvg.addEventListener('pointercancel', () => {
+    if (typeof graphRuntime === 'undefined') return;
+    graphRuntime.nodes.forEach(node => { node.fixed = false; });
+  });
+}
