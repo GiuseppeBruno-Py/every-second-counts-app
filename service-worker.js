@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v8';
+const CACHE_NAME = 'compasso-pages-v9';
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const APP_SHELL = [
   './evidence-feature.js',
   './weekly-review-feature.js',
   './analytics-feature.js',
+  './dictionary-relations-feature.js',
   './manifest.webmanifest',
   './compasso-icon.svg',
   './compasso.ico',
@@ -19,6 +20,7 @@ const SESSIONS_MARKER = '/* Compasso · Sessões de leitura e estudo';
 const EVIDENCE_MARKER = '/* Compasso · Evidências de sessão';
 const WEEKLY_REVIEW_MARKER = '/* Compasso · Revisão semanal guiada por evidências';
 const ANALYTICS_MARKER = '/* Compasso · Métricas de consistência e histórico global de sessões';
+const DICTIONARY_MARKER = '/* Compasso · Dicionário visual de relações';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -86,12 +88,13 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, sessionsCode, evidenceCode, weeklyReviewCode, analyticsCode] = await Promise.all([
+  const [html, sessionsCode, evidenceCode, weeklyReviewCode, analyticsCode, dictionaryCode] = await Promise.all([
     response.text(),
     readCachedText('./sessions-feature.js'),
     readCachedText('./evidence-feature.js'),
     readCachedText('./weekly-review-feature.js'),
-    readCachedText('./analytics-feature.js')
+    readCachedText('./analytics-feature.js'),
+    readCachedText('./dictionary-relations-feature.js')
   ]);
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
@@ -100,12 +103,14 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-evidence', 'v1');
   headers.set('x-compasso-weekly-review', 'v1');
   headers.set('x-compasso-analytics', 'v1');
+  headers.set('x-compasso-dictionary', 'v1');
 
   const withStorage = integrateIndexedDb(html);
   const withSessions = integrateFeature(withStorage, sessionsCode, SESSIONS_MARKER);
   const withEvidence = integrateFeature(withSessions, evidenceCode, EVIDENCE_MARKER);
   const withWeeklyReview = integrateFeature(withEvidence, weeklyReviewCode, WEEKLY_REVIEW_MARKER);
-  const enhanced = integrateFeature(withWeeklyReview, analyticsCode, ANALYTICS_MARKER);
+  const withAnalytics = integrateFeature(withWeeklyReview, analyticsCode, ANALYTICS_MARKER);
+  const enhanced = integrateFeature(withAnalytics, dictionaryCode, DICTIONARY_MARKER);
 
   return new Response(enhanced, {
     status: response.status,
