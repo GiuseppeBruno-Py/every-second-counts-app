@@ -19,8 +19,6 @@ const APP_SHELL = [
   './markdown-vault-feature.js',
   './markdown-vault-hardening.js',
   './anki-obsidian-feature.js',
-  './context-rag-feature.js',
-  './context-learning-feature.js',
   './manifest.webmanifest',
   './compasso-icon.svg',
   './compasso.ico',
@@ -114,7 +112,7 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, todayCode, sessionsCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, contextRagCode, contextLearningCode] = await Promise.all([
+  const [html, todayCode, sessionsCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
     response.text(),
     readCachedText('./today-feature.js'),
     readCachedText('./sessions-feature.js'),
@@ -131,9 +129,7 @@ async function enhanceHtmlResponse(response) {
     readCachedText('./knowledge-graph-lifecycle.js'),
     readCachedText('./markdown-vault-feature.js'),
     readCachedText('./markdown-vault-hardening.js'),
-    readCachedText('./anki-obsidian-feature.js'),
-    readCachedText('./context-rag-feature.js'),
-    readCachedText('./context-learning-feature.js')
+    readCachedText('./anki-obsidian-feature.js')
   ]);
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
@@ -152,8 +148,6 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-knowledge-graph', 'v1');
   headers.set('x-compasso-markdown-vault', 'v1');
   headers.set('x-compasso-anki-obsidian', 'v1');
-  headers.set('x-compasso-context-rag', 'v1');
-  headers.set('x-compasso-context-learning', 'v1');
 
   const withStorage = integrateIndexedDb(html);
   const withToday = integrateFeature(withStorage, todayCode, TODAY_MARKER);
@@ -171,9 +165,7 @@ async function enhanceHtmlResponse(response) {
   const withKnowledgeGraphLifecycle = integrateFeature(withKnowledgeGraph, knowledgeGraphLifecycleCode, KNOWLEDGE_GRAPH_LIFECYCLE_MARKER);
   const withMarkdownVault = integrateFeature(withKnowledgeGraphLifecycle, markdownVaultCode, MARKDOWN_VAULT_MARKER);
   const withMarkdownVaultHardening = integrateFeature(withMarkdownVault, markdownVaultHardeningCode, MARKDOWN_VAULT_HARDENING_MARKER);
-  const withAnkiObsidian = integrateFeature(withMarkdownVaultHardening, ankiObsidianCode, ANKI_OBSIDIAN_MARKER);
-  const withContextRag = integrateFeature(withAnkiObsidian, contextRagCode, CONTEXT_RAG_MARKER);
-  const enhanced = integrateFeature(withContextRag, contextLearningCode, CONTEXT_LEARNING_MARKER);
+  const enhanced = integrateFeature(withMarkdownVaultHardening, ankiObsidianCode, ANKI_OBSIDIAN_MARKER);
 
   return new Response(enhanced, {
     status: response.status,
