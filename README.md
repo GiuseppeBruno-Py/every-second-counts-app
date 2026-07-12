@@ -67,6 +67,7 @@ O percentual e o restante são calculados automaticamente.
 - Importação e exportação do Atlas como vault Markdown em ZIP ou pasta.
 - Manifesto opcional para preservar IDs, tags, pastas e vínculos em round-trip.
 - Importação segura por mesclagem, cópia isolada ou substituição somente do Atlas.
+- OAuth do Google Drive configurado para sincronização opcional via `appDataFolder`.
 - Compatibilidade com vaults Markdown externos e frontmatter YAML básico.
 - Editor dividido entre escrita e visualização.
 - Tags, links `[[wikilinks]]` e notas vinculadas a itens de progresso.
@@ -124,6 +125,9 @@ weakness-feature.js
 
 outcomes-feature.js
 └── planejado vs. realizado e sínteses orientadas de livros
+
+drive-sync-feature.js
+└── OAuth Google Drive e base da sincronização appDataFolder
 
 weekly-review-feature.js
 └── revisão semanal guiada
@@ -183,7 +187,7 @@ O desenvolvimento segue o fluxo:
 | 0 · Fundação local-first | IndexedDB, migração do `localStorage`, schema versionado, backup e restauração | ✅ Concluída |
 | 1 · Execução guiada | Hoje, sessões, próximas ações, evidências, metas/foco conectados e revisão semanal | ✅ Concluída |
 | 2 · Aprendizagem ativa | Active Recall, revisão espaçada, assuntos fracos, caderno de erros, síntese de livros e planejado vs. realizado | ✅ Concluída |
-| 3 · Integrações | Google Drive, Markdown/Obsidian, Anki, Kindle/Readwise e calendário | 🟡 Parcial: vault Markdown concluído |
+| 3 · Integrações | Google Drive, Markdown/Obsidian, Anki, Kindle/Readwise e calendário | 🟡 Em andamento: vault Markdown + OAuth Drive |
 | 4 · IA contextual | RAG sobre dados locais, geração de perguntas e avaliação de explicações | 📋 Planejada |
 
 ### Fluxo já disponível
@@ -197,7 +201,8 @@ O desenvolvimento segue o fluxo:
 
 ### Próximos incrementos
 
-- Fase 3: sincronização opcional entre dispositivos pelo Google Drive, com IDs permanentes, `updatedAt` e merge por registro.
+- Fase 3.1: OAuth Google Drive configurado com Client ID público e escopo `drive.appdata`.
+- Fase 3.2: criar/ler `compasso-sync.json` no `appDataFolder`, com IDs permanentes, `updatedAt` e merge por registro.
 - Evolução contínua de acessibilidade e experiência mobile.
 
 ---
