@@ -71,6 +71,7 @@ O percentual e o restante são calculados automaticamente.
 - Exportação Markdown refinada para Obsidian com frontmatter YAML, aliases, tags, vínculos e índice inicial.
 - OAuth do Google Drive configurado para sincronização opcional via `appDataFolder`.
 - Conciliação visual do Google Drive com comparação local/remota e decisão explícita por local, Drive ou mescla.
+- Busca contextual local sobre frentes, notas, evidências, Active Recall e caderno de erros, com ranking e fontes rastreáveis.
 - Compatibilidade com vaults Markdown externos e frontmatter YAML básico.
 - Editor dividido entre escrita e visualização.
 - Tags, links `[[wikilinks]]` e notas vinculadas a itens de progresso.
@@ -156,6 +157,9 @@ markdown-vault-hardening.js
 anki-obsidian-feature.js
 └── exportação Anki e refinamento do vault Markdown para Obsidian
 
+context-rag-feature.js
+└── indexação e recuperação contextual local com fontes rastreáveis
+
 manifest.webmanifest
 └── identidade e instalação PWA
 
@@ -197,7 +201,7 @@ O desenvolvimento segue o fluxo:
 | 1 · Execução guiada | Hoje, sessões, próximas ações, evidências, metas/foco conectados e revisão semanal | ✅ Concluída |
 | 2 · Aprendizagem ativa | Active Recall, revisão espaçada, assuntos fracos, caderno de erros, síntese de livros e planejado vs. realizado | ✅ Concluída |
 | 3 · Integrações | Google Drive, Markdown/Obsidian, Anki, Kindle/Readwise e calendário | 🟡 Em andamento: Drive conciliável, vault Markdown, Anki e Obsidian |
-| 4 · IA contextual | RAG sobre dados locais, geração de perguntas e avaliação de explicações | 📋 Planejada |
+| 4 · IA contextual | RAG sobre dados locais, geração de perguntas e avaliação de explicações | 🟡 Em andamento: recuperação contextual local |
 
 ### Fluxo já disponível
 
@@ -215,6 +219,8 @@ O desenvolvimento segue o fluxo:
 - Fase 3.3: ✅ exportação TSV compatível com Anki e vault Markdown refinado para Obsidian com frontmatter, tags, aliases, vínculos e índice.
 - Fase 3.4: ✅ conciliação visual do Google Drive, com comparação local/remoto e resolução explícita por versão local, versão do Drive ou mescla.
 - Fase 3.5: importação Kindle/Readwise e integração inicial com calendário.
+- Fase 4.1: ✅ índice RAG local sobre frentes, notas, evidências, Active Recall e erros, com busca, filtros, ranking e abertura da fonte.
+- Fase 4.2: geração assistida de perguntas a partir do contexto recuperado, com revisão humana antes de salvar.
 - Evolução contínua de acessibilidade e experiência mobile.
 
 ---
