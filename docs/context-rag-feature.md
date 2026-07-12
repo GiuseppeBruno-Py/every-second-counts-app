@@ -21,6 +21,12 @@ Recuperar contexto relevante do acervo pessoal antes das futuras etapas de gera�
 
 Nenhuma consulta ou fonte é enviada para um serviço externo. O índice é reconstruído localmente e não duplica os dados persistidos.
 
-## Próxima fase
+## Fase 4.2 · Perguntas contextuais
 
-A Fase 4.2 poderá usar os resultados recuperados para propor perguntas de Active Recall. Toda pergunta deverá ser revisada antes de entrar no banco.
+Os resultados recuperados podem originar perguntas de explicação, aplicação ou relação entre conceitos. A pergunta e a resposta de referência são abertas no editor existente do Active Recall e só entram no banco depois da confirmação do usuário.
+
+## Fase 4.3 · Avaliação de explicações
+
+A explicação do usuário é comparada localmente aos conceitos-chave da fonte. O diagnóstico combina cobertura lexical, desenvolvimento e sinais básicos de estrutura. O resultado é orientativo, mantém histórico local e pode gerar uma entrada no caderno de erros.
+
+A pontuação não afirma correção factual e não substitui revisão humana da fonte.
