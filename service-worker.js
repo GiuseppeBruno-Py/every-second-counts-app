@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v18';
+const CACHE_NAME = 'compasso-pages-v19';
 const APP_SHELL = [
   './',
   './index.html',
@@ -132,7 +132,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-recall', 'v1');
   headers.set('x-compasso-weakness', 'v1');
   headers.set('x-compasso-outcomes', 'v1');
-  headers.set('x-compasso-drive-sync', 'oauth-v1');
+  headers.set('x-compasso-drive-sync', 'drive-merge-v2');
   headers.set('x-compasso-weekly-review', 'v1');
   headers.set('x-compasso-analytics', 'v1');
   headers.set('x-compasso-dictionary', 'v1');
