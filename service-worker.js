@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v11';
+const CACHE_NAME = 'compasso-pages-v12';
 const APP_SHELL = [
   './',
   './index.html',
@@ -10,6 +10,8 @@ const APP_SHELL = [
   './dictionary-relations-feature.js',
   './knowledge-graph-feature.js',
   './knowledge-graph-lifecycle.js',
+  './markdown-vault-feature.js',
+  './markdown-vault-hardening.js',
   './manifest.webmanifest',
   './compasso-icon.svg',
   './compasso.ico',
@@ -25,6 +27,8 @@ const ANALYTICS_MARKER = '/* Compasso · Métricas de consistência e histórico
 const DICTIONARY_MARKER = '/* Compasso · Dicionário visual de relações';
 const KNOWLEDGE_GRAPH_MARKER = '/* Compasso · Grafo interativo de conhecimento';
 const KNOWLEDGE_GRAPH_LIFECYCLE_MARKER = '/* Compasso · Ciclo de vida do grafo interativo';
+const MARKDOWN_VAULT_MARKER = '/* Compasso · Importação e exportação do vault em Markdown';
+const MARKDOWN_VAULT_HARDENING_MARKER = '/* Compasso · Compatibilidade do vault Markdown';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -92,7 +96,7 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, sessionsCode, evidenceCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode] = await Promise.all([
+  const [html, sessionsCode, evidenceCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode] = await Promise.all([
     response.text(),
     readCachedText('./sessions-feature.js'),
     readCachedText('./evidence-feature.js'),
@@ -100,7 +104,9 @@ async function enhanceHtmlResponse(response) {
     readCachedText('./analytics-feature.js'),
     readCachedText('./dictionary-relations-feature.js'),
     readCachedText('./knowledge-graph-feature.js'),
-    readCachedText('./knowledge-graph-lifecycle.js')
+    readCachedText('./knowledge-graph-lifecycle.js'),
+    readCachedText('./markdown-vault-feature.js'),
+    readCachedText('./markdown-vault-hardening.js')
   ]);
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
@@ -111,6 +117,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-analytics', 'v1');
   headers.set('x-compasso-dictionary', 'v1');
   headers.set('x-compasso-knowledge-graph', 'v1');
+  headers.set('x-compasso-markdown-vault', 'v1');
 
   const withStorage = integrateIndexedDb(html);
   const withSessions = integrateFeature(withStorage, sessionsCode, SESSIONS_MARKER);
@@ -119,7 +126,9 @@ async function enhanceHtmlResponse(response) {
   const withAnalytics = integrateFeature(withWeeklyReview, analyticsCode, ANALYTICS_MARKER);
   const withDictionary = integrateFeature(withAnalytics, dictionaryCode, DICTIONARY_MARKER);
   const withKnowledgeGraph = integrateFeature(withDictionary, knowledgeGraphCode, KNOWLEDGE_GRAPH_MARKER);
-  const enhanced = integrateFeature(withKnowledgeGraph, knowledgeGraphLifecycleCode, KNOWLEDGE_GRAPH_LIFECYCLE_MARKER);
+  const withKnowledgeGraphLifecycle = integrateFeature(withKnowledgeGraph, knowledgeGraphLifecycleCode, KNOWLEDGE_GRAPH_LIFECYCLE_MARKER);
+  const withMarkdownVault = integrateFeature(withKnowledgeGraphLifecycle, markdownVaultCode, MARKDOWN_VAULT_MARKER);
+  const enhanced = integrateFeature(withMarkdownVault, markdownVaultHardeningCode, MARKDOWN_VAULT_HARDENING_MARKER);
 
   return new Response(enhanced, {
     status: response.status,
