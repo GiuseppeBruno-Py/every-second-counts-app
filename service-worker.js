@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v32';
+const CACHE_NAME = 'compasso-pages-v33';
 const APP_SHELL = [
   './',
   './index.html',
@@ -9,6 +9,8 @@ const APP_SHELL = [
   './contingency-feature.js',
   './deep-work-model.js',
   './deep-work-feature.js',
+  './ritual-model.js',
+  './ritual-feature.js',
   './energy-model.js',
   './energy-feature.js',
   './flow-model.js',
@@ -42,6 +44,8 @@ const CONTINGENCY_MODEL_MARKER = 'CompassoContingencyModel';
 const CONTINGENCY_MARKER = '/* Compasso · Contingências Se X então Y e versão mínima';
 const DEEP_WORK_MODEL_MARKER = 'CompassoDeepWorkModel';
 const DEEP_WORK_MARKER = '/* Compasso · Modo Deep Work para sessões focadas';
+const RITUAL_MODEL_MARKER = 'CompassoRitualModel';
+const RITUAL_MARKER = '/* Compasso · Rituais e arquitetura de ação reutilizáveis';
 const ENERGY_MODEL_MARKER = 'CompassoEnergyModel';
 const ENERGY_MARKER = '/* Compasso · Energia percebida e mapa pessoal por horario';
 const FLOW_MODEL_MARKER = 'CompassoFlowModel';
@@ -132,7 +136,7 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, todayCode, sessionsCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
+  const [html, todayCode, sessionsCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
     response.text(),
     readCachedText('./today-feature.js'),
     readCachedText('./sessions-feature.js'),
@@ -140,6 +144,8 @@ async function enhanceHtmlResponse(response) {
     readCachedText('./contingency-feature.js'),
     readCachedText('./deep-work-model.js'),
     readCachedText('./deep-work-feature.js'),
+    readCachedText('./ritual-model.js'),
+    readCachedText('./ritual-feature.js'),
     readCachedText('./energy-model.js'),
     readCachedText('./energy-feature.js'),
     readCachedText('./flow-model.js'),
@@ -168,6 +174,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-sessions', 'v1');
   headers.set('x-compasso-contingencies', 'v1');
   headers.set('x-compasso-deep-work', 'v1');
+  headers.set('x-compasso-rituals', 'v1');
   headers.set('x-compasso-energy', 'v1');
   headers.set('x-compasso-flow-matching', 'v1');
   headers.set('x-compasso-evidence', 'v1');
@@ -191,7 +198,9 @@ async function enhanceHtmlResponse(response) {
   const withContingencies = integrateFeature(withContingencyModel, contingencyCode, CONTINGENCY_MARKER);
   const withDeepWorkModel = integrateFeature(withContingencies, deepWorkModelCode, DEEP_WORK_MODEL_MARKER);
   const withDeepWork = integrateFeature(withDeepWorkModel, deepWorkCode, DEEP_WORK_MARKER);
-  const withEnergyModel = integrateFeature(withDeepWork, energyModelCode, ENERGY_MODEL_MARKER);
+  const withRitualModel = integrateFeature(withDeepWork, ritualModelCode, RITUAL_MODEL_MARKER);
+  const withRitual = integrateFeature(withRitualModel, ritualCode, RITUAL_MARKER);
+  const withEnergyModel = integrateFeature(withRitual, energyModelCode, ENERGY_MODEL_MARKER);
   const withEnergy = integrateFeature(withEnergyModel, energyCode, ENERGY_MARKER);
   const withFlowModel = integrateFeature(withEnergy, flowModelCode, FLOW_MODEL_MARKER);
   const withFlow = integrateFeature(withFlowModel, flowCode, FLOW_MARKER);
