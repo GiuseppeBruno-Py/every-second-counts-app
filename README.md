@@ -47,6 +47,8 @@ O percentual e o restante são calculados automaticamente.
 - Active Recall com perguntas derivadas de evidências e notas.
 - Modo de prática com resposta oculta, edição e histórico de tentativas.
 - Revisão espaçada com fila de cards devidos e autoavaliação em quatro níveis.
+- Diagnóstico automático de assuntos fracos baseado no histórico de recuperação.
+- Caderno de erros com causa, correção, próxima ação e acompanhamento de resolução.
 - Histórico de sessões por item e histórico global pesquisável.
 - Métricas de tempo focado, dias ativos, consistência e sequências.
 - Tendência das últimas oito semanas e ranking por investimento.
@@ -115,6 +117,9 @@ evidence-feature.js
 recall-feature.js
 └── perguntas de Active Recall derivadas de evidências e notas
 
+weakness-feature.js
+└── assuntos fracos e caderno de erros acionável
+
 weekly-review-feature.js
 └── revisão semanal guiada
 
@@ -172,7 +177,7 @@ O desenvolvimento segue o fluxo:
 | --- | --- | --- |
 | 0 · Fundação local-first | IndexedDB, migração do `localStorage`, schema versionado, backup e restauração | ✅ Concluída |
 | 1 · Execução guiada | Hoje, sessões, próximas ações, evidências, metas/foco conectados e revisão semanal | ✅ Concluída |
-| 2 · Aprendizagem ativa | Active Recall, revisão espaçada, assuntos fracos, caderno de erros, síntese de livros e planejado vs. realizado | 🟡 Em andamento: Active Recall e revisão espaçada concluídos |
+| 2 · Aprendizagem ativa | Active Recall, revisão espaçada, assuntos fracos, caderno de erros, síntese de livros e planejado vs. realizado | 🟡 Em andamento: até assuntos fracos e caderno de erros concluído |
 | 3 · Integrações | Google Drive, Markdown/Obsidian, Anki, Kindle/Readwise e calendário | 🟡 Parcial: vault Markdown concluído |
 | 4 · IA contextual | RAG sobre dados locais, geração de perguntas e avaliação de explicações | 📋 Planejada |
 
@@ -187,7 +192,6 @@ O desenvolvimento segue o fluxo:
 
 ### Próximos incrementos
 
-- Fase 2.3: painel de assuntos fracos e caderno de erros.
 - Fase 2.4: planejado vs. realizado e síntese orientada de livros.
 - Fase 3: sincronização opcional entre dispositivos pelo Google Drive, com IDs permanentes, `updatedAt` e merge por registro.
 - Evolução contínua de acessibilidade e experiência mobile.
