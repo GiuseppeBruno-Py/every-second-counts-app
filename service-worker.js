@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v21';
+const CACHE_NAME = 'compasso-pages-v22';
 const APP_SHELL = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const APP_SHELL = [
   './weakness-feature.js',
   './outcomes-feature.js',
   './drive-sync-feature.js',
+  './drive-reconcile-feature.js',
   './weekly-review-feature.js',
   './analytics-feature.js',
   './dictionary-relations-feature.js',
@@ -33,6 +34,7 @@ const RECALL_MARKER = '/* Compasso · Active Recall a partir de evidências e no
 const WEAKNESS_MARKER = '/* Compasso · Assuntos fracos e caderno de erros';
 const OUTCOMES_MARKER = '/* Compasso · Planejado vs. realizado e síntese orientada de livros';
 const DRIVE_SYNC_MARKER = '/* Compasso · OAuth Google Drive e base de sincronização';
+const DRIVE_RECONCILE_MARKER = '/* Compasso · Conciliacao visual do Google Drive';
 const WEEKLY_REVIEW_MARKER = '/* Compasso · Revisão semanal guiada por evidências';
 const ANALYTICS_MARKER = '/* Compasso · Métricas de consistência e histórico global de sessões';
 const DICTIONARY_MARKER = '/* Compasso · Dicionário visual de relações';
@@ -108,7 +110,7 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, todayCode, sessionsCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
+  const [html, todayCode, sessionsCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode] = await Promise.all([
     response.text(),
     readCachedText('./today-feature.js'),
     readCachedText('./sessions-feature.js'),
@@ -117,6 +119,7 @@ async function enhanceHtmlResponse(response) {
     readCachedText('./weakness-feature.js'),
     readCachedText('./outcomes-feature.js'),
     readCachedText('./drive-sync-feature.js'),
+    readCachedText('./drive-reconcile-feature.js'),
     readCachedText('./weekly-review-feature.js'),
     readCachedText('./analytics-feature.js'),
     readCachedText('./dictionary-relations-feature.js'),
@@ -136,6 +139,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-weakness', 'v1');
   headers.set('x-compasso-outcomes', 'v1');
   headers.set('x-compasso-drive-sync', 'drive-merge-v2');
+  headers.set('x-compasso-drive-reconcile', 'v1');
   headers.set('x-compasso-weekly-review', 'v1');
   headers.set('x-compasso-analytics', 'v1');
   headers.set('x-compasso-dictionary', 'v1');
@@ -151,7 +155,8 @@ async function enhanceHtmlResponse(response) {
   const withWeakness = integrateFeature(withRecall, weaknessCode, WEAKNESS_MARKER);
   const withOutcomes = integrateFeature(withWeakness, outcomesCode, OUTCOMES_MARKER);
   const withDriveSync = integrateFeature(withOutcomes, driveSyncCode, DRIVE_SYNC_MARKER);
-  const withWeeklyReview = integrateFeature(withDriveSync, weeklyReviewCode, WEEKLY_REVIEW_MARKER);
+  const withDriveReconcile = integrateFeature(withDriveSync, driveReconcileCode, DRIVE_RECONCILE_MARKER);
+  const withWeeklyReview = integrateFeature(withDriveReconcile, weeklyReviewCode, WEEKLY_REVIEW_MARKER);
   const withAnalytics = integrateFeature(withWeeklyReview, analyticsCode, ANALYTICS_MARKER);
   const withDictionary = integrateFeature(withAnalytics, dictionaryCode, DICTIONARY_MARKER);
   const withKnowledgeGraph = integrateFeature(withDictionary, knowledgeGraphCode, KNOWLEDGE_GRAPH_MARKER);

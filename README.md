@@ -70,6 +70,7 @@ O percentual e o restante são calculados automaticamente.
 - Importação segura por mesclagem, cópia isolada ou substituição somente do Atlas.
 - Exportação Markdown refinada para Obsidian com frontmatter YAML, aliases, tags, vínculos e índice inicial.
 - OAuth do Google Drive configurado para sincronização opcional via `appDataFolder`.
+- Conciliação visual do Google Drive com comparação local/remota e decisão explícita por local, Drive ou mescla.
 - Compatibilidade com vaults Markdown externos e frontmatter YAML básico.
 - Editor dividido entre escrita e visualização.
 - Tags, links `[[wikilinks]]` e notas vinculadas a itens de progresso.
@@ -130,6 +131,9 @@ outcomes-feature.js
 
 drive-sync-feature.js
 └── OAuth Google Drive e base da sincronização appDataFolder
+
+drive-reconcile-feature.js
+└── comparação visual local/remoto e resolução explícita de conflitos
 
 weekly-review-feature.js
 └── revisão semanal guiada
@@ -192,7 +196,7 @@ O desenvolvimento segue o fluxo:
 | 0 · Fundação local-first | IndexedDB, migração do `localStorage`, schema versionado, backup e restauração | ✅ Concluída |
 | 1 · Execução guiada | Hoje, sessões, próximas ações, evidências, metas/foco conectados e revisão semanal | ✅ Concluída |
 | 2 · Aprendizagem ativa | Active Recall, revisão espaçada, assuntos fracos, caderno de erros, síntese de livros e planejado vs. realizado | ✅ Concluída |
-| 3 · Integrações | Google Drive, Markdown/Obsidian, Anki, Kindle/Readwise e calendário | 🟡 Em andamento: Drive, vault Markdown, Anki e Obsidian |
+| 3 · Integrações | Google Drive, Markdown/Obsidian, Anki, Kindle/Readwise e calendário | 🟡 Em andamento: Drive conciliável, vault Markdown, Anki e Obsidian |
 | 4 · IA contextual | RAG sobre dados locais, geração de perguntas e avaliação de explicações | 📋 Planejada |
 
 ### Fluxo já disponível
@@ -209,7 +213,8 @@ O desenvolvimento segue o fluxo:
 - Fase 3.1: ✅ OAuth Google Drive configurado com Client ID público e escopo `drive.appdata`.
 - Fase 3.2: ✅ sincronização manual e automática via `compasso-sync.json` no `appDataFolder`, com IDs permanentes, `updatedAt`, tombstones para exclusões e merge por registro.
 - Fase 3.3: ✅ exportação TSV compatível com Anki e vault Markdown refinado para Obsidian com frontmatter, tags, aliases, vínculos e índice.
-- Fase 3.4: conciliação visual do Google Drive, com comparação local/remoto e resolução explícita de conflitos.
+- Fase 3.4: ✅ conciliação visual do Google Drive, com comparação local/remoto e resolução explícita por versão local, versão do Drive ou mescla.
+- Fase 3.5: importação Kindle/Readwise e integração inicial com calendário.
 - Evolução contínua de acessibilidade e experiência mobile.
 
 ---
