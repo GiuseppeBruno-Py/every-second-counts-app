@@ -12,7 +12,10 @@
   let persistenceMode = 'indexeddb';
 
   function clone(value) {
-    return value == null ? value : structuredClone(value);
+    if (value == null) return value;
+    return typeof structuredClone === 'function'
+      ? structuredClone(value)
+      : JSON.parse(JSON.stringify(value));
   }
 
   function openDatabase() {
@@ -142,18 +145,29 @@
     return next;
   }
 
+  function announceReady(migrated) {
+    window.dispatchEvent(new CustomEvent('compasso:storage-ready', {
+      detail: { mode: persistenceMode, migrated }
+    }));
+  }
+
   async function ready(key) {
     const legacySerialized = localStorage.getItem(key);
-    const record = await readStateRecord(key);
+    let record = null;
+
+    try {
+      record = await readStateRecord(key);
+    } catch (error) {
+      persistenceMode = 'localstorage-fallback';
+      console.warn('[CompassoStorage] Falha ao ler o IndexedDB; preservando o estado legado.', error);
+    }
 
     // Se o app legado alterou o localStorage depois da última sincronização,
     // essa versão visível ao usuário tem precedência e é migrada para o IndexedDB.
     if (legacySerialized && (!record || legacySerialized !== record.serialized)) {
       memory.set(key, legacySerialized);
       await enqueueWrite(key, legacySerialized);
-      window.dispatchEvent(new CustomEvent('compasso:storage-ready', {
-        detail: { mode: persistenceMode, migrated: true }
-      }));
+      announceReady(true);
       return;
     }
 
@@ -164,9 +178,7 @@
       memory.set(key, legacySerialized);
     }
 
-    window.dispatchEvent(new CustomEvent('compasso:storage-ready', {
-      detail: { mode: persistenceMode, migrated: Boolean(legacySerialized && !record) }
-    }));
+    announceReady(Boolean(legacySerialized && !record));
   }
 
   function getSerialized(key) {
