@@ -78,7 +78,7 @@ function installSessionUi() {
       <form method="dialog" id="sessionStartForm">
         <div class="session-dialog-head"><div><div class="eyebrow">Nova sessão</div><h2 id="sessionStartTitle">Iniciar sessão</h2></div><button class="close-btn" type="button" data-session-close="sessionStartDialog">${icon('x')}</button></div>
         <div class="session-dialog-body"><div class="session-summary" id="sessionStartSummary"></div><div class="field"><label for="sessionIntent">Objetivo desta sessão</label><textarea id="sessionIntent" maxlength="220" placeholder="Ex.: ler o capítulo 4 e identificar o argumento central."></textarea></div></div>
-        <div class="session-dialog-foot"><button type="button" class="quiet-btn" data-session-close="sessionStartDialog">Cancelar</button><button type="submit" class="primary-btn">${icon('play')}Iniciar</button></div>
+        <div class="session-dialog-foot"><button type="button" class="quiet-btn" data-session-close="sessionStartDialog">Cancelar</button><button type="submit" class="primary-btn">Iniciar</button></div>
       </form>
     </dialog>
     <dialog class="session-dialog" id="sessionFinishDialog">
@@ -140,7 +140,7 @@ renderAll = function() {
 
 function openSessionStart(domain, itemId) {
   const active = sessionActive();
-  if (active) { showToast('Encerre ou pause a sessão atual antes de iniciar outra'); return; }
+  if (active) { showToast('Encerre a sessão atual antes de iniciar outra'); return; }
   const item = state.data[domain].find(candidate => candidate.id === itemId);
   if (!item) return;
   sessionRuntime.selectedItem = { domain, itemId };
@@ -220,13 +220,15 @@ function finishSession() {
   const metric = sessionMetric(item, session.domain);
   const endValue = metric.config.isPercent ? clamp(document.getElementById('sessionEndValue').value) : positiveNumber(document.getElementById('sessionEndValue').value);
   if (endValue < positiveNumber(session.startValue)) { showToast('O valor final não pode ser menor que o inicial'); return; }
+  const endedAt = new Date().toISOString();
   if (session.status === 'paused' && session.pauseStartedAt) {
-    session.pausedMs = positiveNumber(session.pausedMs) + Math.max(0, sessionNow() - new Date(session.pauseStartedAt).getTime());
+    session.pausedMs = positiveNumber(session.pausedMs) + Math.max(0, new Date(endedAt).getTime() - new Date(session.pauseStartedAt).getTime());
+    session.pauseStartedAt = null;
+    session.status = 'active';
   }
   session.endValue = endValue;
-  session.endedAt = new Date().toISOString();
-  session.durationMs = sessionElapsedMs(session, new Date(session.endedAt).getTime());
-  session.pauseStartedAt = null;
+  session.endedAt = endedAt;
+  session.durationMs = sessionElapsedMs(session, new Date(endedAt).getTime());
   session.status = 'completed';
   session.reflection = document.getElementById('sessionReflection').value.trim();
   item[metric.config.currentKey] = endValue;
