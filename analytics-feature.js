@@ -36,10 +36,7 @@ function analyticsAddDays(value, days) {
 }
 
 function analyticsCompletedSessions(domain = analyticsRuntime.domain) {
-  return state.data.sessions
-    .filter(session => session.status === 'completed')
-    .filter(session => domain === 'all' || session.domain === domain)
-    .sort((a, b) => analyticsSessionDate(b) - analyticsSessionDate(a));
+  return completedExecutionSessions(domain);
 }
 
 function analyticsPeriodStart(period = analyticsRuntime.period) {
@@ -206,7 +203,7 @@ function installAnalyticsStyles() {
     .analytics-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:18px}.analytics-panel{background:var(--surface-strong);border:1px solid var(--line);border-radius:18px;padding:21px;box-shadow:var(--shadow)}.analytics-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}.analytics-panel-head h3{margin:4px 0 0;font:800 17px/1.25 Manrope,sans-serif;letter-spacing:-.025em}.analytics-panel-head p{margin:5px 0 0;color:var(--muted);font-size:10px}.analytics-panel-badge{padding:5px 8px;border-radius:999px;background:var(--blue-soft);color:var(--blue);font-size:9px;font-weight:800}
     .analytics-trend{height:220px;display:grid;grid-template-columns:repeat(8,1fr);gap:9px;align-items:end;padding-top:15px}.analytics-week{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px;min-width:0}.analytics-week-bar{width:100%;max-width:42px;min-height:5px;border-radius:8px 8px 3px 3px;background:var(--blue-soft);position:relative;overflow:hidden}.analytics-week-bar span{position:absolute;inset:auto 0 0;background:var(--blue);border-radius:inherit}.analytics-week b{font-size:9px}.analytics-week small{font-size:8px;color:var(--muted);white-space:nowrap}
     .analytics-rank-list,.analytics-domain-list{display:grid;gap:10px}.analytics-rank-row{display:grid;grid-template-columns:35px minmax(0,1fr) auto;gap:10px;align-items:center;border-top:1px solid var(--line);padding-top:11px}.analytics-rank-row:first-child{border-top:0;padding-top:0}.analytics-rank-icon{width:35px;height:35px;border-radius:10px;display:grid;place-items:center}.analytics-rank-icon svg{width:16px;height:16px}.analytics-rank-row strong{display:block;font-size:11px}.analytics-rank-row span{display:block;color:var(--muted);font-size:9px;margin-top:4px}.analytics-rank-row em{font-style:normal;font-size:10px;font-weight:800;text-align:right}.analytics-domain-row{border:1px solid var(--line);border-radius:12px;padding:13px}.analytics-domain-row header{display:flex;justify-content:space-between;gap:12px}.analytics-domain-row strong{font-size:11px}.analytics-domain-row span{color:var(--muted);font-size:9px}.analytics-domain-row .progress{margin-top:10px}
-    .analytics-history-tools{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.analytics-search{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:9px;padding:0 10px;min-height:37px}.analytics-search svg{width:14px;height:14px;color:var(--muted)}.analytics-search input{border:0;outline:0;width:min(250px,45vw);font-size:10px}.analytics-history-list{display:grid;gap:10px}.analytics-history-row{border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px}.analytics-history-row header{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.analytics-history-row header b{font-size:11px}.analytics-history-row header span{padding:3px 7px;border-radius:999px;background:var(--violet-soft);color:var(--violet);font-size:8px;font-weight:800}.analytics-history-row p{margin:7px 0 0;color:var(--muted);font-size:9px;line-height:1.5}.analytics-history-row time{display:block;color:var(--muted);font-size:9px;text-align:right}.analytics-history-row>aside strong{display:block;margin-top:5px;font-size:11px;text-align:right}.analytics-history-evidence{margin-top:9px;padding:9px 10px;border-radius:10px;background:var(--green-soft);color:#2e6f5d;font-size:9px;line-height:1.45}.analytics-empty{border:1px dashed var(--line);border-radius:12px;padding:27px;text-align:center;color:var(--muted);font-size:11px;line-height:1.55}.analytics-load{display:flex;justify-content:center;margin-top:13px}
+    .analytics-history-tools{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.analytics-search{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:9px;padding:0 10px;min-height:37px}.analytics-search svg{width:14px;height:14px;color:var(--muted)}.analytics-search input{border:0;outline:0;width:min(250px,45vw);font-size:10px}.analytics-history-list{display:grid;gap:10px}.analytics-history-row{border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px}.analytics-history-row header{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.analytics-history-row header b{font-size:11px}.analytics-history-row header span{padding:3px 7px;border-radius:999px;background:var(--violet-soft);color:var(--violet);font-size:8px;font-weight:800}.analytics-history-row header span.deep-work{background:var(--green-soft);color:var(--green)}.analytics-history-row p{margin:7px 0 0;color:var(--muted);font-size:9px;line-height:1.5}.analytics-history-row time{display:block;color:var(--muted);font-size:9px;text-align:right}.analytics-history-row>aside strong{display:block;margin-top:5px;font-size:11px;text-align:right}.analytics-history-row>aside button{margin-top:9px;border:0;background:transparent;color:var(--red);font-size:9px;font-weight:800;cursor:pointer}.analytics-history-evidence{margin-top:9px;padding:9px 10px;border-radius:10px;background:var(--green-soft);color:#2e6f5d;font-size:9px;line-height:1.45}.analytics-empty{border:1px dashed var(--line);border-radius:12px;padding:27px;text-align:center;color:var(--muted);font-size:11px;line-height:1.55}.analytics-load{display:flex;justify-content:center;margin-top:13px}
     @media(max-width:1100px){.analytics-kpis{grid-template-columns:repeat(3,1fr)}.analytics-grid{grid-template-columns:1fr}.analytics-hero{align-items:flex-start;flex-direction:column}.analytics-controls{justify-content:flex-start}}
     @media(max-width:720px){.analytics-kpis{grid-template-columns:1fr 1fr}.analytics-hero{padding:22px 20px}.analytics-panel{padding:17px}.analytics-trend{gap:5px}.analytics-history-row{grid-template-columns:1fr}.analytics-history-row time,.analytics-history-row>aside strong{text-align:left}.analytics-search{flex:1}.analytics-search input{width:100%}}
   `;
@@ -307,8 +304,9 @@ function renderAnalyticsInsight(periodSessions, allDomainSessions) {
 }
 
 function analyticsProgressLabel(session) {
+  if (session.source === 'deep-work') return session.completionCriterion ? `Critério: ${session.completionCriterion}` : 'Deep Work concluído';
   const item = analyticsItemForSession(session);
-  const config = metricConfig(session.domain, item?.readingFormat || session.readingFormat || 'physical');
+  const config = metricConfig(session.domain, session.domain === 'study' ? item?.studyUnit || session.studyUnit : item?.readingFormat || session.readingFormat || 'physical');
   const delta = Math.max(0, positiveNumber(session.endValue) - positiveNumber(session.startValue));
   return delta > 0 ? `+${formatNumber(delta)} ${config.unit}` : 'sem avanço informado';
 }
@@ -326,7 +324,8 @@ function renderAnalyticsHistory(historySessions) {
     const date = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(analyticsSessionDate(session));
     const evidence = analyticsEvidenceForSession(session.id);
     const evidenceHtml = evidence.map(entry => `<div class="analytics-history-evidence"><strong>${escapeHtml((typeof evidenceTypeLabels === 'object' && evidenceTypeLabels[entry.type]) || 'Evidência')}:</strong> ${escapeHtml(entry.summary)}${entry.details ? `<br>${escapeHtml(entry.details)}` : ''}</div>`).join('');
-    return `<article class="analytics-history-row"><div><header><b>${escapeHtml(item?.title || 'Item removido')}</b><span>${escapeHtml(domainLabels[session.domain] || session.domain)}</span></header>${session.intent ? `<p><strong>Objetivo:</strong> ${escapeHtml(session.intent)}</p>` : ''}${session.reflection ? `<p><strong>Observação:</strong> ${escapeHtml(session.reflection)}</p>` : ''}${evidenceHtml}</div><aside><time>${escapeHtml(date)}</time><strong>${analyticsDurationLabel(session.durationMs)}</strong><p>${escapeHtml(analyticsProgressLabel(session))}</p></aside></article>`;
+    const source = session.source === 'deep-work' ? '<span class="deep-work">Deep Work</span>' : '';
+    return `<article class="analytics-history-row"><div><header><b>${escapeHtml(item?.title || 'Item removido')}</b><span>${escapeHtml(domainLabels[session.domain] || session.domain)}</span>${source}</header>${session.intent ? `<p><strong>Objetivo:</strong> ${escapeHtml(session.intent)}</p>` : ''}${session.reflection ? `<p><strong>Resultado:</strong> ${escapeHtml(session.reflection)}</p>` : ''}${session.nextAction ? `<p><strong>Próxima ação:</strong> ${escapeHtml(session.nextAction)}</p>` : ''}${evidenceHtml}</div><aside><time>${escapeHtml(date)}</time><strong>${analyticsDurationLabel(session.durationMs)}</strong><p>${escapeHtml(analyticsProgressLabel(session))}</p><button type="button" data-analytics-delete="${escapeHtml(session.id)}">Excluir</button></aside></article>`;
   }).join('');
   const wrap = document.getElementById('analyticsLoadWrap');
   wrap.hidden = visible.length >= historySessions.length;
@@ -403,6 +402,13 @@ document.addEventListener('click', event => {
     renderAnalyticsHistory(analyticsHistorySessions());
   }
   if (event.target.closest('#analyticsExport')) exportAnalyticsCsv();
+  const remove = event.target.closest('[data-analytics-delete]');
+  if (remove) {
+    const id = remove.dataset.analyticsDelete;
+    if (id.startsWith('deep:')) deleteDeepWorkSession(id);
+    else deleteSession(id);
+    renderAnalytics();
+  }
 });
 
 document.getElementById('analyticsDomain').addEventListener('change', event => {

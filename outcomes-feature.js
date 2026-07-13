@@ -14,7 +14,7 @@ function outcomesInRange(value, range) { const date = new Date(value); return da
 function outcomesDuration(ms) { const minutes = Math.round(positiveNumber(ms) / 60000), hours = Math.floor(minutes / 60), rest = minutes % 60; return hours ? `${hours}h ${String(rest).padStart(2,'0')}min` : `${minutes} min`; }
 function outcomesWeekData(range) {
   const plans = (state.data.dailyPlans || []).filter(plan => { const date = new Date(`${plan.date}T12:00:00`); return date >= range.start && date < range.end; });
-  const sessions = (state.data.sessions || []).filter(session => session.status === 'completed' && outcomesInRange(session.endedAt || session.startedAt, range));
+  const sessions = completedExecutionSessions().filter(session => outcomesInRange(session.endedAt || session.startedAt, range));
   const evidence = (state.data.evidence || []).filter(item => outcomesInRange(item.createdAt, range));
   const planned = plans.reduce((sum, plan) => sum + (plan.items || []).length, 0), completed = plans.reduce((sum, plan) => sum + (plan.items || []).filter(item => item.completedAt).length, 0);
   const days = Array.from({ length:7 }, (_, index) => { const date = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate() + index), key = outcomesDateKey(date), plan = plans.find(item => item.date === key), daySessions = sessions.filter(session => outcomesDateKey(session.endedAt || session.startedAt) === key); return { date, planned:(plan?.items || []).length, completed:(plan?.items || []).filter(item => item.completedAt).length, sessions:daySessions.length, durationMs:daySessions.reduce((sum, session) => sum + positiveNumber(session.durationMs), 0) }; });

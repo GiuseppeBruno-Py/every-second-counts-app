@@ -44,8 +44,8 @@ function weeklyDateInRange(value, range) {
 }
 
 function weeklyCompletedSessions(range) {
-  return state.data.sessions
-    .filter(session => session.status === 'completed' && weeklyDateInRange(session.endedAt || session.startedAt, range))
+  return completedExecutionSessions()
+    .filter(session => weeklyDateInRange(session.endedAt || session.startedAt, range))
     .sort((a, b) => new Date(b.endedAt || b.startedAt) - new Date(a.endedAt || a.startedAt));
 }
 
@@ -103,7 +103,7 @@ function weeklyAggregateItems(sessions) {
     const last = itemSessions[itemSessions.length - 1];
     const durationMs = itemSessions.reduce((sum, session) => sum + positiveNumber(session.durationMs), 0);
     const delta = Math.max(0, positiveNumber(last.endValue) - positiveNumber(first.startValue));
-    const config = metricConfig(domain, item?.readingFormat || last.readingFormat || 'physical');
+    const config = metricConfig(domain, domain === 'study' ? item?.studyUnit || last.studyUnit : item?.readingFormat || last.readingFormat || 'physical');
     return {
       key,
       domain,
