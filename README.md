@@ -34,6 +34,11 @@ O percentual e o restante são calculados automaticamente.
 ## Funcionalidades
 
 - Dashboard com visão consolidada das frentes ativas.
+- Captura rápida global, sem classificação obrigatória, com persistência imediata na Caixa de entrada do Atlas.
+- Processamento de capturas em nota, pergunta de Active Recall, próxima ação ou evidência, além de arquivamento e descarte.
+- Vínculos opcionais entre capturas e leituras, estudos, metas, ações, sessões ou notas existentes.
+- Destilação opcional de notas em essência, aplicação e pergunta, preservando integralmente o corpo Markdown.
+- Etapa condicional na Revisão semanal para processar as capturas mais antigas, sem bloquear a conclusão da revisão.
 - Visão **Hoje** com plano diário curto e próximas ações.
 - Criação manual de ações independentes ou vinculadas a uma frente.
 - Fila inteligente baseada no foco semanal e nas frentes ativas.
@@ -98,7 +103,7 @@ O percentual e o restante são calculados automaticamente.
 O Compasso segue uma abordagem **local-first**:
 
 - O repositório contém somente dados de demonstração genéricos.
-- Leituras, notas, estudos, metas, sessões, evidências e revisões ficam no armazenamento local do navegador.
+- Leituras, notas, capturas, estudos, metas, sessões, evidências e revisões ficam no armazenamento local do navegador.
 - Nenhum dado pessoal é enviado ao GitHub ou a um servidor externo.
 - Backups JSON, vaults Markdown e relatórios CSV são exportados apenas quando o usuário solicita.
 - A análise de ZIPs e pastas Markdown ocorre integralmente no navegador.
@@ -124,6 +129,12 @@ index.html
 
 storage.js
 └── persistência IndexedDB com contingência local
+
+capture-model.js
+└── criação, validação, migração, vínculos, processamento e filtros de capturas sem dependência da interface
+
+capture-feature.js
+└── botão Capturar, Caixa de entrada no Atlas, processamento, destilação e integração com a Revisão semanal
 
 today-feature.js
 └── plano diário e próximas ações conectadas às sessões

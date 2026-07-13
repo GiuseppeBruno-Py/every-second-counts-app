@@ -51,6 +51,7 @@
     button, input, select, textarea { font: inherit; }
     button { color: inherit; }
     svg { display: block; }
+    body > svg[aria-hidden="true"] { display: none; }
 
     .app-shell { min-height: 100vh; display: grid; grid-template-columns: var(--sidebar) 1fr; }
     .sidebar {
@@ -390,10 +391,11 @@
     }
     @media (max-width: 760px) {
       .app-shell { display: block; }
-      .sidebar { inset: auto 10px 10px; width: auto; height: 62px; border-radius: 17px; padding: 7px; flex-direction: row; box-shadow: 0 10px 35px rgba(0,0,0,.22); }
+      .sidebar { inset: auto 10px 10px; width: calc(100vw - 20px); max-width: calc(100vw - 20px); height: 62px; border-radius: 17px; padding: 7px; box-sizing: border-box; overflow: hidden; flex-direction: row; box-shadow: 0 10px 35px rgba(0,0,0,.22); }
       .brand, .nav-label, .sidebar-spacer, .sidebar-card, .profile { display: none; }
-      .nav { width: 100%; grid-template-columns: repeat(5, 1fr); }
-      .nav-item { padding: 5px; display: grid; place-items: center; gap: 1px; border-radius: 11px; }
+      .nav { width: 100%; min-width: 0; max-width: 100%; grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(54px, 1fr); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+      .nav::-webkit-scrollbar { display: none; }
+      .nav-item { padding: 5px; display: grid; place-items: center; gap: 1px; border-radius: 11px; scroll-snap-align: nearest; }
       .nav-item span:not(.nav-badge) { display: block; font-size: 8px; font-weight: 600; }
       .nav-item svg { width: 17px; height: 17px; }
       .main { padding: 0 16px 96px; }
@@ -613,6 +615,7 @@
         { id:'example-goal', title:'Meta de exemplo', meta:'Horizonte de 30 dias', note:'Definir uma evidência concreta de conclusão.', progress:23, status:'active', icon:'target', elapsedDays:7, targetDays:30 }
       ],
       focus: ['Exemplo de leitura', 'Curso de exemplo', 'Meta de exemplo'],
+      captures: [],
       folders: [
         { id:'f-inbox', name:'00 · Inbox', parent:null, domain:'inbox' },
         { id:'f-reading', name:'01 · Leituras', parent:null, domain:'reading' },
@@ -742,6 +745,8 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       normalized.focus = Array.isArray(normalized.focus) ? normalized.focus.filter(value => typeof value === 'string') : [];
       normalized.folders = Array.isArray(normalized.folders) ? normalized.folders.filter(item => item && typeof item === 'object') : structuredClone(initialData.folders);
       normalized.notes = Array.isArray(normalized.notes) ? normalized.notes.filter(item => item && typeof item === 'object') : [];
+      normalized.captures = Array.isArray(normalized.captures) ? normalized.captures.filter(item => item && typeof item === 'object') : [];
+      if (globalThis.CompassoCaptureModel) normalized.captures = normalized.captures.map(item => globalThis.CompassoCaptureModel.migrateCapture(item)).filter(Boolean);
       return normalized;
     }
     function average(items) { return Array.isArray(items) && items.length ? Math.round(items.reduce((sum, item) => sum + clamp(item.progress), 0) / items.length) : 0; }
@@ -1089,7 +1094,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       const noteRow = event.target.closest('[data-open-note]'); if (noteRow) openNote(noteRow.dataset.openNote);
       const mode = event.target.closest('[data-mode]'); if (mode) { state.editorMode = mode.dataset.mode; renderNotes(); }
       const exportNote = event.target.closest('[data-export-note]'); if (exportNote) {
-        const note = state.data.notes.find(n => n.id === exportNote.dataset.exportNote); const blob = new Blob([note.content], {type:'text/markdown'}); const a = document.createElement('a');
+        const note = state.data.notes.find(n => n.id === exportNote.dataset.exportNote); const markdown = globalThis.CompassoCaptureFeature?.noteMarkdown?.(note) || note.content; const blob = new Blob([markdown], {type:'text/markdown'}); const a = document.createElement('a');
         a.href = URL.createObjectURL(blob); a.download = `${note.title.replace(/[\\/:*?"<>|]/g,'-')}.md`; a.click(); URL.revokeObjectURL(a.href); showToast('Nota exportada');
       }
       const duplicate = event.target.closest('[data-duplicate-note]'); if (duplicate) {

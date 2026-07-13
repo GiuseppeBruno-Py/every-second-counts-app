@@ -1,9 +1,11 @@
-const CACHE_NAME = 'compasso-pages-v40';
+const CACHE_NAME = 'compasso-pages-v41';
 const APP_SHELL = [
   './',
   './index.html',
   './storage.js',
   './feature-runtime.js',
+  './capture-model.js',
+  './capture-feature.js',
   './today-feature.js',
   './sessions-feature.js',
   './goal-links-feature.js',
@@ -36,6 +38,8 @@ const APP_SHELL = [
   './markdown-vault-feature.js',
   './markdown-vault-hardening.js',
   './anki-obsidian-feature.js',
+  './context-rag-feature.js',
+  './context-learning-feature.js',
   './manifest.webmanifest',
   './compasso-icon.svg',
   './compasso.ico',
@@ -79,6 +83,8 @@ const UX_MODEL_MARKER = 'CompassoUxModel';
 const UX_MARKER = '/* Compasso · Consolidação da experiência e hierarquia visual';
 const CONTEXT_RAG_MARKER = '/* Compasso · RAG local sobre dados do usuario';
 const CONTEXT_LEARNING_MARKER = '/* Compasso · Perguntas contextuais e avaliacao de explicacoes';
+const CAPTURE_MODEL_MARKER = 'CompassoCaptureModel';
+const CAPTURE_MARKER = '/* Compasso · Capturas, caixa de entrada e destilacao de notas';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -128,7 +134,7 @@ function integrateFeature(html, featureCode, marker) {
   if (!html.includes(bootstrapPoint)) return html;
   return html.replace(
     bootstrapPoint,
-    `    ${featureCode}\n\n    renderAll();\n    const requestedView`
+    () => `    ${featureCode}\n\n    renderAll();\n    const requestedView`
   );
 }
 
@@ -149,7 +155,7 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, featureRuntimeCode, todayCode, sessionsCode, goalLinksCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, sessionCompanionCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, uxModelCode, uxCode] = await Promise.all([
+  const [html, featureRuntimeCode, todayCode, sessionsCode, goalLinksCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, sessionCompanionCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, contextRagCode, contextLearningCode, captureModelCode, captureCode, uxModelCode, uxCode] = await Promise.all([
     response.text(),
     readCachedText('./feature-runtime.js'),
     readCachedText('./today-feature.js'),
@@ -182,6 +188,10 @@ async function enhanceHtmlResponse(response) {
     readCachedText('./markdown-vault-feature.js'),
     readCachedText('./markdown-vault-hardening.js'),
     readCachedText('./anki-obsidian-feature.js'),
+    readCachedText('./context-rag-feature.js'),
+    readCachedText('./context-learning-feature.js'),
+    readCachedText('./capture-model.js'),
+    readCachedText('./capture-feature.js'),
     readCachedText('./ux-consolidation-model.js'),
     readCachedText('./ux-consolidation-feature.js')
   ]);
@@ -211,6 +221,8 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-knowledge-graph', 'v1');
   headers.set('x-compasso-markdown-vault', 'v1');
   headers.set('x-compasso-anki-obsidian', 'v1');
+  headers.set('x-compasso-context-rag', 'v1');
+  headers.set('x-compasso-captures', 'v1');
   headers.set('x-compasso-ux-consolidation', 'v1');
 
   const withStorage = integrateIndexedDb(html);
@@ -245,7 +257,11 @@ async function enhanceHtmlResponse(response) {
   const withMarkdownVault = integrateFeature(withKnowledgeGraphLifecycle, markdownVaultCode, MARKDOWN_VAULT_MARKER);
   const withMarkdownVaultHardening = integrateFeature(withMarkdownVault, markdownVaultHardeningCode, MARKDOWN_VAULT_HARDENING_MARKER);
   const withAnkiObsidian = integrateFeature(withMarkdownVaultHardening, ankiObsidianCode, ANKI_OBSIDIAN_MARKER);
-  const withUxModel = integrateFeature(withAnkiObsidian, uxModelCode, UX_MODEL_MARKER);
+  const withContextRag = integrateFeature(withAnkiObsidian, contextRagCode, CONTEXT_RAG_MARKER);
+  const withContextLearning = integrateFeature(withContextRag, contextLearningCode, CONTEXT_LEARNING_MARKER);
+  const withCaptureModel = integrateFeature(withContextLearning, captureModelCode, CAPTURE_MODEL_MARKER);
+  const withCaptures = integrateFeature(withCaptureModel, captureCode, CAPTURE_MARKER);
+  const withUxModel = integrateFeature(withCaptures, uxModelCode, UX_MODEL_MARKER);
   const enhanced = integrateFeature(withUxModel, uxCode, UX_MARKER);
 
   return new Response(enhanced, {

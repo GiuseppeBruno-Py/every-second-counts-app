@@ -35,7 +35,11 @@ function buildContextRagIndex() {
   ['reading', 'study', 'goal'].forEach(domain => (state.data[domain] || []).forEach(item => {
     documents.push(contextRagSource('item', item.id, item.title, [item.meta, item.note, item.status].filter(Boolean).join('. '), domainLabels[domain], { view: domain, domain, id: item.id }));
   }));
-  (state.data.notes || []).forEach(note => documents.push(contextRagSource('note', note.id, note.title, note.content, 'Nota do Atlas', { view: 'notes', id: note.id })));
+  (state.data.notes || []).forEach(note => {
+    const distillation = note.distillation && typeof note.distillation === 'object' ? note.distillation : {};
+    const text = [distillation.essence, distillation.application, note.title, note.content, distillation.question].filter(Boolean).join('. ');
+    documents.push(contextRagSource('note', note.id, note.title, text, 'Nota do Atlas', { view: 'notes', id: note.id }));
+  });
   (state.data.evidence || []).forEach(item => {
     const linked = state.data[item.domain]?.find(source => source.id === item.itemId);
     documents.push(contextRagSource('evidence', item.id, item.summary || linked?.title || 'Evidencia', [item.summary, item.details, item.output, item.nextStep].filter(Boolean).join('. '), linked?.title || 'Sessao registrada', { view: item.domain || 'overview', domain: item.domain, id: item.itemId }));

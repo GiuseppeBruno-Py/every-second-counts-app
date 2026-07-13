@@ -80,7 +80,8 @@ function vaultBuildExportModel() {
       const filename = `${vaultUniqueName(vaultSafeSegment(note.title), usedByFolder.get(folderPath))}.md`;
       const path = `${folderPath}/${filename}`;
       const linked = vaultLinkedItem(note);
-      files.push({ path, content: String(note.content || ''), modified: note.updated || null });
+      const content = globalThis.CompassoCaptureFeature?.noteMarkdown?.(note) || String(note.content || '');
+      files.push({ path, content, modified: note.updated || null });
       noteRecords.push({
         path,
         id: note.id,
