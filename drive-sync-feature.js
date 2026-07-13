@@ -107,11 +107,18 @@ function mergeSyncData(localData, remoteData) {
     ...Object.keys(local).filter(key => Array.isArray(local[key])),
     ...Object.keys(remote).filter(key => Array.isArray(remote[key]))
   ]);
+  const journalConflicts = [];
   collections.forEach(collection => {
     const byId = new Map();
     [...(remote[collection] || []), ...(local[collection] || [])].forEach(record => {
       if (!record?.id) return;
       const current = byId.get(record.id);
+      if (collection === 'journalEntries' && current && String(record.updatedAt || '') === String(current.updatedAt || '') && syncFingerprint(record) !== syncFingerprint(current)) {
+        const preserved = { ...record, id: `${record.id}_conflict_${Math.random().toString(36).slice(2, 8)}`, source: { type: 'integration', id: record.id }, metadata: { ...record.metadata, conflictOf: record.id } };
+        byId.set(preserved.id, preserved);
+        journalConflicts.push({ id:`journal_conflict_${Date.now()}_${journalConflicts.length}`, entryId:record.id, preservedEntryId:preserved.id, detectedAt:syncNowIso(), status:'pending', updatedAt:syncNowIso() });
+        return;
+      }
       if (!current || String(record.updatedAt || '') >= String(current.updatedAt || '')) byId.set(record.id, record);
     });
     merged[collection] = [...byId.values()].filter(record => {
@@ -119,6 +126,7 @@ function mergeSyncData(localData, remoteData) {
       return !deletedAt || String(record.updatedAt || '') > deletedAt;
     });
   });
+  if (journalConflicts.length) merged.journalConflicts = [...(merged.journalConflicts || []), ...journalConflicts];
   const localUpdated = String(local._sync.updatedAt || '');
   const remoteUpdated = String(remote._sync.updatedAt || '');
   const newest = remoteUpdated > localUpdated ? remote : local;

@@ -45,6 +45,7 @@ function buildContextRagIndex() {
     documents.push(contextRagSource('evidence', item.id, item.summary || linked?.title || 'Evidencia', [item.summary, item.details, item.output, item.nextStep].filter(Boolean).join('. '), linked?.title || 'Sessao registrada', { view: item.domain || 'overview', domain: item.domain, id: item.itemId }));
   });
   (state.data.reviewItems || []).forEach(card => documents.push(contextRagSource('recall', card.id, card.prompt, card.answer, 'Active Recall', { view: 'recall', id: card.id })));
+  (state.data.journalEntries || []).filter(item => !item.archivedAt && item.taskStatus !== 'archived').forEach(item => documents.push(contextRagSource('journal', item.id, item.content.slice(0, 90), [item.content, ...(item.tags || []), ...(item.comments || []).map(comment => comment.content)].join('. '), `Journal · ${item.date}`, { view: 'journal', id: item.id, date: item.date })));
   (state.data.errorNotebook || state.data.errorEntries || []).forEach(entry => documents.push(contextRagSource('error', entry.id, entry.topic || entry.title || 'Caderno de erros', [entry.cause, entry.correction, entry.nextAction].filter(Boolean).join('. '), 'Caderno de erros', { view: 'weakness', id: entry.id })));
   contextRagRuntime.indexedAt = new Date().toISOString();
   return documents.filter(document => document.text || document.title);
@@ -70,7 +71,7 @@ function searchContextRag(query, type = 'all', limit = 12) {
 }
 
 function contextRagTypeLabel(type) {
-  return { item: 'Frente', note: 'Nota', evidence: 'Evidencia', recall: 'Active Recall', error: 'Erro' }[type] || type;
+  return { item: 'Frente', note: 'Nota', evidence: 'Evidencia', recall: 'Active Recall', journal: 'Journal', error: 'Erro' }[type] || type;
 }
 
 function contextRagExcerpt(document, query) {
@@ -118,6 +119,7 @@ function openContextRagSource(type, id) {
     const note = state.data.notes.find(item => item.id === id);
     if (note) state.selectedFolderId = note.folder;
   }
+  if (type === 'journal' && globalThis.CompassoJournalFeature) return globalThis.CompassoJournalFeature.open(result.target.date);
   switchView(result.target.view || 'overview');
   if (type === 'item' && result.target.domain && typeof openDialog === 'function') openDialog(result.target.domain, id);
 }
@@ -142,7 +144,7 @@ function installContextRagUi() {
   if (!document.getElementById('contextView')) document.querySelector('.content')?.insertAdjacentHTML('beforeend', `
     <section class="view" id="contextView"><div class="context-rag-shell">
       <section class="context-rag-hero"><div><div class="eyebrow">Fase 4.1 · RAG local</div><h2>Encontre contexto<br>antes de responder.</h2><p>O Compasso recupera trechos relevantes do seu acervo e preserva a origem de cada resultado.</p></div><div class="context-rag-stat"><strong id="contextRagCount">0</strong><span>fontes disponiveis</span></div></section>
-      <section class="context-rag-panel"><form class="context-rag-form" id="contextRagForm"><input id="contextRagQuery" type="search" maxlength="180" placeholder="Ex.: o que anotei sobre arquitetura de dados?" aria-label="Consultar acervo"><select id="contextRagType" aria-label="Filtrar fonte"><option value="all">Todas as fontes</option><option value="note">Notas</option><option value="evidence">Evidencias</option><option value="item">Frentes</option><option value="recall">Active Recall</option><option value="error">Caderno de erros</option></select><button class="primary-btn" type="submit">${icon('search')}Buscar</button></form><p class="context-rag-privacy" id="contextRagIndexed"></p><div class="context-rag-results" id="contextRagResults"></div></section>
+      <section class="context-rag-panel"><form class="context-rag-form" id="contextRagForm"><input id="contextRagQuery" type="search" maxlength="180" placeholder="Ex.: o que anotei sobre arquitetura de dados?" aria-label="Consultar acervo"><select id="contextRagType" aria-label="Filtrar fonte"><option value="all">Todas as fontes</option><option value="journal">Journal</option><option value="note">Notas</option><option value="evidence">Evidencias</option><option value="item">Frentes</option><option value="recall">Active Recall</option><option value="error">Caderno de erros</option></select><button class="primary-btn" type="submit">${icon('search')}Buscar</button></form><p class="context-rag-privacy" id="contextRagIndexed"></p><div class="context-rag-results" id="contextRagResults"></div></section>
     </div></section>`);
 }
 
