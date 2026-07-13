@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v35';
+const CACHE_NAME = 'compasso-pages-v36';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   './feature-runtime.js',
   './today-feature.js',
   './sessions-feature.js',
+  './goal-links-feature.js',
   './contingency-model.js',
   './contingency-feature.js',
   './deep-work-model.js',
@@ -44,6 +45,7 @@ const APP_SHELL = [
 const STORAGE_KEY = 'compasso.app.v1';
 const FEATURE_RUNTIME_MARKER = '/* Compasso · Runtime central de features e eventos';
 const SESSIONS_MARKER = '/* Compasso · Sessões de leitura e estudo';
+const GOAL_LINKS_MARKER = '/* Compasso · Metas conectadas a leituras e estudos';
 const CONTINGENCY_MODEL_MARKER = 'CompassoContingencyModel';
 const CONTINGENCY_MARKER = '/* Compasso · Contingências Se X então Y e versão mínima';
 const DEEP_WORK_MODEL_MARKER = 'CompassoDeepWorkModel';
@@ -145,11 +147,12 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, featureRuntimeCode, todayCode, sessionsCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, uxModelCode, uxCode] = await Promise.all([
+  const [html, featureRuntimeCode, todayCode, sessionsCode, goalLinksCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, uxModelCode, uxCode] = await Promise.all([
     response.text(),
     readCachedText('./feature-runtime.js'),
     readCachedText('./today-feature.js'),
     readCachedText('./sessions-feature.js'),
+    readCachedText('./goal-links-feature.js'),
     readCachedText('./contingency-model.js'),
     readCachedText('./contingency-feature.js'),
     readCachedText('./deep-work-model.js'),
@@ -185,6 +188,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-feature-runtime', 'v1');
   headers.set('x-compasso-today', 'v1');
   headers.set('x-compasso-sessions', 'v1');
+  headers.set('x-compasso-goal-links', 'v1');
   headers.set('x-compasso-contingencies', 'v1');
   headers.set('x-compasso-deep-work', 'v1');
   headers.set('x-compasso-rituals', 'v1');
@@ -209,7 +213,8 @@ async function enhanceHtmlResponse(response) {
   const withFeatureRuntime = integrateFeature(withStorage, featureRuntimeCode, FEATURE_RUNTIME_MARKER);
   const withToday = integrateFeature(withFeatureRuntime, todayCode, TODAY_MARKER);
   const withSessions = integrateFeature(withToday, sessionsCode, SESSIONS_MARKER);
-  const withContingencyModel = integrateFeature(withSessions, contingencyModelCode, CONTINGENCY_MODEL_MARKER);
+  const withGoalLinks = integrateFeature(withSessions, goalLinksCode, GOAL_LINKS_MARKER);
+  const withContingencyModel = integrateFeature(withGoalLinks, contingencyModelCode, CONTINGENCY_MODEL_MARKER);
   const withContingencies = integrateFeature(withContingencyModel, contingencyCode, CONTINGENCY_MARKER);
   const withDeepWorkModel = integrateFeature(withContingencies, deepWorkModelCode, DEEP_WORK_MODEL_MARKER);
   const withDeepWork = integrateFeature(withDeepWorkModel, deepWorkCode, DEEP_WORK_MARKER);
