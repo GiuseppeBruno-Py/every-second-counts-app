@@ -93,14 +93,24 @@ document.getElementById('itemForm').addEventListener('submit', event => {
   if (domain !== 'goal') return;
   const links = selectedGoalLinks();
   const editedId = state.editingId?.split(':')[1] || null;
+  const editedGoal = editedId ? state.data.goal.find(item => item.id === editedId) : null;
+  const existingIds = new Set(state.data.goal.map(item => item.id));
   const title = document.getElementById('titleField').value.trim();
+
+  // O listener principal do formulário fecha o modal e limpa state.editingId.
+  // Preserve a referência antes disso para que qualquer meta editada receba os vínculos.
+  if (editedGoal) {
+    editedGoal.linkedItems = links;
+    return;
+  }
+
   queueMicrotask(() => {
-    const goal = editedId ? state.data.goal.find(item => item.id === editedId) : state.data.goal[0];
-    if (!goal || (!editedId && goal.title !== title)) return;
+    const goal = state.data.goal.find(item => !existingIds.has(item.id) && item.title === title);
+    if (!goal) return;
     goal.linkedItems = links;
     saveData(links.length ? 'Meta vinculada e progresso atualizado' : 'Vínculos da meta atualizados');
   });
-});
+}, { capture:true });
 
 CompassoFeatures.register('goal-links',{order:22,afterGrid:enhanceGoalCards});
 syncLinkedGoalProgress();
