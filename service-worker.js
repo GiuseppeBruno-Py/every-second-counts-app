@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v41';
+const CACHE_NAME = 'compasso-pages-v42';
 const APP_SHELL = [
   './',
   './index.html',
@@ -83,7 +83,7 @@ const UX_MODEL_MARKER = 'CompassoUxModel';
 const UX_MARKER = '/* Compasso · Consolidação da experiência e hierarquia visual';
 const CONTEXT_RAG_MARKER = '/* Compasso · RAG local sobre dados do usuario';
 const CONTEXT_LEARNING_MARKER = '/* Compasso · Perguntas contextuais e avaliacao de explicacoes';
-const CAPTURE_MODEL_MARKER = 'CompassoCaptureModel';
+const CAPTURE_MODEL_MARKER = '/* Compasso · Modelo puro da caixa de entrada de capturas */';
 const CAPTURE_MARKER = '/* Compasso · Capturas, caixa de entrada e destilacao de notas';
 
 self.addEventListener('install', event => {
