@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v36';
+const CACHE_NAME = 'compasso-pages-v37';
 const APP_SHELL = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const APP_SHELL = [
   './contingency-feature.js',
   './deep-work-model.js',
   './deep-work-feature.js',
+  './session-companion-feature.js',
   './ritual-model.js',
   './ritual-feature.js',
   './ux-consolidation-model.js',
@@ -50,6 +51,7 @@ const CONTINGENCY_MODEL_MARKER = 'CompassoContingencyModel';
 const CONTINGENCY_MARKER = '/* Compasso · Contingências Se X então Y e versão mínima';
 const DEEP_WORK_MODEL_MARKER = 'CompassoDeepWorkModel';
 const DEEP_WORK_MARKER = '/* Compasso · Modo Deep Work para sessões focadas';
+const SESSION_COMPANION_MARKER = '/* Compasso · Companheiro compacto de sessão e Deep Work';
 const RITUAL_MODEL_MARKER = 'CompassoRitualModel';
 const RITUAL_MARKER = '/* Compasso · Rituais e arquitetura de ação reutilizáveis';
 const ENERGY_MODEL_MARKER = 'CompassoEnergyModel';
@@ -147,7 +149,7 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, featureRuntimeCode, todayCode, sessionsCode, goalLinksCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, uxModelCode, uxCode] = await Promise.all([
+  const [html, featureRuntimeCode, todayCode, sessionsCode, goalLinksCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, sessionCompanionCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, uxModelCode, uxCode] = await Promise.all([
     response.text(),
     readCachedText('./feature-runtime.js'),
     readCachedText('./today-feature.js'),
@@ -157,6 +159,7 @@ async function enhanceHtmlResponse(response) {
     readCachedText('./contingency-feature.js'),
     readCachedText('./deep-work-model.js'),
     readCachedText('./deep-work-feature.js'),
+    readCachedText('./session-companion-feature.js'),
     readCachedText('./ritual-model.js'),
     readCachedText('./ritual-feature.js'),
     readCachedText('./energy-model.js'),
@@ -191,6 +194,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-goal-links', 'v1');
   headers.set('x-compasso-contingencies', 'v1');
   headers.set('x-compasso-deep-work', 'v1');
+  headers.set('x-compasso-session-companion', 'v1');
   headers.set('x-compasso-rituals', 'v1');
   headers.set('x-compasso-energy', 'v1');
   headers.set('x-compasso-flow-matching', 'v1');
@@ -218,7 +222,8 @@ async function enhanceHtmlResponse(response) {
   const withContingencies = integrateFeature(withContingencyModel, contingencyCode, CONTINGENCY_MARKER);
   const withDeepWorkModel = integrateFeature(withContingencies, deepWorkModelCode, DEEP_WORK_MODEL_MARKER);
   const withDeepWork = integrateFeature(withDeepWorkModel, deepWorkCode, DEEP_WORK_MARKER);
-  const withRitualModel = integrateFeature(withDeepWork, ritualModelCode, RITUAL_MODEL_MARKER);
+  const withSessionCompanion = integrateFeature(withDeepWork, sessionCompanionCode, SESSION_COMPANION_MARKER);
+  const withRitualModel = integrateFeature(withSessionCompanion, ritualModelCode, RITUAL_MODEL_MARKER);
   const withRitual = integrateFeature(withRitualModel, ritualCode, RITUAL_MARKER);
   const withEnergyModel = integrateFeature(withRitual, energyModelCode, ENERGY_MODEL_MARKER);
   const withEnergy = integrateFeature(withEnergyModel, energyCode, ENERGY_MARKER);
@@ -292,6 +297,18 @@ self.addEventListener('fetch', event => {
         }
         return response;
       }).catch(() => Response.error());
+    })
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  const target = event.notification?.data?.url || './';
+  event.notification?.close();
+  event.waitUntil(
+    clients.matchAll({type:'window', includeUncontrolled:true}).then(windows => {
+      const visible = windows.find(client => 'focus' in client);
+      if (visible) { visible.navigate?.(target); return visible.focus(); }
+      return clients.openWindow ? clients.openWindow(target) : null;
     })
   );
 });
