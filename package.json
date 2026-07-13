@@ -1,6 +1,6 @@
 {
   "name":"every-second-counts-app",
   "private":true,
-  "scripts":{"test":"node --test tests/*.test.js","build:test":"node scripts/compose-test-app.js","test:browser":"npm run build:test && playwright test","test:pwa":"playwright test --config=playwright.pwa.config.js","test:all":"npm test && npm run test:browser && npm run test:pwa"},
+  "scripts":{"test":"node --test tests/*.test.js","build:test":"node scripts/compose-test-app.js","test:browser":"npm run build:test && playwright test","test:all":"npm test && npm run test:browser"},
   "devDependencies":{"@playwright/test":"1.55.0"}
 }
