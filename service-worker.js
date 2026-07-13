@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v43';
+const CACHE_NAME = 'compasso-pages-v42';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,16 +6,6 @@ const APP_SHELL = [
   './feature-runtime.js',
   './capture-model.js',
   './capture-feature.js',
-  './world-locations.js',
-  './world-quality.js',
-  './world-navigation.js',
-  './world-accessibility.js',
-  './world-character.js',
-  './world-scene.js',
-  './world-3d-feature.js',
-  './vendor/three/three.module.min.js',
-  './vendor/three/three.core.min.js',
-  './vendor/three/LICENSE',
   './today-feature.js',
   './sessions-feature.js',
   './goal-links-feature.js',
@@ -95,13 +85,6 @@ const CONTEXT_RAG_MARKER = '/* Compasso · RAG local sobre dados do usuario';
 const CONTEXT_LEARNING_MARKER = '/* Compasso · Perguntas contextuais e avaliacao de explicacoes';
 const CAPTURE_MODEL_MARKER = '/* Compasso · Modelo puro da caixa de entrada de capturas */';
 const CAPTURE_MARKER = '/* Compasso · Capturas, caixa de entrada e destilacao de notas';
-const WORLD_LOCATIONS_MARKER = '/* Compasso · Topologia original do Mundo do Compasso */';
-const WORLD_QUALITY_MARKER = '/* Compasso · Qualidade progressiva do Mundo do Compasso */';
-const WORLD_NAVIGATION_MARKER = '/* Compasso · Estados de navegação do Mundo do Compasso */';
-const WORLD_ACCESSIBILITY_MARKER = '/* Compasso · Acessibilidade do Mundo do Compasso */';
-const WORLD_CHARACTER_MARKER = '/* Compasso · Guardiã original e configurável do Mundo do Compasso */';
-const WORLD_SCENE_MARKER = '/* Compasso · Cena Three.js procedural do Mundo do Compasso */';
-const WORLD_FEATURE_MARKER = '/* Compasso · Mundo 3D navegável com adaptação visual progressiva */';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -172,7 +155,7 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, featureRuntimeCode, todayCode, sessionsCode, goalLinksCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, sessionCompanionCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, contextRagCode, contextLearningCode, captureModelCode, captureCode, worldLocationsCode, worldQualityCode, worldNavigationCode, worldAccessibilityCode, worldCharacterCode, worldSceneCode, worldFeatureCode, uxModelCode, uxCode] = await Promise.all([
+  const [html, featureRuntimeCode, todayCode, sessionsCode, goalLinksCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, sessionCompanionCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, contextRagCode, contextLearningCode, captureModelCode, captureCode, uxModelCode, uxCode] = await Promise.all([
     response.text(),
     readCachedText('./feature-runtime.js'),
     readCachedText('./today-feature.js'),
@@ -209,17 +192,9 @@ async function enhanceHtmlResponse(response) {
     readCachedText('./context-learning-feature.js'),
     readCachedText('./capture-model.js'),
     readCachedText('./capture-feature.js'),
-    readCachedText('./world-locations.js'),
-    readCachedText('./world-quality.js'),
-    readCachedText('./world-navigation.js'),
-    readCachedText('./world-accessibility.js'),
-    readCachedText('./world-character.js'),
-    readCachedText('./world-scene.js'),
-    readCachedText('./world-3d-feature.js'),
     readCachedText('./ux-consolidation-model.js'),
     readCachedText('./ux-consolidation-feature.js')
   ]);
-  const worldBundleReady = [worldLocationsCode, worldQualityCode, worldNavigationCode, worldAccessibilityCode, worldCharacterCode, worldSceneCode, worldFeatureCode].every(Boolean);
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=utf-8');
   headers.set('x-compasso-storage', 'indexeddb-v1');
@@ -248,7 +223,6 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-anki-obsidian', 'v1');
   headers.set('x-compasso-context-rag', 'v1');
   headers.set('x-compasso-captures', 'v1');
-  headers.set('x-compasso-world', worldBundleReady ? 'three-v1' : 'unavailable');
   headers.set('x-compasso-ux-consolidation', 'v1');
 
   const withStorage = integrateIndexedDb(html);
@@ -287,17 +261,7 @@ async function enhanceHtmlResponse(response) {
   const withContextLearning = integrateFeature(withContextRag, contextLearningCode, CONTEXT_LEARNING_MARKER);
   const withCaptureModel = integrateFeature(withContextLearning, captureModelCode, CAPTURE_MODEL_MARKER);
   const withCaptures = integrateFeature(withCaptureModel, captureCode, CAPTURE_MARKER);
-  let withWorld = withCaptures;
-  if (worldBundleReady) {
-    withWorld = integrateFeature(withWorld, worldLocationsCode, WORLD_LOCATIONS_MARKER);
-    withWorld = integrateFeature(withWorld, worldQualityCode, WORLD_QUALITY_MARKER);
-    withWorld = integrateFeature(withWorld, worldNavigationCode, WORLD_NAVIGATION_MARKER);
-    withWorld = integrateFeature(withWorld, worldAccessibilityCode, WORLD_ACCESSIBILITY_MARKER);
-    withWorld = integrateFeature(withWorld, worldCharacterCode, WORLD_CHARACTER_MARKER);
-    withWorld = integrateFeature(withWorld, worldSceneCode, WORLD_SCENE_MARKER);
-    withWorld = integrateFeature(withWorld, worldFeatureCode, WORLD_FEATURE_MARKER);
-  }
-  const withUxModel = integrateFeature(withWorld, uxModelCode, UX_MODEL_MARKER);
+  const withUxModel = integrateFeature(withCaptures, uxModelCode, UX_MODEL_MARKER);
   const enhanced = integrateFeature(withUxModel, uxCode, UX_MARKER);
 
   return new Response(enhanced, {

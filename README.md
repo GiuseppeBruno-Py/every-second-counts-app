@@ -33,10 +33,6 @@ O percentual e o restante são calculados automaticamente.
 
 ## Funcionalidades
 
-- **Mundo do Compasso**: uma vila isométrica low-poly em Three.js transforma a visão geral em uma entrada espacial para as áreas que já existem, sem duplicar dados ou regras de negócio.
-- Personagem original **Guardiã do Compasso**, com estados visuais de caminhada, leitura, escrita e foco derivados das sessões reais.
-- Mapa rápido textual, navegação por teclado, controles de qualidade e fallback 2D automático quando WebGL não estiver disponível.
-- Ambientes visuais de sessão e Deep Work conectados ao mesmo cronômetro, progresso e persistência já usados pelo aplicativo.
 - Dashboard com visão consolidada das frentes ativas.
 - Captura rápida global, sem classificação obrigatória, com persistência imediata na Caixa de entrada do Atlas.
 - Processamento de capturas em nota, pergunta de Active Recall, próxima ação ou evidência, além de arquivamento e descarte.
@@ -102,14 +98,6 @@ O percentual e o restante são calculados automaticamente.
 - Instalação como aplicativo PWA.
 - Funcionamento offline após o primeiro carregamento.
 
-### Mundo do Compasso
-
-O mundo visual é uma camada de navegação sobre o Compasso atual. A praça, a Biblioteca das Histórias, a Academia do Conhecimento, a Torre do Horizonte, a Casa do Cartógrafo e os demais edifícios abrem as mesmas views e operações da interface convencional. O estado oficial continua em `state.data`; o mundo não mantém pontos, inventário, progresso paralelo ou uma taxonomia própria.
-
-O seletor no cabeçalho do mundo oferece os modos **Automático**, **Alta**, **Equilibrada**, **Econômica** e **Mapa 2D**. No modo automático, capacidade do dispositivo, viewport e preferência por movimento reduzido determinam apenas a apresentação. Se Three.js ou WebGL não puder iniciar, o mapa 2D acessível assume o lugar sem impedir o uso do aplicativo.
-
-O Three.js é distribuído localmente em `vendor/three`, permitindo que a vila abra offline e sem CDN. A licença correspondente acompanha os arquivos vendorizados.
-
 ## Privacidade
 
 O Compasso segue uma abordagem **local-first**:
@@ -147,21 +135,6 @@ capture-model.js
 
 capture-feature.js
 └── botão Capturar, Caixa de entrada no Atlas, processamento, destilação e integração com a Revisão semanal
-
-world-locations.js
-└── topologia e métricas puras derivadas do estado existente
-
-world-quality.js + world-navigation.js
-└── progressive enhancement, preferências visuais e máquina de estados de navegação
-
-world-character.js + world-scene.js
-└── personagem original, vila procedural low-poly e renderização Three.js
-
-world-accessibility.js + world-3d-feature.js
-└── teclado, anúncios, mapa 2D, integração com views, sessões e runtime central
-
-vendor/three/
-└── módulos Three.js e licença disponíveis no app shell offline
 
 today-feature.js
 └── plano diário e próximas ações conectadas às sessões
