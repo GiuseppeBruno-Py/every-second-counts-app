@@ -25,6 +25,7 @@ function recallPlainText(markdown = '') { return markdown.replace(/^---[\s\S]*?-
 function recallSourceLabel(card) {
   if (card.sourceType === 'evidence') { const evidence = recallEvidence().find(item => item.id === card.sourceId); const linked = evidence && recallLinkedItem(evidence.domain, evidence.itemId); return linked ? `Evidência · ${linked.title}` : 'Evidência'; }
   if (card.sourceType === 'note') { const note = state.data.notes.find(item => item.id === card.sourceId); return note ? `Nota · ${note.title}` : 'Nota'; }
+  if (card.sourceType === 'capture') return 'Captura processada';
   return 'Pergunta manual';
 }
 function recallDraftFromEvidence(evidence) { const linked = recallLinkedItem(evidence.domain, evidence.itemId); const context = linked?.title || domainLabels[evidence.domain] || 'esta sessão'; return { sourceType: 'evidence', sourceId: evidence.id, domain: evidence.domain || null, itemId: evidence.itemId || null, prompt: `Sem consultar, explique o que você compreendeu ou produziu em “${context}”.`, answer: [evidence.summary, evidence.details].filter(Boolean).join('\n\n') }; }

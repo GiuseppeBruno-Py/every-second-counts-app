@@ -10,3 +10,6 @@ dados-pessoais/
 .env.*
 .DS_Store
 Thumbs.db
+.test-dist/
+test-results/
+node_modules/
