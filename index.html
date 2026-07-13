@@ -734,7 +734,8 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
           if (item[config.currentKey] == null) item[config.currentKey] = 0;
           if (item[config.totalKey] == null) item[config.totalKey] = 0;
           const metric = metricInfo(item, domain);
-          if (metric.hasTarget) item.progress = metric.progress;
+          const hasLinkedProgress = domain === 'goal' && Array.isArray(item.linkedItems) && item.linkedItems.length > 0;
+          if (metric.hasTarget && !hasLinkedProgress) item.progress = metric.progress;
         });
       });
 
