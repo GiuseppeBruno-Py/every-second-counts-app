@@ -27,9 +27,10 @@
       #sessionBanner{display:none!important}.session-companion{position:fixed;right:16px;bottom:16px;z-index:70;width:min(316px,calc(100vw - 24px));min-height:62px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px;padding:8px;background:#252521;color:#fff;border:1px solid #45443e;border-radius:15px;box-shadow:0 14px 38px rgba(20,20,17,.24)}.session-companion[hidden]{display:none}.session-companion-main{min-width:0;border:0;background:transparent;color:inherit;display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:9px;padding:5px 4px;text-align:left;cursor:pointer}.session-companion-dot{width:8px;height:8px;border-radius:50%;background:#8e82ff;box-shadow:0 0 0 4px rgba(142,130,255,.14)}.session-companion.paused .session-companion-dot{background:#dc7e3f;box-shadow:0 0 0 4px rgba(220,126,63,.14)}.session-companion.deep .session-companion-dot{background:#76d4b8;box-shadow:0 0 0 4px rgba(118,212,184,.14)}.session-companion-copy{min-width:0}.session-companion-copy small,.session-companion-copy strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.session-companion-copy small{color:#aaa79f;font-size:8px;text-transform:uppercase;letter-spacing:.1em;font-weight:800}.session-companion-copy strong{margin-top:3px;font:700 11px/1.25 Manrope,sans-serif}.session-companion-time{font:800 16px/1 Manrope,sans-serif;letter-spacing:-.04em}.session-companion-actions{display:flex;gap:4px}.session-companion-actions button{width:31px;height:31px;border:1px solid #4c4b45;border-radius:8px;background:#34342f;color:#fff;display:grid;place-items:center;cursor:pointer;font-size:12px;font-weight:800}.session-companion-actions button:hover{background:#42413b}.session-companion-actions button[hidden]{display:none}@media(max-width:520px){.session-companion{right:12px;bottom:12px;width:calc(100vw - 24px)}.session-companion-main{grid-template-columns:9px minmax(0,1fr) auto}.session-companion-actions button{width:29px;height:29px}}
     `;
     document.head.appendChild(style);
-    document.body.insertAdjacentHTML('beforeend', `<aside id="sessionCompanion" class="session-companion" hidden aria-live="polite"><button type="button" class="session-companion-main" id="sessionCompanionOpen" title="Voltar à sessão"><span class="session-companion-dot"></span><span class="session-companion-copy"><small id="sessionCompanionLabel">Sessão em andamento</small><strong id="sessionCompanionTitle"></strong></span><time id="sessionCompanionTime">00:00</time></button><div class="session-companion-actions"><button type="button" id="sessionCompanionPause" aria-label="Pausar sessão" title="Pausar ou retomar">Ⅱ</button><button type="button" id="sessionCompanionFloat" aria-label="Abrir janela flutuante" title="Manter sobre outras janelas">▣</button></div></aside>`);
+    document.body.insertAdjacentHTML('beforeend', `<aside id="sessionCompanion" class="session-companion" hidden aria-live="polite"><button type="button" class="session-companion-main" id="sessionCompanionOpen" title="Voltar ao item em execução"><span class="session-companion-dot"></span><span class="session-companion-copy"><small id="sessionCompanionLabel">Sessão em andamento</small><strong id="sessionCompanionTitle"></strong></span><time id="sessionCompanionTime">00:00</time></button><div class="session-companion-actions"><button type="button" id="sessionCompanionPause" aria-label="Pausar sessão" title="Pausar ou retomar">Ⅱ</button><button type="button" id="sessionCompanionFinish" aria-label="Concluir sessão" title="Concluir sessão">✓</button><button type="button" id="sessionCompanionFloat" aria-label="Abrir janela flutuante" title="Manter sobre outras janelas">▣</button></div></aside>`);
     sessionCompanionOpen.addEventListener('click', openActivity);
     sessionCompanionPause.addEventListener('click', togglePause);
+    sessionCompanionFinish.addEventListener('click', finishActivity);
     sessionCompanionFloat.addEventListener('click', openPictureInPicture);
     sessionCompanionFloat.hidden = !('documentPictureInPicture' in window);
   }
@@ -49,6 +50,12 @@
     if (current.kind === 'deep') deepPause.click();
     else toggleSessionPause();
     queueMicrotask(render);
+  }
+  function finishActivity() {
+    const current = activity();
+    if (!current) return;
+    if (current.kind === 'deep') { deepComplete.click(); return; }
+    openSessionFinish();
   }
   function pipMarkup(current) {
     return `<main><span></span><div><small>${escapeHtml(current.label)}</small><strong>${escapeHtml(current.title)}</strong></div><time id="pipClock">${clock(current.elapsedMs)}</time></main><button id="pipReturn">Voltar ao Compasso</button>`;
@@ -118,6 +125,9 @@
     sessionCompanionTime.textContent = clock(current.elapsedMs);
     sessionCompanionPause.textContent = current.status === 'paused' ? '▶' : 'Ⅱ';
     sessionCompanionPause.setAttribute('aria-label', current.status === 'paused' ? 'Retomar sessão' : 'Pausar sessão');
+    sessionCompanionFinish.hidden = false;
+    sessionCompanionFinish.setAttribute('aria-label', current.kind === 'deep' ? 'Concluir Deep Work' : 'Concluir sessão');
+    sessionCompanionFinish.setAttribute('title', current.kind === 'deep' ? 'Concluir Deep Work' : 'Concluir sessão');
     document.title = `● ${current.kind === 'deep' ? 'Deep Work' : 'Sessão'} · ${current.title}`;
     updatePip(current); updateBadge(current); showNotification(current);
     if (current.status === 'paused') { clearInterval(runtime.timer); runtime.timer = null; }
