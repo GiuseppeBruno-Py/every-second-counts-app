@@ -267,6 +267,9 @@
     .cover-field.show { display: grid; }
     .reading-field { display: none; }
     .reading-field.show { display: grid; }
+    .study-field { display: none; }
+    .study-field.show { display: grid; }
+    .field-hint { margin: -2px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
     .cover-editor { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #f8f7f3; }
     .cover-preview { width: 58px; height: 82px; border-radius: 9px; object-fit: cover; background: #e9e7e1; display: none; }
     .cover-preview.show { display: block; }
@@ -573,6 +576,7 @@
         <div class="field"><label for="titleField">Título</label><input id="titleField" name="title" required maxlength="90" placeholder="Ex.: Curso de arquitetura de dados"></div>
         <div class="field"><label for="metaField">Contexto</label><input id="metaField" name="meta" maxlength="100" placeholder="Autor, curso, horizonte ou fonte"></div>
         <div class="field reading-field" id="readingFormatField"><label for="readingFormat">Formato da leitura</label><select id="readingFormat"><option value="physical">Livro físico</option><option value="kindle">Kindle / digital</option></select></div>
+        <div class="field study-field" id="studyUnitField"><label for="studyUnit">Unidade de progresso do estudo</label><select id="studyUnit"><option value="hours">Horas</option><option value="days">Dias</option></select><p class="field-hint">Escolha horas para carga acumulada ou dias para uma rotina/cronograma.</p></div>
         <div class="field cover-field" id="coverField"><label for="coverInput">Capa do livro</label><div class="cover-editor"><img class="cover-preview" id="coverPreview" alt="Prévia da capa"><div class="cover-actions"><input id="coverInput" type="file" accept="image/jpeg,image/png,image/webp"><button class="quiet-btn" type="button" id="removeCover">Remover capa</button><p class="cover-hint">A imagem será reduzida e ficará somente no seu navegador e nos seus backups.</p></div></div></div>
         <div class="field"><label for="noteField">Próxima evidência</label><textarea id="noteField" name="note" maxlength="220" placeholder="Qual resultado concreto mostra que você avançou?"></textarea></div>
         <details class="cognitive-fields" id="cognitiveFields">
@@ -686,11 +690,16 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     function metricConfig(domain, readingFormat = 'physical') {
       if (domain === 'reading' && readingFormat === 'kindle') return { currentKey:'currentPercent', totalKey:'digitalTotal', heading:'Progresso no Kindle', currentLabel:'Percentual atual', totalLabel:'Total', unit:'%', help:'Informe a porcentagem exibida pelo Kindle, de 0% a 100%.', step:'1', icon:'book', isPercent:true };
       if (domain === 'reading') return { currentKey:'currentPages', totalKey:'totalPages', heading:'Progresso por páginas', currentLabel:'Página atual', totalLabel:'Total de páginas', unit:'páginas', help:'Use o total de páginas da sua edição, pois a paginação varia entre editoras.', step:'1', icon:'book' };
-      if (domain === 'study') return { currentKey:'completedHours', totalKey:'targetHours', heading:'Progresso por horas', currentLabel:'Horas concluídas', totalLabel:'Horas planejadas', unit:'horas', help:'Você define a carga horária total e registra o tempo efetivamente estudado.', step:'0.5', icon:'study' };
+      if (domain === 'study') {
+        const studyUnit = readingFormat === 'days' ? 'days' : 'hours';
+        return studyUnit === 'days'
+          ? { currentKey:'completedDays', totalKey:'targetDays', heading:'Progresso por dias', currentLabel:'Dias concluídos', totalLabel:'Dias planejados', unit:'dias', help:'Use para acompanhar uma rotina ou cronograma de estudos em dias.', step:'1', icon:'study' }
+          : { currentKey:'completedHours', totalKey:'targetHours', heading:'Progresso por horas', currentLabel:'Horas concluídas', totalLabel:'Horas planejadas', unit:'horas', help:'Você define a carga horária total e registra o tempo efetivamente estudado.', step:'0.5', icon:'study' };
+      }
       return { currentKey:'elapsedDays', totalKey:'targetDays', heading:'Progresso por dias', currentLabel:'Dias executados', totalLabel:'Dias planejados', unit:'dias', help:'Este indicador mede o avanço temporal. A evidência da meta continua descrita separadamente.', step:'1', icon:'calendar' };
     }
     function metricInfo(item, domain) {
-      const config = metricConfig(domain, item.readingFormat || 'physical');
+      const config = metricConfig(domain, domain === 'study' ? item.studyUnit : item.readingFormat || 'physical');
       const current = positiveNumber(item[config.currentKey]);
       const total = positiveNumber(item[config.totalKey]);
       const hasTarget = total > 0;
@@ -719,7 +728,8 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
           item.estimatedMinutes = Number.isInteger(Number(item.estimatedMinutes)) && Number(item.estimatedMinutes) > 0 ? Math.min(1440, Number(item.estimatedMinutes)) : null;
           item.expectedOutcome = typeof item.expectedOutcome === 'string' ? item.expectedOutcome.trim().slice(0,160) : '';
           if (domain === 'reading' && !item.readingFormat) item.readingFormat = 'physical';
-          const config = metricConfig(domain, item.readingFormat || 'physical');
+          if (domain === 'study') item.studyUnit = item.studyUnit === 'days' ? 'days' : 'hours';
+          const config = metricConfig(domain, domain === 'study' ? item.studyUnit : item.readingFormat || 'physical');
           if (config.isPercent) item[config.totalKey] = 100;
           if (item[config.currentKey] == null) item[config.currentKey] = 0;
           if (item[config.totalKey] == null) item[config.totalKey] = 0;
@@ -989,7 +999,9 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       document.getElementById('expectedOutcomeField').value = item?.expectedOutcome || '';
       document.getElementById('cognitiveFields').open = Boolean(item?.workType || item?.cognitiveDemand || item?.requiredEnergy || item?.estimatedMinutes || item?.expectedOutcome);
       document.getElementById('readingFormat').value = item?.readingFormat || 'physical';
+      document.getElementById('studyUnit').value = item?.studyUnit === 'days' ? 'days' : 'hours';
       document.getElementById('readingFormatField').classList.toggle('show', domain === 'reading');
+      document.getElementById('studyUnitField').classList.toggle('show', domain === 'study');
       pendingCover = item?.coverImage || '';
       updateCoverEditor(domain);
       configureMetricEditor(domain, item);
@@ -1028,7 +1040,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     }
 
     function configureMetricEditor(domain, item = null) {
-      const readingFormat = domain === 'reading' ? document.getElementById('readingFormat').value : 'physical';
+      const readingFormat = domain === 'reading' ? document.getElementById('readingFormat').value : domain === 'study' ? document.getElementById('studyUnit').value : 'physical';
       const config = metricConfig(domain, readingFormat);
       document.getElementById('metricHeading').textContent = config.heading;
       document.getElementById('currentUnitLabel').textContent = config.currentLabel;
@@ -1046,7 +1058,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
 
     function updateMetricPreview() {
       const domain = document.getElementById('domainField').value;
-      const readingFormat = domain === 'reading' ? document.getElementById('readingFormat').value : 'physical';
+      const readingFormat = domain === 'reading' ? document.getElementById('readingFormat').value : domain === 'study' ? document.getElementById('studyUnit').value : 'physical';
       const config = metricConfig(domain, readingFormat);
       const current = config.isPercent ? clamp(document.getElementById('currentUnitField').value) : positiveNumber(document.getElementById('currentUnitField').value);
       const total = config.isPercent ? 100 : positiveNumber(document.getElementById('totalUnitField').value);
@@ -1069,7 +1081,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       const add = event.target.closest('[data-add]'); if (add) openDialog(add.dataset.add);
       const edit = event.target.closest('[data-edit]'); if (edit) { const [d,id] = edit.dataset.edit.split(':'); openDialog(d,id); }
       const noteLink = event.target.closest('[data-note]'); if (noteLink) { const [d,id] = noteLink.dataset.note.split(':'); const note = ensureLinkedNote(d,id); openNote(note.id); }
-      const complete = event.target.closest('[data-complete]'); if (complete) { const [d,id] = complete.dataset.complete.split(':'); const item = state.data[d].find(i => i.id === id); const config = metricConfig(d, item.readingFormat || 'physical'); item.status='done'; item.progress=100; if (positiveNumber(item[config.totalKey]) > 0) item[config.currentKey] = item[config.totalKey]; saveData('Item concluído'); }
+      const complete = event.target.closest('[data-complete]'); if (complete) { const [d,id] = complete.dataset.complete.split(':'); const item = state.data[d].find(i => i.id === id); const config = metricConfig(d, d === 'study' ? item.studyUnit : item.readingFormat || 'physical'); item.status='done'; item.progress=100; if (positiveNumber(item[config.totalKey]) > 0) item[config.currentKey] = item[config.totalKey]; saveData('Item concluído'); }
       const reopen = event.target.closest('[data-reopen]'); if (reopen) { const [d,id] = reopen.dataset.reopen.split(':'); const item = state.data[d].find(i => i.id === id); item.status='active'; saveData('Item reaberto'); }
       const filter = event.target.closest('[data-filter]'); if (filter) { state.filters[filter.dataset.domain] = filter.dataset.filter; renderFilters(filter.dataset.domain); renderGrid(filter.dataset.domain); }
       const folder = event.target.closest('[data-folder]'); if (folder) { const id = folder.dataset.folder; state.selectedFolderId = id; state.collapsedFolders.has(id) ? state.collapsedFolders.delete(id) : state.collapsedFolders.add(id); renderFileTree(); }
@@ -1125,8 +1137,9 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     document.getElementById('closeDialog').addEventListener('click', closeDialog);
     document.getElementById('cancelDialog').addEventListener('click', closeDialog);
     document.getElementById('itemDialog').addEventListener('click', e => { if (e.target === e.currentTarget) closeDialog(); });
-    document.getElementById('domainField').addEventListener('change', event => { document.getElementById('readingFormatField').classList.toggle('show', event.target.value === 'reading'); configureMetricEditor(event.target.value); updateCoverEditor(event.target.value); });
+    document.getElementById('domainField').addEventListener('change', event => { document.getElementById('readingFormatField').classList.toggle('show', event.target.value === 'reading'); document.getElementById('studyUnitField').classList.toggle('show', event.target.value === 'study'); configureMetricEditor(event.target.value); updateCoverEditor(event.target.value); });
     document.getElementById('readingFormat').addEventListener('change', () => configureMetricEditor('reading'));
+    document.getElementById('studyUnit').addEventListener('change', () => configureMetricEditor('study'));
     document.getElementById('coverInput').addEventListener('change', async event => {
       const file = event.target.files[0]; if (!file) return;
       try { pendingCover = await resizeCover(file); updateCoverEditor('reading'); showToast('Capa pronta para salvar'); }
@@ -1138,7 +1151,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     document.getElementById('itemForm').addEventListener('submit', event => {
       event.preventDefault();
       const domain = document.getElementById('domainField').value;
-      const readingFormat = domain === 'reading' ? document.getElementById('readingFormat').value : 'physical';
+      const readingFormat = domain === 'reading' ? document.getElementById('readingFormat').value : domain === 'study' ? document.getElementById('studyUnit').value : 'physical';
       const config = metricConfig(domain, readingFormat);
       const currentValue = config.isPercent ? clamp(document.getElementById('currentUnitField').value) : positiveNumber(document.getElementById('currentUnitField').value);
       const totalValue = config.isPercent ? 100 : positiveNumber(document.getElementById('totalUnitField').value);
@@ -1153,6 +1166,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
         expectedOutcome: document.getElementById('expectedOutcomeField').value.trim().slice(0,160)
       };
       if (domain === 'reading') { payload.coverImage = pendingCover; payload.readingFormat = readingFormat; }
+      if (domain === 'study') payload.studyUnit = readingFormat;
       payload[config.currentKey] = currentValue;
       payload[config.totalKey] = totalValue;
       if (!payload.title) return;

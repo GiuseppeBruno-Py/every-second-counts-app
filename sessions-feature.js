@@ -38,12 +38,12 @@ function formatClock(ms) {
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 function sessionMetric(item, domain) {
-  const config = metricConfig(domain, item?.readingFormat || 'physical');
+  const config = metricConfig(domain, domain === 'study' ? item?.studyUnit : item?.readingFormat || 'physical');
   return { config, value: positiveNumber(item?.[config.currentKey]) };
 }
 function sessionMetricLabel(session) {
   const item = sessionItem(session);
-  const config = metricConfig(session.domain, item?.readingFormat || session.readingFormat || 'physical');
+  const config = metricConfig(session.domain, session.domain === 'study' ? item?.studyUnit || session.studyUnit : item?.readingFormat || session.readingFormat || 'physical');
   const start = positiveNumber(session.startValue);
   const end = session.endValue == null ? null : positiveNumber(session.endValue);
   if (end == null) return `${formatNumber(start)} ${config.unit}`;
@@ -153,6 +153,7 @@ function createSession() {
     domain: selected.domain,
     itemId: selected.itemId,
     readingFormat: item.readingFormat || null,
+    studyUnit: item.studyUnit || null,
     intent: document.getElementById('sessionIntent').value.trim(),
     reflection: '',
     startValue: metric.value,
