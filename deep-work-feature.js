@@ -2,7 +2,7 @@
 const deepModel=globalThis.CompassoDeepWorkModel;
 state.data.deepWorkSessions=Array.isArray(state.data.deepWorkSessions)?state.data.deepWorkSessions.map(x=>deepModel.normalize(x)).filter(Boolean):[];
 const deepRuntime={selected:null,timer:null,finishAt:null,tabId:`tab-${Date.now()}-${Math.random().toString(36).slice(2)}`,lockKey:'compasso.deepwork.lock.v1'};
-function deepActive(){return deepModel.active(state.data.deepWorkSessions)}
+function deepActive(){return state.data.deepWorkSessions.find(session=>deepModel.isActive(session))||null}
 function deepItem(s=deepActive()){return s?state.data[s.domain]?.find(x=>x.id===s.actionId):null}
 function deepSave(message){window.CompassoStorage?.save?.(STORAGE_KEY,state.data);localStorage.setItem(STORAGE_KEY,JSON.stringify(state.data));renderAll();if(message)showToast(message)}
 function deepLock(sessionId){localStorage.setItem(deepRuntime.lockKey,JSON.stringify({tabId:deepRuntime.tabId,sessionId,updatedAt:Date.now()}))}
