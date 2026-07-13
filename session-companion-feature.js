@@ -120,7 +120,8 @@
     sessionCompanionPause.setAttribute('aria-label', current.status === 'paused' ? 'Retomar sessão' : 'Pausar sessão');
     document.title = `● ${current.kind === 'deep' ? 'Deep Work' : 'Sessão'} · ${current.title}`;
     updatePip(current); updateBadge(current); showNotification(current);
-    if (!runtime.timer) runtime.timer = setInterval(render, 1000);
+    if (current.status === 'paused') { clearInterval(runtime.timer); runtime.timer = null; }
+    else if (!runtime.timer) runtime.timer = setInterval(render, 1000);
   }
 
   installUi();
