@@ -14,7 +14,7 @@ const flowRuntime={results:[],rejected:new Set(),formTarget:null};
 function flowEvent(type,itemId=null,metadata={}){state.data.flowEvents.unshift({id:`fe${Date.now()}${Math.random().toString(36).slice(2,6)}`,type,itemId,metadata,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});}
 function flowInputs(){return{energy:document.getElementById('flowEnergy').value,minutes:Number(document.getElementById('flowMinutes').value),context:document.getElementById('flowContext').value,concentration:document.getElementById('flowConcentration').checked};}
 function flowCandidates(){return ['reading','study','goal'].flatMap(domain=>(state.data[domain]||[]).map(item=>({item,domain})));}
-function flowLastActivity(){return Object.fromEntries((state.data.sessions||[]).slice().sort((a,b)=>new Date(b.startedAt)-new Date(a.startedAt)).map(session=>[session.itemId,session.endedAt||session.startedAt]));}
+function flowLastActivity(){return Object.fromEntries(completedExecutionSessions().map(session=>[session.itemId,session.endedAt||session.startedAt]));}
 function flowLatestEnergy(){const recent=(state.data.energyCheckins||[]).filter(record=>record.energyBefore&&Date.now()-new Date(record.startedAt)<21600000).sort((a,b)=>new Date(b.startedAt)-new Date(a.startedAt))[0];return recent?.energyBefore||'medium';}
 
 function installFlowStyles(){

@@ -4,6 +4,36 @@ state.data.deepWorkSessions=Array.isArray(state.data.deepWorkSessions)?state.dat
 const deepRuntime={selected:null,timer:null,finishAt:null,tabId:`tab-${Date.now()}-${Math.random().toString(36).slice(2)}`,lockKey:'compasso.deepwork.lock.v1'};
 function deepActive(){return state.data.deepWorkSessions.find(session=>deepModel.isActive(session))||null}
 function deepItem(s=deepActive()){return s?state.data[s.domain]?.find(x=>x.id===s.actionId):null}
+function deepWorkRecordId(id){return `deep:${id}`}
+function deepWorkCompletedSessions(domain='all'){
+  return (state.data.deepWorkSessions||[])
+    .filter(session=>session?.state==='completed'&&(domain==='all'||session.domain===domain))
+    .map(session=>{
+      const item=state.data[session.domain]?.find(candidate=>candidate.id===session.actionId);
+      return {id:deepWorkRecordId(session.id),source:'deep-work',deepWorkId:session.id,status:'completed',domain:session.domain,itemId:session.actionId,startedAt:session.startedAt,endedAt:session.endedAt||session.startedAt,durationMs:Math.max(0,Number(session.actualMinutes)||0)*60000,intent:session.expectedOutcome||'',reflection:session.completionNote||'',nextAction:session.nextAction||'',completionCriterion:session.completionCriterion||'',readingFormat:item?.readingFormat||null,studyUnit:item?.studyUnit||null,startValue:null,endValue:null};
+    })
+}
+function completedExecutionSessions(domain='all'){
+  const regular=(state.data.sessions||[]).filter(session=>session.status==='completed'&&(domain==='all'||session.domain===domain));
+  return [...regular,...deepWorkCompletedSessions(domain)].sort((a,b)=>new Date(b.endedAt||b.startedAt)-new Date(a.endedAt||a.startedAt));
+}
+function deleteDeepWorkSession(id){
+  const deepWorkId=String(id||'').replace(/^deep:/,'');
+  const session=(state.data.deepWorkSessions||[]).find(candidate=>candidate.id===deepWorkId);
+  if(!session||!confirm('Excluir este Deep Work? O tempo, o resultado e a evidência vinculada deixarão de contar nos painéis.'))return false;
+  state.data.deepWorkSessions=state.data.deepWorkSessions.filter(candidate=>candidate.id!==deepWorkId);
+  state.data.evidence=(state.data.evidence||[]).filter(item=>item.sessionId!==deepWorkRecordId(deepWorkId));
+  deepSave('Deep Work excluído');
+  return true;
+}
+function deepWorkRegisterEvidence(session){
+  const summary=(session.completionNote||'').trim();
+  if(summary.length<3)return;
+  state.data.evidence=Array.isArray(state.data.evidence)?state.data.evidence:[];
+  const sessionId=deepWorkRecordId(session.id);
+  if(state.data.evidence.some(item=>item.sessionId===sessionId))return;
+  state.data.evidence.unshift({id:`e${Date.now()}${Math.random().toString(36).slice(2,7)}`,schemaVersion:1,sessionId,itemId:session.actionId,domain:session.domain,type:'deliverable',summary,details:(session.nextAction||'').trim(),createdAt:session.endedAt||new Date().toISOString()});
+}
 function deepSave(message){window.CompassoStorage?.save?.(STORAGE_KEY,state.data);localStorage.setItem(STORAGE_KEY,JSON.stringify(state.data));renderAll();if(message)showToast(message)}
 function deepLock(sessionId){localStorage.setItem(deepRuntime.lockKey,JSON.stringify({tabId:deepRuntime.tabId,sessionId,updatedAt:Date.now()}))}
 function deepUnlock(){try{const x=JSON.parse(localStorage.getItem(deepRuntime.lockKey)||'{}');if(x.tabId===deepRuntime.tabId)localStorage.removeItem(deepRuntime.lockKey)}catch{}}
@@ -20,7 +50,7 @@ deepStart.onclick=()=>{if(deepActive()||deepLockedElsewhere())return showToast('
 deepPause.onclick=()=>{const s=deepActive();if(!s)return;if(s.state==='running'){const reason=prompt('Motivo da pausa (opcional):')||'';Object.assign(s,deepModel.transition(s,'pause',new Date().toISOString(),{reason}))}else Object.assign(s,deepModel.transition(s,'resume'));deepSave(s.state==='paused'?'Sessão pausada':'Sessão retomada');deepTick()};
 deepCapture.onclick=()=>{const s=deepActive(),value=deepDistraction.value.trim();if(!s||!value)return;Object.assign(s,deepModel.addDistraction(s,value));deepDistraction.value='';deepSave('Distração guardada sem sair do foco');deepRender()};
 let deepFinishKind='complete';function deepShowFinish(kind){const s=deepActive();if(!s)return;deepFinishKind=kind;deepRuntime.finishAt=new Date().toISOString();if(s.state==='running')Object.assign(s,deepModel.transition(s,'pause',deepRuntime.finishAt));clearInterval(deepRuntime.timer);deepRuntime.timer=null;deepClock.textContent=deepFormat(deepModel.elapsedMs(s,Date.parse(deepRuntime.finishAt)));deepFinish.classList.remove('deep-hidden');deepReasonLabel.classList.toggle('deep-hidden',kind!=='interrupt');deepConfirmFinish.textContent=kind==='interrupt'?'Salvar interrupção':'Salvar conclusão';deepSave();deepFinish.scrollIntoView({behavior:'smooth',block:'nearest'});(kind==='interrupt'?deepReason:deepCompletionNote).focus()}deepComplete.onclick=()=>deepShowFinish('complete');deepInterrupt.onclick=()=>deepShowFinish('interrupt');
-deepConfirmFinish.onclick=()=>{const s=deepActive();if(!s)return;if(deepFinishKind==='interrupt'&&!deepReason.value.trim())return showToast('Informe o motivo da interrupção');clearInterval(deepRuntime.timer);deepRuntime.timer=null;const endedAt=deepRuntime.finishAt||new Date().toISOString();Object.assign(s,deepModel.transition(s,deepFinishKind,endedAt,{completionNote:deepCompletionNote.value,nextAction:deepNextAction.value,energyAfter:deepEnergyAfter.value,reason:deepReason.value}));deepUnlock();deepSave(deepFinishKind==='complete'?'Sessão concluída':'Sessão interrompida');deepResetFinish();deepDialog.close()};
+deepConfirmFinish.onclick=()=>{const s=deepActive();if(!s)return;if(deepFinishKind==='interrupt'&&!deepReason.value.trim())return showToast('Informe o motivo da interrupção');clearInterval(deepRuntime.timer);deepRuntime.timer=null;const endedAt=deepRuntime.finishAt||new Date().toISOString();Object.assign(s,deepModel.transition(s,deepFinishKind,endedAt,{completionNote:deepCompletionNote.value,nextAction:deepNextAction.value,energyAfter:deepEnergyAfter.value,reason:deepReason.value}));if(deepFinishKind==='complete')deepWorkRegisterEvidence(s);deepUnlock();deepSave(deepFinishKind==='complete'?'Sessão concluída':'Sessão interrompida');deepResetFinish();deepDialog.close()};
 deepExit.onclick=()=>{if(deepActive()&&!confirm('A sessão continua ativa. Sair da tela de foco?'))return;deepDialog.close()};deepDialog.addEventListener('cancel',e=>{if(deepActive()&&!confirm('A sessão continua ativa. Sair da tela de foco?'))e.preventDefault()});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-deep]');if(b){const[d,id]=b.dataset.deep.split(':');deepOpen(d,id)}});window.addEventListener('beforeunload',e=>{if(deepActive()){window.CompassoStorage?.save?.(STORAGE_KEY,state.data);e.preventDefault()}});window.addEventListener('storage',e=>{if(e.key===STORAGE_KEY){const incoming=JSON.parse(e.newValue||'{}');if(Array.isArray(incoming.deepWorkSessions)){state.data.deepWorkSessions=incoming.deepWorkSessions.map(x=>deepModel.normalize(x)).filter(Boolean);deepRender()}}});
 if(deepActive())deepTick();
