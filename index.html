@@ -1189,7 +1189,9 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     });
 
     document.getElementById('exportBtn').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(state.data, null, 2)], {type:'application/json'});
+      if (!confirm('O backup pode conter registros privados. Deseja continuar a exportação?')) return;
+      const exportData = globalThis.CompassoJournalFeature?.prepareExport?.(state.data) || state.data;
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {type:'application/json'});
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `compasso-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); showToast('Backup exportado');
     });
     document.getElementById('importInput').addEventListener('change', async event => {

@@ -40,6 +40,9 @@ O percentual e o restante são calculados automaticamente.
 - Destilação opcional de notas em essência, aplicação e pergunta, preservando integralmente o corpo Markdown.
 - Etapa condicional na Revisão semanal para processar as capturas mais antigas, sem bloquear a conclusão da revisão.
 - Visão **Hoje** com plano diário curto e próximas ações.
+- Journal local-first no nível Essencial, com registro rápido de tarefas, eventos e notas, intenção diária e fechamento do dia.
+- Planejamento mensal, calendário futuro e coleções temáticas no Journal, incluindo migração explícita de tarefas e histórico auditável.
+- Transformação de entradas do Journal em notas, ações de Hoje, capturas, perguntas de Active Recall e evidências sem perder a origem.
 - Criação manual de ações independentes ou vinculadas a uma frente.
 - Fila inteligente baseada no foco semanal e nas frentes ativas.
 - Flow Matching com até três recomendações explicáveis por energia, tempo, contexto e concentração.
@@ -103,7 +106,7 @@ O percentual e o restante são calculados automaticamente.
 O Compasso segue uma abordagem **local-first**:
 
 - O repositório contém somente dados de demonstração genéricos.
-- Leituras, notas, capturas, estudos, metas, sessões, evidências e revisões ficam no armazenamento local do navegador.
+- Leituras, notas, capturas, estudos, metas, sessões, evidências, revisões e registros do Journal ficam no armazenamento local do navegador.
 - Nenhum dado pessoal é enviado ao GitHub ou a um servidor externo.
 - Backups JSON, vaults Markdown e relatórios CSV são exportados apenas quando o usuário solicita.
 - A análise de ZIPs e pastas Markdown ocorre integralmente no navegador.
@@ -204,6 +207,12 @@ context-rag-feature.js
 
 context-learning-feature.js
 └── perguntas contextuais revisáveis e avaliação orientativa de explicações
+
+journal-model.js
+└── schema, migrações, estados, filtros, métricas, coleções e planejamento futuro do Journal
+
+journal-feature.js
+└── Diário, Mês, Futuro, Coleções, captura em sessão e integrações com execução e conhecimento
 
 manifest.webmanifest
 └── identidade e instalação PWA

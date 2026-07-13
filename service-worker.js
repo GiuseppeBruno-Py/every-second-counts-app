@@ -1,4 +1,4 @@
-const CACHE_NAME = 'compasso-pages-v43';
+const CACHE_NAME = 'compasso-pages-v44';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,8 @@ const APP_SHELL = [
   './feature-runtime.js',
   './capture-model.js',
   './capture-feature.js',
+  './journal-model.js',
+  './journal-feature.js',
   './today-feature.js',
   './sessions-feature.js',
   './goal-links-feature.js',
@@ -85,6 +87,8 @@ const CONTEXT_RAG_MARKER = '/* Compasso · RAG local sobre dados do usuario';
 const CONTEXT_LEARNING_MARKER = '/* Compasso · Perguntas contextuais e avaliacao de explicacoes';
 const CAPTURE_MODEL_MARKER = '/* Compasso · Modelo puro da caixa de entrada de capturas */';
 const CAPTURE_MARKER = '/* Compasso · Capturas, caixa de entrada e destilacao de notas';
+const JOURNAL_MODEL_MARKER = '/* Compasso · Modelo puro de Journaling */';
+const JOURNAL_MARKER = '/* Compasso · Journaling integrado';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -155,7 +159,7 @@ async function readCachedText(path) {
 async function enhanceHtmlResponse(response) {
   if (!response) return response;
 
-  const [html, featureRuntimeCode, todayCode, sessionsCode, goalLinksCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, sessionCompanionCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, contextRagCode, contextLearningCode, captureModelCode, captureCode, uxModelCode, uxCode] = await Promise.all([
+  const [html, featureRuntimeCode, todayCode, sessionsCode, goalLinksCode, contingencyModelCode, contingencyCode, deepWorkModelCode, deepWorkCode, sessionCompanionCode, ritualModelCode, ritualCode, energyModelCode, energyCode, flowModelCode, flowCode, evidenceCode, recallCode, weaknessCode, outcomesCode, driveSyncCode, driveReconcileCode, weeklyReviewCode, weeklyPlanModelCode, weeklyPlanCode, analyticsCode, dictionaryCode, knowledgeGraphCode, knowledgeGraphLifecycleCode, markdownVaultCode, markdownVaultHardeningCode, ankiObsidianCode, contextRagCode, contextLearningCode, captureModelCode, captureCode, journalModelCode, journalCode, uxModelCode, uxCode] = await Promise.all([
     response.text(),
     readCachedText('./feature-runtime.js'),
     readCachedText('./today-feature.js'),
@@ -192,6 +196,8 @@ async function enhanceHtmlResponse(response) {
     readCachedText('./context-learning-feature.js'),
     readCachedText('./capture-model.js'),
     readCachedText('./capture-feature.js'),
+    readCachedText('./journal-model.js'),
+    readCachedText('./journal-feature.js'),
     readCachedText('./ux-consolidation-model.js'),
     readCachedText('./ux-consolidation-feature.js')
   ]);
@@ -223,6 +229,7 @@ async function enhanceHtmlResponse(response) {
   headers.set('x-compasso-anki-obsidian', 'v1');
   headers.set('x-compasso-context-rag', 'v1');
   headers.set('x-compasso-captures', 'v1');
+  headers.set('x-compasso-journal', 'v1');
   headers.set('x-compasso-ux-consolidation', 'v1');
 
   const withStorage = integrateIndexedDb(html);
@@ -261,7 +268,9 @@ async function enhanceHtmlResponse(response) {
   const withContextLearning = integrateFeature(withContextRag, contextLearningCode, CONTEXT_LEARNING_MARKER);
   const withCaptureModel = integrateFeature(withContextLearning, captureModelCode, CAPTURE_MODEL_MARKER);
   const withCaptures = integrateFeature(withCaptureModel, captureCode, CAPTURE_MARKER);
-  const withUxModel = integrateFeature(withCaptures, uxModelCode, UX_MODEL_MARKER);
+  const withJournalModel = integrateFeature(withCaptures, journalModelCode, JOURNAL_MODEL_MARKER);
+  const withJournal = integrateFeature(withJournalModel, journalCode, JOURNAL_MARKER);
+  const withUxModel = integrateFeature(withJournal, uxModelCode, UX_MODEL_MARKER);
   const enhanced = integrateFeature(withUxModel, uxCode, UX_MARKER);
 
   return new Response(enhanced, {

@@ -49,4 +49,9 @@ test('service worker insere o modelo de capturas antes da feature no HTML de pro
   assert.ok(modelIndex >= 0, 'capture-model.js deve participar do HTML composto');
   assert.ok(featureIndex > modelIndex, 'o modelo deve carregar antes da feature');
   assert.match(html, /root\.CompassoCaptureModel = api/);
+  const journalModelIndex = html.indexOf('/* Compasso · Modelo puro de Journaling */');
+  const journalFeatureIndex = html.indexOf('/* Compasso · Journaling integrado');
+  assert.ok(journalModelIndex > featureIndex, 'journal-model.js deve participar do HTML composto');
+  assert.ok(journalFeatureIndex > journalModelIndex, 'o modelo do Journal deve carregar antes da interface');
+  assert.match(response.headers.get('x-compasso-journal') || '', /v1/);
 });
