@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 async function journalReady(page) {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
+  await page.route(/^https?:\/(?!\/127\.0\.0\.1)/, route => route.abort());
   await page.addInitScript(() => localStorage.setItem('compasso.ux.mode.v1', 'essential'));
   await page.goto('/', { waitUntil:'domcontentloaded' });
   await page.waitForFunction(() => globalThis.CompassoFeatures?.installed === true);
@@ -19,11 +20,11 @@ async function quickEntry(page, content) {
 test('Journal 1 · registro rápido persiste após recarregar', async ({ page }) => {
   await journalReady(page);
   await quickEntry(page, '/tarefa Preparar os testes do pipeline');
-  await expect(page.locator('.journal-entry-content')).toContainText('Preparar os testes do pipeline');
+  await expect(page.locator('#journalTimeline .journal-entry-content')).toContainText('Preparar os testes do pipeline');
   await page.reload();
   await page.waitForFunction(() => globalThis.CompassoFeatures?.installed);
   await page.locator('[data-view="journal"]').click();
-  await expect(page.locator('.journal-entry-content')).toContainText('Preparar os testes do pipeline');
+  await expect(page.locator('#journalTimeline .journal-entry-content')).toContainText('Preparar os testes do pipeline');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('compasso.app.v1') || '{}').journalEntries?.[0]?.taskStatus)).toBe('open');
 });
 
@@ -55,7 +56,7 @@ test('Journal 3 · migração exige decisão e preserva histórico', async ({ pa
     return { origin:entries.find(item => item.taskStatus === 'migrated')?.taskStatus, destination:entries.find(item => item.taskStatus === 'open')?.migrationHistory?.[0]?.reason };
   })).toEqual({ origin:'migrated', destination:'lack_of_time' });
   await page.locator('[data-journal-date="1"]').click();
-  await expect(page.locator('.journal-entry-content')).toContainText('Revisar arquitetura do sync');
+  await expect(page.locator('#journalTimeline .journal-entry-content')).toContainText('Revisar arquitetura do sync');
 });
 
 test('Journal 4 · aprendizado vira nota e mantém referência de origem', async ({ page }) => {
@@ -116,5 +117,5 @@ test('Journal 7 · PWA cria e restaura entrada sem rede', async ({ page, context
   await page.reload({ waitUntil:'domcontentloaded' });
   await page.waitForFunction(() => globalThis.CompassoFeatures?.installed);
   await page.locator('[data-view="journal"]').click();
-  await expect(page.locator('.journal-entry-content')).toContainText('Registro criado offline');
+  await expect(page.locator('#journalTimeline .journal-entry-content')).toContainText('Registro criado offline');
 });

@@ -1,4 +1,28 @@
-const fs=require('node:fs');const path=require('node:path');
+const fs=require('node:fs');
+const path=require('node:path');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'.test-dist');
-const files=['feature-runtime.js','today-feature.js','sessions-feature.js','goal-links-feature.js','contingency-model.js','contingency-feature.js','deep-work-model.js','deep-work-feature.js','session-companion-feature.js','ritual-model.js','ritual-feature.js','evidence-feature.js','recall-feature.js','weakness-feature.js','outcomes-feature.js','weekly-review-feature.js','analytics-feature.js','capture-model.js','capture-feature.js','journal-model.js','journal-feature.js','ux-consolidation-model.js','ux-consolidation-feature.js'];
-let html=fs.readFileSync(path.join(root,'index.html'),'utf8');const code=files.map(file=>fs.readFileSync(path.join(root,file),'utf8')).join('\n\n');const point='    renderAll();\n    const requestedView';if(!html.includes(point))throw Error('bootstrap point not found');html=html.replace(point,()=>`    ${code}\n\n    renderAll();\n    const requestedView`);fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'index.html'),html);const moduleCode=html.match(/<script(?: type="module")?>([\s\S]*?)<\/script>/)?.[1];if(moduleCode)fs.writeFileSync(path.join(out,'app.mjs'),moduleCode);for(const asset of ['compasso-icon.svg','service-worker.js'])if(fs.existsSync(path.join(root,asset)))fs.copyFileSync(path.join(root,asset),path.join(out,asset));
+const manifest=require(path.join(root,'app-manifest.js'));
+let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const code=manifest.modules.filter(module=>module.browserJourney).map(module=>{
+  const source=fs.readFileSync(path.join(root,module.file),'utf8');
+  return `globalThis.CompassoBootstrapDiagnostic?.start('${module.file}');\n${source}\nglobalThis.CompassoBootstrapDiagnostic?.done('${module.file}');`;
+}).join('\n\n');
+const point='    renderAll();\n    const requestedView';
+if(!html.includes(point))throw Error('bootstrap point not found');
+html=html.replace('</head>','  <link rel="stylesheet" href="./app-ui.css">\n  <script src="./app-manifest.js"></script>\n  <script src="./bootstrap-diagnostics.js"></script>\n</head>');
+html=html.replace(point,()=>`    ${code}\n\n    renderAll();\n    const requestedView`);
+fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'index.html'),html);
+const moduleCode=html.match(/<script(?: type="module")?>([\s\S]*?)<\/script>/)?.[1];if(moduleCode)fs.writeFileSync(path.join(out,'app.mjs'),moduleCode);
+const journeyFiles=new Set(manifest.modules.filter(module=>module.browserJourney).map(module=>module.file));
+const moduleFiles=new Set(manifest.modules.map(module=>module.file));
+for(const asset of manifest.assets.map(value=>value.replace(/^\.\//,''))){
+  if(moduleFiles.has(asset)&&!journeyFiles.has(asset))continue;
+  const source=path.join(root,asset||'index.html');
+  if(asset&&asset!=='index.html'&&fs.existsSync(source)&&fs.statSync(source).isFile())fs.copyFileSync(source,path.join(out,asset));
+}
+const journeyManifest={
+  ...manifest,
+  modules:manifest.modules.filter(module=>module.browserJourney),
+  assets:manifest.assets.filter(value=>{const asset=value.replace(/^\.\//,'');return!moduleFiles.has(asset)||journeyFiles.has(asset)})
+};
+fs.writeFileSync(path.join(out,'app-manifest.js'),`${fs.readFileSync(path.join(root,'app-manifest.js'),'utf8')}\n;globalThis.CompassoAppManifest=Object.freeze(${JSON.stringify(journeyManifest)});\n`);

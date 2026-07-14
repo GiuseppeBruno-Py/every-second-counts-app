@@ -50,8 +50,11 @@ function ensureSyncMetadata(data, touchChanged = false) {
   data._sync.deviceId ||= crypto.randomUUID();
   data._sync.tombstones = data._sync.tombstones && typeof data._sync.tombstones === 'object' ? data._sync.tombstones : {};
 
-  Object.entries(data).forEach(([collection, records]) => {
-    if (collection === '_sync' || !Array.isArray(records)) return;
+  const syncCollections = globalThis.CompassoStateFoundation
+    ? globalThis.CompassoStateFoundation.collectionNames('array')
+    : Object.keys(data).filter(collection => Array.isArray(data[collection]));
+  syncCollections.forEach(collection => {
+    const records = Array.isArray(data[collection]) ? data[collection] : [];
     const currentIds = new Set();
     records.forEach(record => {
       if (!record || typeof record !== 'object') return;
@@ -76,8 +79,11 @@ function ensureSyncMetadata(data, touchChanged = false) {
 
 function captureSyncBaseline(data) {
   const next = new Map();
-  Object.entries(data || {}).forEach(([collection, records]) => {
-    if (!Array.isArray(records)) return;
+  const collections = globalThis.CompassoStateFoundation
+    ? globalThis.CompassoStateFoundation.collectionNames('array')
+    : Object.keys(data || {}).filter(collection => Array.isArray(data[collection]));
+  collections.forEach(collection => {
+    const records = Array.isArray(data?.[collection]) ? data[collection] : [];
     records.forEach(record => {
       if (record?.id) next.set(syncRecordKey(collection, record.id), syncFingerprint(record));
     });
@@ -95,6 +101,9 @@ function installSyncAwareSave() {
 }
 
 function mergeSyncData(localData, remoteData) {
+  if (globalThis.CompassoStateFoundation) {
+    return ensureSyncMetadata(globalThis.CompassoStateFoundation.merge(localData, remoteData));
+  }
   const local = ensureSyncMetadata(syncClone(localData));
   const remote = ensureSyncMetadata(syncClone(remoteData));
   const merged = { ...local };
