@@ -40,6 +40,23 @@ test('Journal 1.1 · intenção fica visível em Hoje e pode ser editada', async
   await expect(page.locator('#journalIntention')).toBeFocused();
 });
 
+test('Journal 1.2 · intenção já aparece ao abrir o app, sem abrir o Journal antes', async ({ page }) => {
+  const intention = 'Resolver o exercício mais importante antes de abrir outra frente';
+  await page.route(/^https?:\/(?!\/127\.0\.0\.1)/, route => route.abort());
+  await page.goto('/', { waitUntil:'domcontentloaded' });
+  await page.waitForFunction(() => globalThis.CompassoFeatures?.installed === true && globalThis.CompassoInformationArchitecture);
+  await page.evaluate(value => {
+    const now = new Date(); const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const data = JSON.parse(localStorage.getItem('compasso.app.v1') || '{}');
+    data.dailyJournals = { ...(data.dailyJournals || {}), [day]:{ ...(data.dailyJournals?.[day] || {}), date:day, intention:value, intentionRef:null, entryIds:[] } };
+    localStorage.setItem('compasso.app.v1', JSON.stringify(data));
+  }, intention);
+  await page.reload({ waitUntil:'domcontentloaded' });
+  await page.waitForFunction(() => globalThis.CompassoFeatures?.installed === true && globalThis.CompassoInformationArchitecture);
+  await expect(page.locator('#journalTodayPanel')).toBeVisible();
+  await expect(page.locator('#journalTodayIntention')).toContainText(intention);
+});
+
 test('Journal 2 · conclusão atualiza estado, métrica e persistência', async ({ page }) => {
   await journalReady(page);
   await quickEntry(page, '/tarefa Concluir fluxo de Journaling');
