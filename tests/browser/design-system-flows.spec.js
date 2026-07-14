@@ -133,3 +133,85 @@ test("snapshots responsivos de 360, 768 e 1280 px não têm overflow", async ({
     });
   }
 });
+
+test("botões escuros mantêm contraste e ações globais têm hierarquia distinta", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "validação do tema móvel");
+  await open(page);
+  const result = await page.evaluate(() => {
+    const rgb = (value) =>
+      (value.match(/[\d.]+/g) || [0, 0, 0]).slice(0, 3).map(Number);
+    const luminance = (value) => {
+      const channel = (item) => {
+        const normalized = item / 255;
+        return normalized <= 0.04045
+          ? normalized / 12.92
+          : ((normalized + 0.055) / 1.055) ** 2.4;
+      };
+      const [red, green, blue] = rgb(value).map(channel);
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    const contrast = (foreground, background) => {
+      const light = Math.max(luminance(foreground), luminance(background));
+      const dark = Math.min(luminance(foreground), luminance(background));
+      return (light + 0.05) / (dark + 0.05);
+    };
+    const sidebar = getComputedStyle(document.querySelector(".sidebar"));
+    const navContrast = [
+      ...document.querySelectorAll(".ia-primary-nav .nav-item"),
+    ].map((button) =>
+      contrast(getComputedStyle(button).color, sidebar.backgroundColor),
+    );
+    const register = getComputedStyle(
+      document.getElementById("captureGlobalBtn"),
+    );
+    const execute = getComputedStyle(document.getElementById("iaExecuteBtn"));
+    return {
+      navContrast,
+      register: { background: register.backgroundColor, color: register.color },
+      execute: { background: execute.backgroundColor, color: execute.color },
+    };
+  });
+  expect(Math.min(...result.navContrast)).toBeGreaterThanOrEqual(4.5);
+  expect(result.register.background).not.toBe(result.execute.background);
+  expect(result.register.color).not.toBe(result.execute.color);
+});
+
+test("timer móvel nasce acima da navegação e pode ser arrastado com segurança", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "interação móvel");
+  await open(page);
+  await page.locator("#studyGrid .ux-execute").first().click();
+  await page.locator('[data-ux-run="ideal"]').click();
+  await page
+    .locator("#sessionStartForm")
+    .evaluate((form) => form.requestSubmit());
+  const companion = page.locator("#sessionCompanion");
+  await expect(companion).toBeVisible();
+  const initial = await page.evaluate(() => {
+    const timer = document
+      .getElementById("sessionCompanion")
+      .getBoundingClientRect();
+    const nav = document.querySelector(".sidebar").getBoundingClientRect();
+    return { top: timer.top, bottom: timer.bottom, navTop: nav.top };
+  });
+  expect(initial.bottom).toBeLessThanOrEqual(initial.navTop - 8);
+  const handle = await page.locator("#sessionCompanionOpen").boundingBox();
+  await page.mouse.move(
+    handle.x + handle.width / 2,
+    handle.y + handle.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(handle.x + handle.width / 2, handle.y - 110, {
+    steps: 5,
+  });
+  await page.mouse.up();
+  const moved = await companion.boundingBox();
+  expect(moved.y).toBeLessThan(initial.top - 80);
+  const navTop = await page
+    .locator(".sidebar")
+    .evaluate((nav) => nav.getBoundingClientRect().top);
+  expect(moved.y + moved.height).toBeLessThanOrEqual(navTop - 8);
+});
