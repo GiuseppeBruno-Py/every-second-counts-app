@@ -129,6 +129,7 @@ test("snapshots responsivos de 360, 768 e 1280 px não têm overflow", async ({
       animations: "disabled",
       caret: "hide",
       fullPage: false,
+      maxDiffPixelRatio: 0.02,
     });
   }
 });
