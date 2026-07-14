@@ -4,6 +4,7 @@
     ['state-foundation.js','/* Compasso · Fundação central de estado'],
     ['feature-runtime.js','/* Compasso · Runtime central de features e eventos'],
     ['app-services.js','/* Compasso · Serviços de domínio'],
+    ['design-system-model.js','/* Compasso · Contrato declarativo do design system'],
     ['today-feature.js','/* Compasso · Hoje e próximas ações'],
     ['sessions-feature.js','/* Compasso · Sessões de leitura e estudo'],
     ['goal-links-feature.js','/* Compasso · Metas conectadas a leituras e estudos'],
@@ -43,14 +44,15 @@
     ['ux-consolidation-model.js','CompassoUxModel'],
     ['ux-consolidation-feature.js','/* Compasso · Consolidação da experiência e hierarquia visual'],
     ['information-architecture-model.js','CompassoInformationArchitectureModel'],
-    ['information-architecture-feature.js','/* Compasso · Navegação central por áreas']
+    ['information-architecture-feature.js','/* Compasso · Navegação central por áreas'],
+    ['design-system-feature.js','/* Compasso · Comportamento acessível do design system']
   ];
   const browserJourneyModules=new Set([
-    'state-foundation.js','feature-runtime.js','app-services.js','today-feature.js','sessions-feature.js','goal-links-feature.js',
+    'state-foundation.js','feature-runtime.js','app-services.js','design-system-model.js','today-feature.js','sessions-feature.js','goal-links-feature.js',
     'contingency-model.js','contingency-feature.js','deep-work-model.js','deep-work-feature.js','session-companion-feature.js',
     'ritual-model.js','ritual-feature.js','evidence-feature.js','recall-feature.js','weakness-feature.js','outcomes-feature.js',
     'weekly-review-feature.js','analytics-feature.js','capture-model.js','capture-feature.js','journal-model.js','journal-feature.js',
-    'ux-consolidation-model.js','ux-consolidation-feature.js','information-architecture-model.js','information-architecture-feature.js'
+    'ux-consolidation-model.js','ux-consolidation-feature.js','information-architecture-model.js','information-architecture-feature.js','design-system-feature.js'
   ]);
   const moduleEntries = modules.map(([file,marker],order)=>({file,marker,order,required:order<3,browserJourney:browserJourneyModules.has(file)}));
 
@@ -65,13 +67,13 @@
     {name:'dailyJournals',type:'keyed-map',identity:'date',merge:'entry-timestamp',sync:true}
   ];
   const assets = [
-    './','./index.html','./app-manifest.js','./bootstrap-diagnostics.js','./app-ui.css','./service-worker.js','./storage.js',
+    './','./index.html','./app-manifest.js','./bootstrap-diagnostics.js','./app-ui.css','./design-system.css','./service-worker.js','./storage.js',
     ...moduleEntries.map(item=>`./${item.file}`),
     './manifest.webmanifest','./compasso-icon.svg','./compasso.ico','./compasso-icon-192.png','./compasso-icon-512.png'
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v46',
+    cacheName:'compasso-pages-v47',
     bootstrapScript:'bootstrap-diagnostics.js',
     modules:Object.freeze(moduleEntries),
     collections:Object.freeze(collections),

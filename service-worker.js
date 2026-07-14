@@ -25,7 +25,7 @@ function integrateIndexedDb(html){
 }
 function integrateSupportAssets(html){
   let result=html;
-  if(!result.includes('src="./bootstrap-diagnostics.js"'))result=result.replace('</head>','  <link rel="stylesheet" href="./app-ui.css">\n  <script src="./app-manifest.js"></script>\n  <script src="./bootstrap-diagnostics.js"></script>\n</head>');
+  if(!result.includes('src="./bootstrap-diagnostics.js"'))result=result.replace('</head>','  <link rel="stylesheet" href="./app-ui.css">\n  <link rel="stylesheet" href="./design-system.css">\n  <script src="./app-manifest.js"></script>\n  <script src="./bootstrap-diagnostics.js"></script>\n</head>');
   return result;
 }
 function integrateFeature(html,featureCode,module){

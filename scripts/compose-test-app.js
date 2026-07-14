@@ -9,7 +9,7 @@ const code=manifest.modules.filter(module=>module.browserJourney).map(module=>{
 }).join('\n\n');
 const point='    renderAll();\n    const requestedView';
 if(!html.includes(point))throw Error('bootstrap point not found');
-html=html.replace('</head>','  <link rel="stylesheet" href="./app-ui.css">\n  <script src="./app-manifest.js"></script>\n  <script src="./bootstrap-diagnostics.js"></script>\n</head>');
+html=html.replace('</head>','  <link rel="stylesheet" href="./app-ui.css">\n  <link rel="stylesheet" href="./design-system.css">\n  <script src="./app-manifest.js"></script>\n  <script src="./bootstrap-diagnostics.js"></script>\n</head>');
 html=html.replace(point,()=>`    ${code}\n\n    renderAll();\n    const requestedView`);
 fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'index.html'),html);
 const moduleCode=html.match(/<script(?: type="module")?>([\s\S]*?)<\/script>/)?.[1];if(moduleCode)fs.writeFileSync(path.join(out,'app.mjs'),moduleCode);

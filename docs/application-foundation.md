@@ -1,5 +1,7 @@
 # Fundação modular do Compasso
 
+> A camada visual e os contratos responsivos estão documentados em [Design system do Compasso](./design-system.md).
+
 Esta fundação mantém o aplicativo estático e local-first, mas remove a necessidade de novas features conhecerem detalhes internos umas das outras.
 
 ## Contratos
