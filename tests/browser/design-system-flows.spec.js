@@ -182,6 +182,8 @@ test("timer móvel nasce acima da navegação e pode ser arrastado com seguranç
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "interação móvel");
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
   await open(page);
   await page.locator("#studyGrid .ux-execute").first().click();
   await page.locator('[data-ux-run="ideal"]').click();
@@ -198,20 +200,32 @@ test("timer móvel nasce acima da navegação e pode ser arrastado com seguranç
     return { top: timer.top, bottom: timer.bottom, navTop: nav.top };
   });
   expect(initial.bottom).toBeLessThanOrEqual(initial.navTop - 8);
-  const handle = await page.locator("#sessionCompanionOpen").boundingBox();
-  await page.mouse.move(
-    handle.x + handle.width / 2,
-    handle.y + handle.height / 2,
-  );
-  await page.mouse.down();
-  await page.mouse.move(handle.x + handle.width / 2, handle.y - 110, {
-    steps: 5,
-  });
-  await page.mouse.up();
+  for (const distance of [-110, 40]) {
+    const handle = await page.locator("#sessionCompanionOpen").boundingBox();
+    await page.mouse.move(
+      handle.x + handle.width / 2,
+      handle.y + handle.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      handle.x + handle.width / 2,
+      handle.y + handle.height / 2 + distance,
+      { steps: 5 },
+    );
+    await page.mouse.up();
+  }
   const moved = await companion.boundingBox();
-  expect(moved.y).toBeLessThan(initial.top - 80);
+  expect(moved.y).toBeLessThan(initial.top - 40);
   const navTop = await page
     .locator(".sidebar")
     .evaluate((nav) => nav.getBoundingClientRect().top);
   expect(moved.y + moved.height).toBeLessThanOrEqual(navTop - 8);
+  await expect(page.locator("#compassoBootstrapAlert")).toHaveCount(0);
+  expect(pageErrors).toEqual([]);
+  const diagnosticErrors = await page.evaluate(() =>
+    CompassoBootstrapDiagnostic.report().filter((entry) =>
+      ["error", "rejection"].includes(entry.type),
+    ),
+  );
+  expect(diagnosticErrors).toEqual([]);
 });

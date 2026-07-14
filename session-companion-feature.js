@@ -111,7 +111,8 @@
   }
   function startDrag(event) {
     if (matchMedia("(min-width: 521px)").matches || event.button > 0) return;
-    const companion = document.getElementById("sessionCompanion"),
+    const handle = event.currentTarget,
+      companion = document.getElementById("sessionCompanion"),
       rect = companion.getBoundingClientRect();
     runtime.drag = {
       pointerId: event.pointerId,
@@ -121,7 +122,7 @@
       top: rect.top,
       moved: false,
     };
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    handle.setPointerCapture?.(event.pointerId);
     const move = (moveEvent) => {
       if (!runtime.drag || moveEvent.pointerId !== runtime.drag.pointerId)
         return;
@@ -133,14 +134,14 @@
       applyDragPosition(runtime.drag.left + dx, runtime.drag.top + dy);
     };
     const end = (endEvent) => {
-      event.currentTarget.removeEventListener("pointermove", move);
-      event.currentTarget.removeEventListener("pointerup", end);
-      event.currentTarget.removeEventListener("pointercancel", end);
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", end);
+      handle.removeEventListener("pointercancel", end);
       finishDrag(endEvent);
     };
-    event.currentTarget.addEventListener("pointermove", move);
-    event.currentTarget.addEventListener("pointerup", end);
-    event.currentTarget.addEventListener("pointercancel", end);
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", end);
+    handle.addEventListener("pointercancel", end);
   }
   function openActivity() {
     const current = activity();
