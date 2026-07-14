@@ -6,9 +6,9 @@ async function journalReady(page) {
   await page.route(/^https?:\/(?!\/127\.0\.0\.1)/, route => route.abort());
   await page.addInitScript(() => localStorage.setItem('compasso.ux.mode.v1', 'essential'));
   await page.goto('/', { waitUntil:'domcontentloaded' });
-  await page.waitForFunction(() => globalThis.CompassoFeatures?.installed === true);
+  await page.waitForFunction(() => globalThis.CompassoFeatures?.installed === true && globalThis.CompassoInformationArchitecture);
   if (errors.length) throw new Error(`App bootstrap failed: ${errors.join(' | ')}`);
-  await page.locator('[data-view="journal"]').click();
+  await page.evaluate(() => globalThis.CompassoInformationArchitecture.open('journal'));
   await expect(page.locator('#journalView')).toBeVisible();
 }
 
@@ -23,7 +23,7 @@ test('Journal 1 · registro rápido persiste após recarregar', async ({ page })
   await expect(page.locator('#journalTimeline .journal-entry-content')).toContainText('Preparar os testes do pipeline');
   await page.reload();
   await page.waitForFunction(() => globalThis.CompassoFeatures?.installed);
-  await page.locator('[data-view="journal"]').click();
+  await page.evaluate(() => globalThis.CompassoInformationArchitecture.open('journal'));
   await expect(page.locator('#journalTimeline .journal-entry-content')).toContainText('Preparar os testes do pipeline');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('compasso.app.v1') || '{}').journalEntries?.[0]?.taskStatus)).toBe('open');
 });
@@ -111,11 +111,11 @@ test('Journal 7 · PWA cria e restaura entrada sem rede', async ({ page, context
   await page.evaluate(() => navigator.serviceWorker?.ready);
   await page.reload();
   await page.waitForFunction(() => navigator.serviceWorker?.controller && globalThis.CompassoFeatures?.installed);
-  await page.locator('[data-view="journal"]').click();
+  await page.evaluate(() => globalThis.CompassoInformationArchitecture.open('journal'));
   await context.setOffline(true);
   await quickEntry(page, '/nota Registro criado offline');
   await page.reload({ waitUntil:'domcontentloaded' });
   await page.waitForFunction(() => globalThis.CompassoFeatures?.installed);
-  await page.locator('[data-view="journal"]').click();
+  await page.evaluate(() => globalThis.CompassoInformationArchitecture.open('journal'));
   await expect(page.locator('#journalTimeline .journal-entry-content')).toContainText('Registro criado offline');
 });

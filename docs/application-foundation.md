@@ -26,3 +26,14 @@ Cada módulo informa início e fim ao `CompassoBootstrapDiagnostic`. Exceções 
 ## Renderização
 
 `CompassoFeatures.health().renders` expõe quantidade, média, máximo e renders acima de 50 ms. Features devem preferir hooks direcionados e evitar chamar uma renderização completa em sequência.
+
+## Arquitetura de informação
+
+`information-architecture-model.js` é a fonte única das cinco áreas primárias: Hoje, Frentes, Journal, Revisão e Mais. Cada área e subvisão declara `id`, `label`, `icon`, `level`, `order` e `route`; nenhuma decisão de visibilidade depende do texto exibido.
+
+- Frentes contém Visão geral, Leituras, Estudos e Metas.
+- Revisão contém Revisão semanal, Resultados, Consistência, Active Recall e Caderno de erros.
+- Mais contém Atlas, grafo/relações, IA contextual, integrações, importação, exportação e configurações.
+- Registrar e Executar são ações globais da barra superior, não destinos.
+
+Deep links continuam usando `?view=<rota>`. Rotas antigas válidas abrem a subvisão e anunciam sua área-pai; rotas ou preferências inválidas voltam para Hoje. Novas features devem registrar sua rota no modelo central em vez de inserir um botão na sidebar.

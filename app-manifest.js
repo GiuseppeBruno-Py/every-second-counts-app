@@ -41,14 +41,16 @@
     ['journal-model.js','/* Compasso · Modelo puro de Journaling */'],
     ['journal-feature.js','/* Compasso · Journaling integrado'],
     ['ux-consolidation-model.js','CompassoUxModel'],
-    ['ux-consolidation-feature.js','/* Compasso · Consolidação da experiência e hierarquia visual']
+    ['ux-consolidation-feature.js','/* Compasso · Consolidação da experiência e hierarquia visual'],
+    ['information-architecture-model.js','CompassoInformationArchitectureModel'],
+    ['information-architecture-feature.js','/* Compasso · Navegação central por áreas']
   ];
   const browserJourneyModules=new Set([
     'state-foundation.js','feature-runtime.js','app-services.js','today-feature.js','sessions-feature.js','goal-links-feature.js',
     'contingency-model.js','contingency-feature.js','deep-work-model.js','deep-work-feature.js','session-companion-feature.js',
     'ritual-model.js','ritual-feature.js','evidence-feature.js','recall-feature.js','weakness-feature.js','outcomes-feature.js',
     'weekly-review-feature.js','analytics-feature.js','capture-model.js','capture-feature.js','journal-model.js','journal-feature.js',
-    'ux-consolidation-model.js','ux-consolidation-feature.js'
+    'ux-consolidation-model.js','ux-consolidation-feature.js','information-architecture-model.js','information-architecture-feature.js'
   ]);
   const moduleEntries = modules.map(([file,marker],order)=>({file,marker,order,required:order<3,browserJourney:browserJourneyModules.has(file)}));
 
@@ -69,7 +71,7 @@
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v45',
+    cacheName:'compasso-pages-v46',
     bootstrapScript:'bootstrap-diagnostics.js',
     modules:Object.freeze(moduleEntries),
     collections:Object.freeze(collections),
