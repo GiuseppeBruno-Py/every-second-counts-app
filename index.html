@@ -980,12 +980,15 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     }
 
     function switchView(view) {
+      if (!labels[view] || !document.getElementById(`${view}View`)) return false;
       state.view = view;
       document.querySelectorAll('.view').forEach(el => el.classList.toggle('active', el.id === `${view}View`));
       document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.view === view));
       document.getElementById('pageTitle').textContent = labels[view].title;
       document.getElementById('pageKicker').textContent = labels[view].kicker;
+      globalThis.CompassoFeatures?.emit?.('view:changed', { view });
       window.scrollTo({top:0, behavior:'smooth'});
+      return true;
     }
 
     function openDialog(domain = 'reading', itemId = null) {
