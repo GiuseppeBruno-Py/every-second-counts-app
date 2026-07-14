@@ -1,0 +1,9 @@
+const {test,expect}=require('@playwright/test');
+async function open(page){await page.route('**/*',route=>/googleapis\.com|accounts\.google\.com|gsi\/client/.test(route.request().url())?route.abort():route.continue());await page.goto('/');await page.waitForFunction(()=>globalThis.CompassoFeatures?.installed)}
+test('fundação instala contratos e expõe diagnóstico saudável',async({page})=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));await open(page);
+  const health=await page.evaluate(()=>({installed:globalThis.CompassoFeatures?.installed||false,services:globalThis.CompassoFeatures?.health?.().services||[],diagnostic:globalThis.CompassoBootstrapDiagnostic?.report?.()||[],manifest:globalThis.CompassoAppManifest?.version||0}));
+  expect(errors,JSON.stringify({errors,health},null,2)).toEqual([]);expect(health.installed,JSON.stringify(health,null,2)).toBe(true);expect(health.manifest).toBe(1);expect(health.services).toEqual(expect.arrayContaining(['register','execute','review','knowledge','learning']));
+});
+test('hook com falha não bloqueia o seguinte e fica diagnosticado',async({page})=>{await open(page);const result=await page.evaluate(()=>{let healthy=false;CompassoFeatures.register('browser-broken',{order:2001,afterRender(){throw Error('isolated-browser-test')}});CompassoFeatures.register('browser-healthy',{order:2002,afterRender(){healthy=true}});renderAll();return{healthy,errors:CompassoFeatures.health().errors}});expect(result.healthy).toBe(true);expect(result.errors.some(error=>error.message.includes('isolated-browser-test'))).toBe(true)});
+test('viewport de 360 px não tem overflow horizontal',async({page})=>{await page.setViewportSize({width:360,height:800});await open(page);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth)).toBe(true)});

@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 async function journalReady(page) {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
+  await page.route(/^https?:\/(?!\/127\.0\.0\.1)/, route => route.abort());
   await page.addInitScript(() => localStorage.setItem('compasso.ux.mode.v1', 'essential'));
   await page.goto('/', { waitUntil:'domcontentloaded' });
   await page.waitForFunction(() => globalThis.CompassoFeatures?.installed === true);

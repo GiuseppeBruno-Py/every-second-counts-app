@@ -39,6 +39,11 @@ test('service worker insere o modelo de capturas antes da feature no HTML de pro
     }
   };
 
+  context.importScripts = (...scripts) => scripts.forEach(script => {
+    const file = path.join(root, script.replace(/^\.\//, ''));
+    vm.runInContext(fs.readFileSync(file, 'utf8'), context);
+  });
+
   vm.createContext(context);
   vm.runInContext(fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8'), context);
   const response = await context.enhanceHtmlResponse(new Response(fs.readFileSync(path.join(root, 'index.html'))));

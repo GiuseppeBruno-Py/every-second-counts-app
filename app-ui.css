@@ -1,0 +1,5 @@
+:root{--compasso-space-1:.375rem;--compasso-space-2:.75rem;--compasso-space-3:1rem;--compasso-radius:14px;--compasso-focus:#2563eb;--compasso-danger:#b42318;--compasso-surface:#fff;--compasso-border:rgba(15,23,42,.14)}
+.compasso-bootstrap-alert{position:sticky;top:.5rem;z-index:10000;display:flex;align-items:center;gap:var(--compasso-space-2);margin:.5rem;padding:var(--compasso-space-2) var(--compasso-space-3);border:1px solid #fda29b;border-radius:var(--compasso-radius);background:#fffbfa;color:#7a271a;box-shadow:0 10px 30px rgba(15,23,42,.16)}
+.compasso-bootstrap-alert span{flex:1}.compasso-bootstrap-alert button{min-height:40px}.compasso-action{min-height:44px;border-radius:var(--compasso-radius)}
+:where(button,a,input,select,textarea):focus-visible{outline:3px solid color-mix(in srgb,var(--compasso-focus) 45%,transparent);outline-offset:2px}
+@media(max-width:480px){.compasso-bootstrap-alert{align-items:flex-start;flex-wrap:wrap}.compasso-bootstrap-alert span{flex-basis:100%}}
