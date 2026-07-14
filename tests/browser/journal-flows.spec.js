@@ -28,6 +28,18 @@ test('Journal 1 · registro rápido persiste após recarregar', async ({ page })
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('compasso.app.v1') || '{}').journalEntries?.[0]?.taskStatus)).toBe('open');
 });
 
+test('Journal 1.1 · intenção fica visível em Hoje e pode ser editada', async ({ page }) => {
+  await journalReady(page);
+  await page.locator('#journalIntention').fill('Estudar com atenção e terminar um exercício importante');
+  await page.locator('#journalIntentionForm').evaluate(form => form.requestSubmit());
+  await expect.poll(() => page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('compasso.app.v1') || '{}').dailyJournals || {})[0]?.intention)).toContain('Estudar com atenção');
+  await page.evaluate(() => globalThis.CompassoInformationArchitecture.open('today'));
+  await expect(page.locator('#journalTodayPanel')).toBeVisible();
+  await expect(page.locator('#journalTodayIntention')).toContainText('Estudar com atenção e terminar um exercício importante');
+  await page.locator('[data-journal-intention-edit]').click();
+  await expect(page.locator('#journalIntention')).toBeFocused();
+});
+
 test('Journal 2 · conclusão atualiza estado, métrica e persistência', async ({ page }) => {
   await journalReady(page);
   await quickEntry(page, '/tarefa Concluir fluxo de Journaling');
