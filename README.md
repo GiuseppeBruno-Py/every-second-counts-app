@@ -50,7 +50,7 @@ O percentual e o restante são calculados automaticamente.
 - Leituras digitais acompanhadas pelo percentual exibido no Kindle.
 - Estudos acompanhados por horas concluídas e planejadas.
 - Metas acompanhadas por dias executados e planejados.
-- Sessões de leitura e estudo com início, pausa, retomada e encerramento que congela o tempo no clique em **Concluir**.
+- Fluxo único **Executar** para sessão rápida, Deep Work, versão mínima e Plano B, com domínio canônico, pausa, retomada e recuperação após recarregar.
 - Check-ins opcionais de energia antes e depois das sessões, com dificuldade percebida.
 - Mapa pessoal de energia por manhã, tarde, noite e madrugada, sempre exibindo tamanho da amostra.
 - Recuperação da sessão ativa após fechar ou recarregar o PWA.

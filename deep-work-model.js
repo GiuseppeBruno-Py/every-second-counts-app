@@ -27,6 +27,8 @@
       interruptionReasons:(Array.isArray(session.interruptionReasons)?session.interruptionReasons:[]).map(item=>({reason:text(item?.reason||item),at:iso(item?.at)||now})).filter(item=>item.reason),
       capturedDistractions:(Array.isArray(session.capturedDistractions)?session.capturedDistractions:[]).map(item=>({id:text(item?.id,90)||`d${Date.now()}`,text:text(item?.text||item),capturedAt:iso(item?.capturedAt)||now,resolved:item?.resolved===true})).filter(item=>item.text),
       preparation:{notifications:session.preparation?.notifications===true,materials:session.preparation?.materials===true,environment:session.preparation?.environment===true},
+      ritualSnapshot:session.ritualSnapshot&&typeof session.ritualSnapshot==='object'?JSON.parse(JSON.stringify(session.ritualSnapshot)):null,
+      ritualChecklist:Array.isArray(session.ritualChecklist)?JSON.parse(JSON.stringify(session.ritualChecklist)):[],
       updatedAt:iso(session.updatedAt)||now,editedAt:iso(session.editedAt)
     };
   }

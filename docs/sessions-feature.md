@@ -1,5 +1,13 @@
 # Sessões de leitura e estudo
 
+## Domínio unificado
+
+Todos os modos começam pela ação **Executar**. O usuário escolhe sessão rápida, Deep Work, versão mínima ou Plano B no mesmo fluxo. Apenas uma execução pode permanecer ativa por vez, inclusive quando ela foi iniciada em outro modo.
+
+`executionSessions` é a projeção canônica e sincronizável. Ela preserva referências para `sessions` e `deepWorkSessions`, que continuam no estado para compatibilidade com backups antigos. A migração é idempotente, deduplica pela coleção e pelo ID de origem e não apaga os registros legados.
+
+Ritual, versão mínima e contingência são snapshots da execução. Alterar ou excluir o template depois não modifica o histórico concluído. Companion, Revisão semanal e Consistência consomem o mesmo estado ou histórico canônico.
+
 ## Objetivo
 
 Registrar execução real no Compasso, preservando duração, ponto inicial, ponto final e contexto da sessão. A funcionalidade atende leituras físicas, leituras digitais/Kindle e estudos por horas.
