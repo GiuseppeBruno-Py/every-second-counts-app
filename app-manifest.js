@@ -9,14 +9,16 @@
     ['session-timer-model.js','CompassoSessionTimerModel'],
     ['history-evidence-model.js','CompassoHistoryEvidenceModel'],
     ['session-kind-model.js','CompassoSessionKindModel'],
+    ['contingency-model.js','CompassoContingencyModel'],
+    ['deep-work-model.js','CompassoDeepWorkModel'],
+    ['ritual-model.js','CompassoRitualModel'],
+    ['execution-session-model.js','CompassoExecutionSessionModel'],
+    ['execution-session-feature.js','/* Compasso · Adaptadores do domínio canônico de execução'],
     ['sessions-feature.js','/* Compasso · Sessões de leitura e estudo'],
     ['goal-links-feature.js','/* Compasso · Metas conectadas a leituras e estudos'],
-    ['contingency-model.js','CompassoContingencyModel'],
     ['contingency-feature.js','/* Compasso · Contingências Se X então Y e versão mínima'],
-    ['deep-work-model.js','CompassoDeepWorkModel'],
     ['deep-work-feature.js','/* Compasso · Modo Deep Work para sessões focadas'],
     ['session-companion-feature.js','/* Compasso · Companheiro compacto de sessão e Deep Work'],
-    ['ritual-model.js','CompassoRitualModel'],
     ['ritual-feature.js','/* Compasso · Rituais e arquitetura de ação reutilizáveis'],
     ['energy-model.js','CompassoEnergyModel'],
     ['energy-feature.js','/* Compasso · Energia percebida e mapa pessoal por horario'],
@@ -52,16 +54,16 @@
     ['design-system-feature.js','/* Compasso · Comportamento acessível do design system']
   ];
   const browserJourneyModules=new Set([
-    'state-foundation.js','feature-runtime.js','app-services.js','design-system-model.js','today-feature.js','session-timer-model.js','history-evidence-model.js','sessions-feature.js','goal-links-feature.js',
-    'contingency-model.js','contingency-feature.js','deep-work-model.js','deep-work-feature.js','session-companion-feature.js',
-    'ritual-model.js','ritual-feature.js','evidence-feature.js','recall-feature.js','weakness-feature.js','outcomes-feature.js',
+    'state-foundation.js','feature-runtime.js','app-services.js','design-system-model.js','today-feature.js','session-timer-model.js','history-evidence-model.js','session-kind-model.js',
+    'contingency-model.js','deep-work-model.js','ritual-model.js','execution-session-model.js','execution-session-feature.js','sessions-feature.js','goal-links-feature.js',
+    'contingency-feature.js','deep-work-feature.js','session-companion-feature.js','ritual-feature.js','evidence-feature.js','recall-feature.js','weakness-feature.js','outcomes-feature.js',
     'weekly-review-feature.js','analytics-feature.js','history-edit-feature.js','capture-model.js','capture-feature.js','journal-model.js','journal-feature.js',
     'ux-consolidation-model.js','ux-consolidation-feature.js','information-architecture-model.js','information-architecture-feature.js','design-system-feature.js'
   ]);
   const moduleEntries = modules.map(([file,marker],order)=>({file,marker,order,required:order<3,browserJourney:browserJourneyModules.has(file)}));
 
   const arrayCollections = [
-    'reading','study','goal','focus','folders','notes','captures','sessions','deepWorkSessions','dailyPlans',
+    'reading','study','goal','focus','folders','notes','captures','sessions','deepWorkSessions','executionSessions','dailyPlans',
     'energyCheckins','flowEvents','evidence','reviewItems','weeklyReviews','weeklyPlans',
     'bookSyntheses','errorEntries','errorNotebook','ritualTemplates','explanationEvaluations',
     'journalEntries','journalCollections','journalFutureItems','journalMonthlyPlans','journalConflicts'
@@ -77,7 +79,7 @@
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v59',
+    cacheName:'compasso-pages-v60',
     bootstrapScript:'bootstrap-diagnostics.js',
     modules:Object.freeze(moduleEntries),
     collections:Object.freeze(collections),

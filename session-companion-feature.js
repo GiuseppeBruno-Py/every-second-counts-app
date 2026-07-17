@@ -12,8 +12,11 @@
   };
 
   function activity() {
-    const deep = typeof deepActive === "function" ? deepActive() : null;
-    if (deep) {
+    const canonical = typeof executionActive === "function" ? executionActive() : null;
+    if (!canonical) return null;
+    if (canonical.source?.collection === "deepWorkSessions") {
+      const deep = state.data.deepWorkSessions?.find(session => session.id === canonical.source.id);
+      if (!deep) return null;
       const item = typeof deepItem === "function" ? deepItem(deep) : null;
       return {
         id: `deep:${deep.id}`,
@@ -25,8 +28,7 @@
         domain: deep.domain,
       };
     }
-    const session =
-      typeof sessionActive === "function" ? sessionActive() : null;
+    const session = state.data.sessions?.find(candidate => candidate.id === canonical.source?.id);
     if (!session) return null;
     const item =
       typeof sessionItem === "function" ? sessionItem(session) : null;

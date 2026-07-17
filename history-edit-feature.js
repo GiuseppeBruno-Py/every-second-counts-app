@@ -173,6 +173,7 @@ function historyEditSaveSession(event) {
     const updatedEvidence = state.data.evidence.map(evidence => evidence.sessionId === id ? historyEditModel.updateEvidence(evidence, { domain: patch.domain, itemId: patch.itemId }) : evidence);
     Object.assign(source, updated);
     state.data.evidence = updatedEvidence;
+    executionSyncAll();
     document.getElementById('historySessionDialog').close();
     CompassoFeatures.emit('session:history-updated', { id, source: deep ? 'deep-work' : 'session', updatedAt: updated.updatedAt });
     saveData('Histórico corrigido e métricas recalculadas');

@@ -73,7 +73,7 @@ function installSessionUi() {
     <dialog class="session-dialog" id="sessionStartDialog">
       <form method="dialog" id="sessionStartForm">
         <div class="session-dialog-head"><div><div class="eyebrow">Nova sessão</div><h2 id="sessionStartTitle">Iniciar sessão</h2></div><button class="close-btn" type="button" data-session-close="sessionStartDialog">${icon('x')}</button></div>
-        <div class="session-dialog-body"><div class="session-summary" id="sessionStartSummary"></div><div class="field"><label for="sessionIntent">Objetivo desta sessão</label><textarea id="sessionIntent" maxlength="220" placeholder="Ex.: ler o capítulo 4 e identificar o argumento central."></textarea></div></div>
+        <div class="session-dialog-body"><div class="session-summary" id="sessionStartSummary"></div><div class="field"><label for="sessionMode">Modo de execução</label><select id="sessionMode"><option value="quick">Sessão rápida</option><option value="deep">Deep Work</option></select><small id="sessionModeHelp">Cronômetro simples com registro de progresso.</small></div><div class="field"><label for="sessionIntent">Objetivo desta sessão</label><textarea id="sessionIntent" maxlength="220" placeholder="Ex.: ler o capítulo 4 e identificar o argumento central."></textarea></div></div>
         <div class="session-dialog-foot"><button type="button" class="quiet-btn" data-session-close="sessionStartDialog">Cancelar</button><button type="submit" class="primary-btn">Iniciar</button></div>
       </form>
     </dialog>
@@ -110,24 +110,25 @@ function renderSessionBanner() {
 }
 
 function enhanceSessionCards(domain) {
-  if (!['reading','study'].includes(domain)) return;
+  if (!['reading','study','goal'].includes(domain)) return;
   const active = sessionActive();
+  const anyActive = executionActive();
   document.querySelectorAll(`#${domain}Grid .item-card`).forEach(card => {
     const edit = card.querySelector('[data-edit]');
     if (!edit) return;
     const [itemDomain,itemId] = edit.dataset.edit.split(':');
     const actions = card.querySelector('.card-actions');
     if (!actions || actions.querySelector('[data-start-session]')) return;
-    const blocked = active && !(active.domain === itemDomain && active.itemId === itemId);
+    const blocked = anyActive && !(active?.domain === itemDomain && active?.itemId === itemId);
     const ownActive = active && active.domain === itemDomain && active.itemId === itemId;
-    actions.insertAdjacentHTML('afterbegin', `<button class="session-card-button" data-start-session="${itemDomain}:${itemId}" ${blocked || ownActive ? 'disabled' : ''}>${ownActive ? 'Sessão ativa' : 'Iniciar sessão'}</button><button class="session-history-button" data-session-history="${itemDomain}:${itemId}">Histórico</button>`);
+    actions.insertAdjacentHTML('afterbegin', `<button class="session-card-button" data-start-session="${itemDomain}:${itemId}" ${blocked || ownActive ? 'disabled' : ''}>${ownActive ? 'Sessão ativa' : 'Executar'}</button><button class="session-history-button" data-session-history="${itemDomain}:${itemId}">Histórico</button>`);
   });
 }
 
 CompassoFeatures.register('sessions',{order:20,afterGrid:enhanceSessionCards,afterRender:renderSessionBanner});
 
 function openSessionStart(domain, itemId) {
-  const active = sessionActive();
+  const active = executionActive();
   if (active) { showToast('Encerre a sessão atual antes de iniciar outra'); return; }
   const item = state.data[domain].find(candidate => candidate.id === itemId);
   if (!item) return;
@@ -136,16 +137,30 @@ function openSessionStart(domain, itemId) {
   document.getElementById('sessionStartTitle').textContent = item.title;
   document.getElementById('sessionStartSummary').textContent = `Início registrado em ${formatNumber(metric.value)} ${metric.config.unit}. O cronômetro continuará mesmo se o aplicativo for fechado.`;
   document.getElementById('sessionIntent').value = item.note || '';
+  const mode = document.getElementById('sessionMode');
+  const contingencies = Array.isArray(item.contingencies) ? item.contingencies.filter(option => option?.enabled !== false) : [];
+  mode.innerHTML = `<option value="quick">Sessão rápida</option><option value="deep">Deep Work</option>${item.minimumVersion ? '<option value="minimum">Versão mínima</option>' : ''}${contingencies.length ? '<option value="contingency">Plano B</option>' : ''}`;
+  mode.value = 'quick';
+  const explain = () => { document.getElementById('sessionModeHelp').textContent = mode.value === 'deep' ? 'Tela focada, preparação, distrações e resultado.' : mode.value === 'minimum' ? 'Executa o menor passo útil sem concluir toda a ação por padrão.' : mode.value === 'contingency' ? 'Aplica uma contingência preservando o plano original.' : 'Cronômetro simples com registro de progresso.'; };
+  mode.onchange = explain; explain();
   document.getElementById('sessionStartDialog').showModal();
 }
 
 function createSession() {
   const selected = sessionRuntime.selectedItem;
-  if (!selected || sessionActive()) return;
+  if (!selected || !executionCanStart()) return;
   const item = state.data[selected.domain].find(candidate => candidate.id === selected.itemId);
   if (!item) return;
+  const mode = document.getElementById('sessionMode')?.value || 'quick';
+  if (mode === 'deep') {
+    document.getElementById('sessionStartDialog').close();
+    if (typeof deepOpen === 'function') deepOpen(selected.domain, selected.itemId);
+    return;
+  }
   const metric = sessionMetric(item, selected.domain);
-  state.data.sessions.unshift({
+  const contingency = mode === 'contingency' ? (item.contingencies || []).find(option => option?.enabled !== false) : null;
+  const ritual = state.data.ritualTemplates?.find(candidate => candidate.id === document.getElementById('ritualQuickSelect')?.value);
+  const session = {
     id: sessionId(),
     schemaVersion: SESSIONS_FEATURE_VERSION,
     domain: selected.domain,
@@ -153,6 +168,9 @@ function createSession() {
     readingFormat: item.readingFormat || null,
     studyUnit: item.studyUnit || null,
     intent: document.getElementById('sessionIntent').value.trim(),
+    executionVariant: { kind: mode === 'minimum' ? 'minimum' : mode === 'contingency' ? 'contingency' : 'ideal', contingencyId: contingency?.id || null },
+    contingencySnapshot: contingency ? JSON.parse(JSON.stringify(contingency)) : null,
+    ritualSnapshot: ritual && globalThis.CompassoRitualModel ? globalThis.CompassoRitualModel.snapshot(ritual) : null,
     reflection: '',
     startValue: metric.value,
     endValue: null,
@@ -162,7 +180,9 @@ function createSession() {
     pauseStartedAt: null,
     durationMs: null,
     status: 'active'
-  });
+  };
+  state.data.sessions.unshift(session);
+  executionSyncRegular(session);
   document.getElementById('sessionStartDialog').close();
   saveData('Sessão iniciada');
 }
@@ -173,11 +193,13 @@ function toggleSessionPause() {
   if (session.status === 'active') {
     session.status = 'paused';
     session.pauseStartedAt = new Date().toISOString();
+    executionSyncRegular(session);
     saveData('Sessão pausada');
   } else {
     session.pausedMs = positiveNumber(session.pausedMs) + Math.max(0, sessionNow() - new Date(session.pauseStartedAt).getTime());
     session.pauseStartedAt = null;
     session.status = 'active';
+    executionSyncRegular(session);
     saveData('Sessão retomada');
   }
 }
@@ -189,6 +211,7 @@ function openSessionFinish() {
   if (!item) { showToast('O item desta sessão não existe mais'); return; }
   if (session.status !== 'finishing') {
     Object.assign(session, sessionTimerModel.begin(session, sessionNow()));
+    executionSyncRegular(session);
     clearInterval(sessionRuntime.tick);
     sessionRuntime.tick = null;
     saveData();
@@ -214,6 +237,7 @@ function cancelSessionFinish() {
   const dialog = document.getElementById('sessionFinishDialog');
   if (!session || session.status !== 'finishing') { if (dialog?.open) dialog.close(); return; }
   Object.assign(session, sessionTimerModel.cancel(session, sessionNow()));
+  executionSyncRegular(session);
   if (dialog?.open) dialog.close();
   saveData(session.status === 'paused' ? 'Encerramento cancelado; sessão continua pausada' : 'Encerramento cancelado; sessão retomada');
 }
@@ -240,6 +264,7 @@ function finishSession() {
   session.frozenDurationMs = null;
   session.updatedAt = new Date().toISOString();
   session.reflection = document.getElementById('sessionReflection').value.trim();
+  executionSyncRegular(session);
   item[metric.config.currentKey] = endValue;
   if (metric.config.isPercent) item[metric.config.totalKey] = 100;
   const total = positiveNumber(item[metric.config.totalKey]);
@@ -277,6 +302,7 @@ function deleteSession(id) {
   const session = state.data.sessions.find(candidate => candidate.id === id);
   if (!session || session.status !== 'completed' || !confirm('Excluir esta sessão do histórico? O progresso atual do item não será alterado.')) return;
   state.data.sessions = state.data.sessions.filter(candidate => candidate.id !== id);
+  state.data.executionSessions = state.data.executionSessions.filter(candidate => !(candidate.source?.collection === 'sessions' && candidate.source?.id === id));
   saveData('Sessão excluída');
   renderSessionHistory();
 }
