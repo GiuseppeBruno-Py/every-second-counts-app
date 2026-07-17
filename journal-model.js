@@ -239,6 +239,42 @@
     return { original, destination, movement };
   }
 
+  function migrateEntryToDate(record, targetDate, options = {}) {
+    const current = migrateEntry(record, options);
+    if (!current) throw new TypeError('Entrada inválida.');
+    if (current.entryType === 'task') return migrateTask(current, targetDate, options);
+    if (current.archivedAt) throw new TypeError('Entradas arquivadas não podem ser migradas.');
+    const toDate = dateKey(targetDate, options);
+    if (toDate === current.date) throw new TypeError('Escolha outra data para migrar.');
+    const timestamp = iso(options);
+    const movement = { fromDate: current.date, toDate, reason: text(options.reason, 80) || null, migratedAt: timestamp };
+    const history = [...current.migrationHistory, movement];
+    const original = {
+      ...current,
+      archivedAt: timestamp,
+      migrationHistory: history,
+      updatedAt: timestamp,
+      metadata: { ...current.metadata, migrationCount: history.length }
+    };
+    const destination = {
+      ...clone(current),
+      id: id('journal', { ...options, id: options.newId }),
+      entryType: current.entryType,
+      taskStatus: null,
+      date: toDate,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      archivedAt: null,
+      scheduledFor: toDate,
+      migratedFromEntryId: current.id,
+      migrationHistory: history,
+      source: { type: 'migration', id: current.id },
+      resultRef: null,
+      metadata: { ...current.metadata, migrationCount: history.length }
+    };
+    return { original, destination, movement };
+  }
+
   function addComment(record, content, options = {}) {
     const current = migrateEntry(record, options);
     const normalized = text(content, 1000);
@@ -399,7 +435,7 @@
 
   return Object.freeze({
     SCHEMA_VERSION, ENTRY_TYPES, TASK_STATUSES, SIGNIFIERS, REF_TYPES, SOURCE_TYPES, FUTURE_SCHEDULES,
-    dateKey, createEntry, migrateEntry, updateEntry, setTaskStatus, migrateTask, addComment,
+    dateKey, createEntry, migrateEntry, updateEntry, setTaskStatus, migrateTask, migrateEntryToDate, addComment,
     dailyJournal, upsertDailyJournal, closeDay, createCollection, migrateCollection,
     createFutureItem, migrateFutureItem, migrateMonthlyPlan, migrateState, entriesForDate, filterEntries, metrics, refs
   });

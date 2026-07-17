@@ -24,6 +24,17 @@ test('edita conteúdo, tipo, estado, vínculos e marcadores', () => {
   assert.deepEqual(updated.signifiers, ['waiting']);
 });
 
+test('atualização parcial ou categoria inválida preserva a categoria explícita', () => {
+  const reflection = journal.createEntry('Refletir', { ...options, entryType:'reflection' });
+  const edited = journal.updateEntry(reflection, { content:'Refletir com contexto', entryType:undefined, linkedRefs:[{type:'study',id:'s1'}] }, { now:'2026-07-13T13:00:00Z' });
+  const empty = journal.updateEntry(edited, { entryType:'' }, { now:'2026-07-13T14:00:00Z' });
+  const invalid = journal.updateEntry(empty, { entryType:'unknown', tags:['preservada'] }, { now:'2026-07-13T15:00:00Z' });
+  assert.equal(edited.entryType, 'reflection');
+  assert.equal(empty.entryType, 'reflection');
+  assert.equal(invalid.entryType, 'reflection');
+  assert.deepEqual(invalid.linkedRefs, [{type:'study',id:'s1'}]);
+});
+
 test('concluir tarefa registra timestamp e reabrir o remove', () => {
   const task = journal.createEntry('Concluir', { ...options, entryType:'task' });
   const completed = journal.setTaskStatus(task, 'completed', { now:'2026-07-13T14:00:00Z' });
@@ -53,6 +64,16 @@ test('migrações repetidas mantêm a cadeia completa', () => {
   const second = journal.migrateTask(first, '2026-07-17', { now:'2026-07-14T18:00:00Z', newId:'journal_3' }).destination;
   assert.deepEqual(second.migrationHistory.map(item => item.toDate), ['2026-07-14','2026-07-17']);
   assert.equal(second.metadata.migrationCount, 2);
+});
+
+test('migração de reflexão preserva categoria, vínculos e origem', () => {
+  const reflection = journal.createEntry('Aprendizado do dia', { ...options, entryType:'reflection', linkedRefs:[{type:'goal',id:'g1'}] });
+  const result = journal.migrateEntryToDate(reflection, '2026-07-14', { now:'2026-07-13T18:00:00Z', newId:'journal_2' });
+  assert.equal(result.original.archivedAt, '2026-07-13T18:00:00.000Z');
+  assert.equal(result.destination.entryType, 'reflection');
+  assert.equal(result.destination.taskStatus, null);
+  assert.equal(result.destination.migratedFromEntryId, reflection.id);
+  assert.deepEqual(result.destination.linkedRefs, [{type:'goal',id:'g1'}]);
 });
 
 test('não migra para a mesma data nem tarefas encerradas', () => {
@@ -103,6 +124,15 @@ test('serialização JSON preserva histórico, vínculos e privacidade', () => {
   assert.equal(restored.journalEntries[0].migrationHistory.length, 1);
   assert.equal(restored.journalEntries[0].metadata.isPrivate, true);
   assert.deepEqual(restored.journalEntries[0].linkedRefs, [{type:'study',id:'s1'}]);
+});
+
+test('round-trip JSON preserva reflexão após edição e migração', () => {
+  const reflection = journal.updateEntry(journal.createEntry('Original', { ...options, entryType:'reflection' }), { content:'Editada' }, { now:'2026-07-13T13:00:00Z' });
+  const moved = journal.migrateEntryToDate(reflection, '2026-07-14', { now:'2026-07-13T18:00:00Z', newId:'journal_2' }).destination;
+  const [restored] = journal.migrateState(JSON.parse(JSON.stringify({journalEntries:[moved]})), {now}).journalEntries;
+  assert.equal(restored.entryType, 'reflection');
+  assert.equal(restored.content, 'Editada');
+  assert.equal(restored.date, '2026-07-14');
 });
 
 test('busca e filtros combinam tipo, estado, marcador, coleção e vínculo', () => {
