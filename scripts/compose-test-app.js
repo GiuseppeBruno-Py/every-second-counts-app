@@ -1,5 +1,6 @@
 const fs=require('node:fs');
 const path=require('node:path');
+const {execFileSync}=require('node:child_process');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'.test-dist');
 const manifest=require(path.join(root,'app-manifest.js'));
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
@@ -12,7 +13,7 @@ if(!html.includes(point))throw Error('bootstrap point not found');
 html=html.replace('</head>','  <link rel="stylesheet" href="./app-ui.css">\n  <link rel="stylesheet" href="./design-system.css">\n  <script src="./app-manifest.js"></script>\n  <script src="./bootstrap-diagnostics.js"></script>\n</head>');
 html=html.replace(point,()=>`    ${code}\n\n    renderAll();\n    const requestedView`);
 fs.rmSync(out,{recursive:true,force:true});fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,'index.html'),html);
-const moduleCode=html.match(/<script(?: type="module")?>([\s\S]*?)<\/script>/)?.[1];if(moduleCode)fs.writeFileSync(path.join(out,'app.mjs'),moduleCode);
+const moduleCode=html.match(/<script(?: type="module")?>([\s\S]*?)<\/script>/)?.[1];if(moduleCode){const output=path.join(out,'app.mjs');fs.writeFileSync(output,moduleCode);execFileSync(process.execPath,['--check',output],{stdio:'pipe'});}
 const journeyFiles=new Set(manifest.modules.filter(module=>module.browserJourney).map(module=>module.file));
 const moduleFiles=new Set(manifest.modules.map(module=>module.file));
 for(const asset of manifest.assets.map(value=>value.replace(/^\.\//,''))){

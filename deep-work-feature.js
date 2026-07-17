@@ -13,10 +13,6 @@ function deepWorkCompletedSessions(domain='all'){
       return {id:deepWorkRecordId(session.id),source:'deep-work',deepWorkId:session.id,status:'completed',domain:session.domain,itemId:session.actionId,startedAt:session.startedAt,endedAt:session.endedAt||session.startedAt,durationMs:Math.max(0,Number(session.actualMinutes)||0)*60000,intent:session.expectedOutcome||'',reflection:session.completionNote||'',nextAction:session.nextAction||'',completionCriterion:session.completionCriterion||'',readingFormat:item?.readingFormat||null,studyUnit:item?.studyUnit||null,startValue:null,endValue:null,updatedAt:session.updatedAt||null,editedAt:session.editedAt||null};
     })
 }
-function completedExecutionSessions(domain='all'){
-  executionSyncAll();
-  return executionSessionModel.history(state.data.executionSessions,domain);
-}
 function deleteDeepWorkSession(id){
   const deepWorkId=String(id||'').replace(/^deep:/,'');
   const session=(state.data.deepWorkSessions||[]).find(candidate=>candidate.id===deepWorkId);
