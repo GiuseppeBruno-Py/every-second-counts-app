@@ -39,7 +39,7 @@ O percentual e o restante são calculados automaticamente.
 - Vínculos opcionais entre capturas e leituras, estudos, metas, ações, sessões ou notas existentes.
 - Destilação opcional de notas em essência, aplicação e pergunta, preservando integralmente o corpo Markdown.
 - Etapa condicional na Revisão semanal para processar as capturas mais antigas, sem bloquear a conclusão da revisão.
-- Visão **Hoje** com plano diário curto e próximas ações.
+- Central **Hoje** com intenção do Journal, foco semanal, sessão ativa, plano diário curto, decisões e progresso essencial recolhido.
 - Journal local-first no nível Essencial, com registro rápido de tarefas, eventos e notas, intenção diária e fechamento do dia.
 - Planejamento mensal, calendário futuro e coleções temáticas no Journal, incluindo migração explícita de tarefas e histórico auditável.
 - Transformação de entradas do Journal em notas, ações de Hoje, capturas, perguntas de Active Recall e evidências sem perder a origem.
