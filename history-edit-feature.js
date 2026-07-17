@@ -90,7 +90,7 @@ function installHistoryEditUi() {
           <div class="history-edit-grid">
             <div class="field"><label for="historyEvidenceType">Tipo</label><select id="historyEvidenceType">${Object.entries(evidenceTypeLabels).map(([value, label]) => `<option value="${value}">${escapeHtml(label)}</option>`).join('')}</select></div>
             <div class="field"><label for="historyEvidenceDate">Data</label><input id="historyEvidenceDate" type="datetime-local" required></div>
-            <div class="field wide"><label for="historyEvidenceSession">Sessão vinculada</label><select id="historyEvidenceSession" required></select></div>
+            <div class="field wide"><label for="historyEvidenceSession">Sessão vinculada</label><select id="historyEvidenceSession"></select></div>
             <div class="field wide"><label for="historyEvidenceSummary">Síntese</label><input id="historyEvidenceSummary" maxlength="180" required></div>
             <div class="field wide"><label for="historyEvidenceDetails">Detalhes</label><textarea id="historyEvidenceDetails" maxlength="500"></textarea></div>
           </div>
@@ -125,7 +125,7 @@ function openHistorySessionEdit(id) {
 }
 
 function historyEvidenceSessionOptions(selectedId) {
-  return completedExecutionSessions().map(session => {
+  return '<option value="">Sem sessão direta</option>' + completedExecutionSessions().map(session => {
     const item = state.data[session.domain]?.find(candidate => candidate.id === session.itemId);
     const date = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(session.endedAt || session.startedAt));
     return `<option value="${escapeHtml(session.id)}"${session.id === selectedId ? ' selected' : ''}>${escapeHtml(item?.title || 'Item removido')} · ${escapeHtml(date)}</option>`;
@@ -187,12 +187,12 @@ function historyEditSaveEvidence(event) {
   const evidence = state.data.evidence.find(item => item.id === historyEditRuntime.evidenceId);
   const sessionId = document.getElementById('historyEvidenceSession').value;
   const session = historyEditSession(sessionId);
-  if (!evidence || !session) return;
+  if (!evidence) return;
   try {
     const updated = historyEditModel.updateEvidence(evidence, {
       sessionId,
-      itemId: session.itemId,
-      domain: session.domain,
+      itemId: session?.itemId || evidence.itemId,
+      domain: session?.domain || evidence.domain,
       type: document.getElementById('historyEvidenceType').value,
       summary: document.getElementById('historyEvidenceSummary').value,
       details: document.getElementById('historyEvidenceDetails').value,
@@ -244,6 +244,17 @@ const renderAnalyticsHistoryWithoutEditing = renderAnalyticsHistory;
 renderAnalyticsHistory = function(historySessions) {
   renderAnalyticsHistoryWithoutEditing(historySessions);
   historyEditDecorateAnalytics(historySessions);
+};
+
+const renderWeeklyEvidenceWithoutEditing = renderWeeklyEvidence;
+renderWeeklyEvidence = function(evidence) {
+  renderWeeklyEvidenceWithoutEditing(evidence);
+  document.querySelectorAll('#weeklyEvidenceList .weekly-evidence-card').forEach((card, index) => {
+    const entry = evidence[index];
+    if (!entry) return;
+    if (entry.editedAt) card.querySelector('header')?.insertAdjacentHTML('beforeend', '<span class="history-edited">Editado</span>');
+    card.insertAdjacentHTML('beforeend', `<div class="evidence-edit-actions"><button type="button" data-evidence-edit="${escapeHtml(entry.id)}">Editar</button><button type="button" class="danger" data-evidence-delete="${escapeHtml(entry.id)}">Excluir</button></div>`);
+  });
 };
 
 const renderSessionHistoryWithoutEditing = renderSessionHistory;
