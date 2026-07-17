@@ -3,6 +3,7 @@
  */
 
 labels.analytics = { title: 'Consistência', kicker: 'Ritmo e histórico' };
+const analyticsSessionKindModel = globalThis.CompassoSessionKindModel;
 
 const analyticsRuntime = {
   period: '30',
@@ -324,7 +325,8 @@ function renderAnalyticsHistory(historySessions) {
     const date = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(analyticsSessionDate(session));
     const evidence = analyticsEvidenceForSession(session.id);
     const evidenceHtml = evidence.map(entry => `<div class="analytics-history-evidence"><strong>${escapeHtml((typeof evidenceTypeLabels === 'object' && evidenceTypeLabels[entry.type]) || 'Evidência')}:</strong> ${escapeHtml(entry.summary)}${entry.details ? `<br>${escapeHtml(entry.details)}` : ''}</div>`).join('');
-    const source = session.source === 'deep-work' ? '<span class="deep-work">Deep Work</span>' : '';
+    const sourceKind = analyticsSessionKindModel.kind(session);
+    const source = `<span class="${sourceKind === 'deep' ? 'deep-work' : 'normal'}">${analyticsSessionKindModel.label(session)}</span>`;
     return `<article class="analytics-history-row"><div><header><b>${escapeHtml(item?.title || 'Item removido')}</b><span>${escapeHtml(domainLabels[session.domain] || session.domain)}</span>${source}</header>${session.intent ? `<p><strong>Objetivo:</strong> ${escapeHtml(session.intent)}</p>` : ''}${session.reflection ? `<p><strong>Resultado:</strong> ${escapeHtml(session.reflection)}</p>` : ''}${session.nextAction ? `<p><strong>Próxima ação:</strong> ${escapeHtml(session.nextAction)}</p>` : ''}${evidenceHtml}</div><aside><time>${escapeHtml(date)}</time><strong>${analyticsDurationLabel(session.durationMs)}</strong><p>${escapeHtml(analyticsProgressLabel(session))}</p><button type="button" data-analytics-delete="${escapeHtml(session.id)}">Excluir</button></aside></article>`;
   }).join('');
   const wrap = document.getElementById('analyticsLoadWrap');
@@ -355,12 +357,13 @@ function exportAnalyticsCsv() {
     return;
   }
   const quote = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
-  const header = ['data', 'dominio', 'item', 'duracao_minutos', 'inicio', 'fim', 'objetivo', 'observacao', 'evidencias'];
+  const header = ['data', 'tipo_sessao', 'dominio', 'item', 'duracao_minutos', 'inicio', 'fim', 'objetivo', 'observacao', 'evidencias'];
   const rows = sessions.map(session => {
     const item = analyticsItemForSession(session);
     const evidence = analyticsEvidenceForSession(session.id).map(entry => `${entry.summary}${entry.details ? ` — ${entry.details}` : ''}`).join(' | ');
     return [
       analyticsSessionDate(session).toISOString(),
+      analyticsSessionKindModel.label(session),
       domainLabels[session.domain] || session.domain,
       item?.title || 'Item removido',
       Math.round(positiveNumber(session.durationMs) / 60000),
