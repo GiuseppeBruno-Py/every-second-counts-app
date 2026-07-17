@@ -18,6 +18,7 @@ test('todos os modos começam pelo fluxo Executar',()=>{
 
 test('companion e relatórios usam a execução canônica',()=>{
   assert.match(read('session-companion-feature.js'),/executionActive\(\)/);
-  assert.match(read('deep-work-feature.js'),/executionSessionModel\.history/);
+  assert.match(read('execution-session-feature.js'),/executionSessionModel\.history/);
+  assert.doesNotMatch(read('deep-work-feature.js'),/function completedExecutionSessions/);
   assert.match(read('history-edit-feature.js'),/executionSyncAll\(\)/);
 });

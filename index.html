@@ -487,7 +487,7 @@
         <strong>Feche a semana com evidências, não impressões.</strong>
         <button data-action="weekly">Ver foco da semana →</button>
       </div>
-      <div class="profile"><div class="avatar">EC</div><div><strong>Meu espaço</strong><span id="sidebarAppVersion">Compasso v60</span></div></div>
+      <div class="profile"><div class="avatar">EC</div><div><strong>Meu espaço</strong><span id="sidebarAppVersion">Compasso v61</span></div></div>
     </aside>
 
     <main class="main">
@@ -509,7 +509,7 @@
         <button id="exportBtn"><svg><use href="#i-export"/></svg>Exportar dados</button>
         <label><svg><use href="#i-import"/></svg>Importar dados<input type="file" id="importInput" accept="application/json"></label>
         <button id="resetBtn"><svg><use href="#i-reset"/></svg>Restaurar exemplo</button>
-        <div class="menu-version" id="settingsAppVersion">Compasso v60</div>
+        <div class="menu-version" id="settingsAppVersion">Compasso v61</div>
       </div>
 
       <div class="content">
@@ -765,7 +765,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
 
     function appVersionLabel() {
       const manifest = globalThis.CompassoAppManifest;
-      const cacheName = manifest?.cacheName || 'compasso-pages-v60';
+      const cacheName = manifest?.cacheName || 'compasso-pages-v61';
       const cacheVersion = String(cacheName).match(/v(\d+)$/)?.[1];
       return `Compasso v${cacheVersion || manifest?.version || '59'}`;
     }
