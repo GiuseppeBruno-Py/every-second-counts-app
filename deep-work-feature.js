@@ -10,7 +10,7 @@ function deepWorkCompletedSessions(domain='all'){
     .filter(session=>session?.state==='completed'&&(domain==='all'||session.domain===domain))
     .map(session=>{
       const item=state.data[session.domain]?.find(candidate=>candidate.id===session.actionId);
-      return {id:deepWorkRecordId(session.id),source:'deep-work',deepWorkId:session.id,status:'completed',domain:session.domain,itemId:session.actionId,startedAt:session.startedAt,endedAt:session.endedAt||session.startedAt,durationMs:Math.max(0,Number(session.actualMinutes)||0)*60000,intent:session.expectedOutcome||'',reflection:session.completionNote||'',nextAction:session.nextAction||'',completionCriterion:session.completionCriterion||'',readingFormat:item?.readingFormat||null,studyUnit:item?.studyUnit||null,startValue:null,endValue:null};
+      return {id:deepWorkRecordId(session.id),source:'deep-work',deepWorkId:session.id,status:'completed',domain:session.domain,itemId:session.actionId,startedAt:session.startedAt,endedAt:session.endedAt||session.startedAt,durationMs:Math.max(0,Number(session.actualMinutes)||0)*60000,intent:session.expectedOutcome||'',reflection:session.completionNote||'',nextAction:session.nextAction||'',completionCriterion:session.completionCriterion||'',readingFormat:item?.readingFormat||null,studyUnit:item?.studyUnit||null,startValue:null,endValue:null,updatedAt:session.updatedAt||null,editedAt:session.editedAt||null};
     })
 }
 function completedExecutionSessions(domain='all'){
@@ -32,7 +32,8 @@ function deepWorkRegisterEvidence(session){
   state.data.evidence=Array.isArray(state.data.evidence)?state.data.evidence:[];
   const sessionId=deepWorkRecordId(session.id);
   if(state.data.evidence.some(item=>item.sessionId===sessionId))return;
-  state.data.evidence.unshift({id:`e${Date.now()}${Math.random().toString(36).slice(2,7)}`,schemaVersion:1,sessionId,itemId:session.actionId,domain:session.domain,type:'deliverable',summary,details:(session.nextAction||'').trim(),createdAt:session.endedAt||new Date().toISOString()});
+  const createdAt=session.endedAt||new Date().toISOString();
+  state.data.evidence.unshift({id:`e${Date.now()}${Math.random().toString(36).slice(2,7)}`,schemaVersion:2,sessionId,itemId:session.actionId,domain:session.domain,type:'deliverable',summary,details:(session.nextAction||'').trim(),createdAt,updatedAt:createdAt,editedAt:null});
 }
 function deepSave(message){window.CompassoStorage?.save?.(STORAGE_KEY,state.data);localStorage.setItem(STORAGE_KEY,JSON.stringify(state.data));renderAll();if(message)showToast(message)}
 function deepLock(sessionId){localStorage.setItem(deepRuntime.lockKey,JSON.stringify({tabId:deepRuntime.tabId,sessionId,updatedAt:Date.now()}))}

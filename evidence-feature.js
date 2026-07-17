@@ -2,8 +2,9 @@
  * Injetado após sessions-feature.js no mesmo módulo principal.
  */
 
-const EVIDENCE_FEATURE_VERSION = 1;
-state.data.evidence = Array.isArray(state.data.evidence) ? state.data.evidence : [];
+const EVIDENCE_FEATURE_VERSION = 2;
+const historyEvidenceModel = globalThis.CompassoHistoryEvidenceModel;
+state.data.evidence = (Array.isArray(state.data.evidence) ? state.data.evidence : []).map(item => historyEvidenceModel.normalizeEvidence(item)).filter(Boolean);
 
 const evidenceTypeLabels = {
   insight: 'Insight',
@@ -73,6 +74,7 @@ finishSession = function() {
     return;
   }
 
+  const evidenceCreatedAt = new Date().toISOString();
   const evidence = {
     id: evidenceId(),
     schemaVersion: EVIDENCE_FEATURE_VERSION,
@@ -82,7 +84,9 @@ finishSession = function() {
     type: document.getElementById('sessionEvidenceType').value,
     summary,
     details: document.getElementById('sessionEvidenceDetails').value.trim(),
-    createdAt: new Date().toISOString()
+    createdAt: evidenceCreatedAt,
+    updatedAt: evidenceCreatedAt,
+    editedAt: null
   };
 
   const previousStatus = session.status;

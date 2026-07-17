@@ -36,6 +36,11 @@ Registrar execução real no Compasso, preservando duração, ponto inicial, pon
 - O valor final não pode ser menor que o valor inicial.
 - Chegar a 100% conclui automaticamente o item.
 - Excluir uma sessão do histórico não reverte o progresso atual do item.
+- Sessões concluídas podem ser corrigidas pelo histórico global ou pelo histórico do item.
+- A correção permite ajustar vínculo, domínio, início, fim, duração, progresso registrado, observação, próxima ação e variante; em Deep Work, ajusta os campos compatíveis no registro original.
+- Uma correção preserva o `id`, atualiza `updatedAt`/`editedAt`, emite `session:history-updated` e mostra o selo **Editado**.
+- Métricas são recalculadas a partir do registro corrigido; o progresso atual do item nunca é aplicado novamente.
+- A edição de Deep Work atualiza o registro existente, sem criar uma segunda sessão ou uma segunda evidência.
 - Sessões entram no backup JSON porque ficam vinculadas ao estado do Compasso.
 
 ## Persistência
@@ -75,10 +80,17 @@ As sessões são salvas em `state.data.sessions`, persistidas pela camada `Compa
 7. Recarregar durante o encerramento e confirmar que o formulário e a duração são recuperados.
 8. Cancelar a conclusão a partir de uma sessão ativa e de uma sessão pausada.
 
+### Correção do histórico
+
+1. Concluir uma sessão comum e uma sessão Deep Work.
+2. Abrir **Consistência** e usar **Editar** no histórico.
+3. Corrigir a duração e a observação, salvar e confirmar o selo **Editado**.
+4. Confirmar que tempo focado, dias ativos e revisão semanal refletem os registros corrigidos.
+5. Confirmar que o progresso atual do item não mudou e que Deep Work continua com um único registro.
+
 ## Fora do escopo desta versão
 
 - lançamento retroativo/manual de sessões;
-- edição de uma sessão concluída;
 - evidência estruturada vinculada à sessão;
 - relatórios e gráficos agregados;
 - sincronização automática entre dispositivos.
