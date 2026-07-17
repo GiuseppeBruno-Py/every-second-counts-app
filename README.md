@@ -50,7 +50,7 @@ O percentual e o restante são calculados automaticamente.
 - Leituras digitais acompanhadas pelo percentual exibido no Kindle.
 - Estudos acompanhados por horas concluídas e planejadas.
 - Metas acompanhadas por dias executados e planejados.
-- Sessões de leitura e estudo com início, pausa, retomada e encerramento.
+- Sessões de leitura e estudo com início, pausa, retomada e encerramento que congela o tempo no clique em **Concluir**.
 - Check-ins opcionais de energia antes e depois das sessões, com dificuldade percebida.
 - Mapa pessoal de energia por manhã, tarde, noite e madrugada, sempre exibindo tamanho da amostra.
 - Recuperação da sessão ativa após fechar ou recarregar o PWA.
@@ -85,7 +85,7 @@ O percentual e o restante são calculados automaticamente.
 - Perfil cognitivo opcional nas ações: trabalho profundo/superficial/recuperação, demanda, energia, duração e resultado esperado, com filtros e compatibilidade retroativa.
 - Conciliação visual do Google Drive com comparação local/remota e decisão explícita por local, Drive ou mescla.
 - Versão mínima e contingências editáveis “Se X, então Y” em cada ação, com templates, ordenação e registro da variante nas sessões.
-- Modo Deep Work em tela focada, com preparação, cronômetro recuperável, captura de distrações, pausas/interrupções e métricas locais orientadas a resultados.
+- Modo Deep Work em tela focada, com preparação, cronômetro recuperável, captura de distrações, pausas/interrupções, encerramento cancelável e métricas locais orientadas a resultados.
 - Companheiro compacto de sessão com cronômetro, pausa/retomada, notificação persistente em computador e celular e janela Picture-in-Picture opcional no desktop.
 - Rituais reutilizáveis para estudo, programação, leitura, escrita e planejamento, com vínculo explícito, checklist por sessão e snapshots históricos versionados.
 - Interface consolidada com entrada única “Executar”, botões reconhecíveis por cor, opções secundárias agrupadas e níveis Essencial, Conhecimento e Avançado.

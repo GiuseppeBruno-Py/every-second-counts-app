@@ -11,9 +11,11 @@ Registrar execução real no Compasso, preservando duração, ponto inicial, pon
 3. Confirma o ponto inicial e registra opcionalmente o objetivo da sessão.
 4. O cronômetro permanece ativo mesmo com o PWA fechado.
 5. A sessão pode ser pausada e retomada.
-6. Ao encerrar, o usuário informa o ponto final e uma observação opcional.
-7. O progresso do item é atualizado automaticamente.
-8. A sessão fica disponível no histórico do item.
+6. Ao tocar em **Concluir**, o instante e a duração são congelados antes de abrir o formulário.
+7. O usuário informa o ponto final e uma observação opcional.
+8. Se cancelar, a sessão ativa retoma sem contar o tempo do formulário; uma sessão que já estava pausada continua pausada.
+9. O progresso do item é atualizado automaticamente.
+10. A sessão fica disponível no histórico do item.
 
 ## Métricas
 
@@ -25,8 +27,11 @@ Registrar execução real no Compasso, preservando duração, ponto inicial, pon
 
 ## Regras
 
-- Existe no máximo uma sessão ativa ou pausada por vez.
+- Existe no máximo uma sessão ativa, pausada ou em encerramento por vez.
 - Pausar interrompe a contagem efetiva, mas preserva a sessão.
+- O estado intermediário `finishing` persiste `finishingStartedAt`, `frozenDurationMs` e `statusBeforeFinishing` para recuperação após reload.
+- Confirmar usa a duração congelada e é idempotente; o tempo preenchendo o formulário nunca aumenta a sessão.
+- Cancelar uma conclusão ativa registra o intervalo do formulário como pausa técnica; cancelar uma conclusão previamente pausada não retoma automaticamente.
 - Fechar ou recarregar o aplicativo não encerra a sessão.
 - O valor final não pode ser menor que o valor inicial.
 - Chegar a 100% conclui automaticamente o item.
@@ -66,6 +71,9 @@ As sessões são salvas em `state.data.sessions`, persistidas pela camada `Compa
 3. Abrir novamente.
 4. Confirmar que o cronômetro e o estado ativo foram recuperados.
 5. Repetir o teste durante uma pausa.
+6. Tocar em **Concluir**, aguardar e confirmar que o relógio permanece congelado.
+7. Recarregar durante o encerramento e confirmar que o formulário e a duração são recuperados.
+8. Cancelar a conclusão a partir de uma sessão ativa e de uma sessão pausada.
 
 ## Fora do escopo desta versão
 

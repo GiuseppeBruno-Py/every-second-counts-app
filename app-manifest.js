@@ -6,6 +6,7 @@
     ['app-services.js','/* Compasso · Serviços de domínio'],
     ['design-system-model.js','/* Compasso · Contrato declarativo do design system'],
     ['today-feature.js','/* Compasso · Hoje e próximas ações'],
+    ['session-timer-model.js','CompassoSessionTimerModel'],
     ['sessions-feature.js','/* Compasso · Sessões de leitura e estudo'],
     ['goal-links-feature.js','/* Compasso · Metas conectadas a leituras e estudos'],
     ['contingency-model.js','CompassoContingencyModel'],
@@ -48,7 +49,7 @@
     ['design-system-feature.js','/* Compasso · Comportamento acessível do design system']
   ];
   const browserJourneyModules=new Set([
-    'state-foundation.js','feature-runtime.js','app-services.js','design-system-model.js','today-feature.js','sessions-feature.js','goal-links-feature.js',
+    'state-foundation.js','feature-runtime.js','app-services.js','design-system-model.js','today-feature.js','session-timer-model.js','sessions-feature.js','goal-links-feature.js',
     'contingency-model.js','contingency-feature.js','deep-work-model.js','deep-work-feature.js','session-companion-feature.js',
     'ritual-model.js','ritual-feature.js','evidence-feature.js','recall-feature.js','weakness-feature.js','outcomes-feature.js',
     'weekly-review-feature.js','analytics-feature.js','capture-model.js','capture-feature.js','journal-model.js','journal-feature.js',
@@ -73,7 +74,7 @@
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v51',
+    cacheName:'compasso-pages-v52',
     bootstrapScript:'bootstrap-diagnostics.js',
     modules:Object.freeze(moduleEntries),
     collections:Object.freeze(collections),
