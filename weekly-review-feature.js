@@ -3,6 +3,7 @@
  */
 
 const WEEKLY_REVIEW_VERSION = 1;
+const weeklySessionKindModel = globalThis.CompassoSessionKindModel;
 state.data.weeklyReviews = Array.isArray(state.data.weeklyReviews) ? state.data.weeklyReviews : [];
 labels.weekly = { title: 'Revisão semanal', kicker: 'Evidências e direção' };
 
@@ -114,7 +115,8 @@ function weeklyAggregateItems(sessions) {
       durationMs,
       delta,
       unit: config.unit,
-      progress: item ? metricInfo(item, domain).progress : null
+      progress: item ? metricInfo(item, domain).progress : null,
+      sessionKinds: weeklySessionKindModel.breakdown(itemSessions)
     };
   }).sort((a, b) => b.durationMs - a.durationMs);
 }
@@ -190,8 +192,9 @@ function installWeeklyReviewUi() {
 
 function renderWeeklyStats(sessions, evidence, itemSummaries) {
   const durationMs = sessions.reduce((sum, session) => sum + positiveNumber(session.durationMs), 0);
+  const sessionKinds = weeklySessionKindModel.breakdown(sessions);
   const stats = [
-    { label: 'Sessões concluídas', value: sessions.length, note: sessions.length === 1 ? 'registro na semana' : 'registros na semana' },
+    { label: 'Sessões concluídas', value: sessions.length, note: `${sessionKinds.deep} Deep Work · ${sessionKinds.normal} Normal` },
     { label: 'Tempo focado', value: weeklyFormatDuration(durationMs), note: 'tempo efetivo, sem pausas' },
     { label: 'Evidências', value: evidence.length, note: 'resultados verificáveis' },
     { label: 'Itens trabalhados', value: itemSummaries.length, note: 'leituras e estudos tocados' }
@@ -226,7 +229,7 @@ function renderWeeklyItems(itemSummaries) {
     const iconName = domainIcons[summary.domain] || 'target';
     const delta = summary.delta > 0 ? `+${formatNumber(summary.delta)} ${summary.unit}` : 'sem avanço informado';
     const progress = summary.progress == null ? '' : `${summary.progress}% atual`;
-    return `<article class="weekly-item-row"><div class="weekly-item-icon ${color}">${icon(iconName)}</div><div><strong>${escapeHtml(summary.title)}</strong><span>${summary.sessions} ${summary.sessions === 1 ? 'sessão' : 'sessões'} · ${weeklyFormatDuration(summary.durationMs)}</span></div><em>${escapeHtml(delta)}${progress ? `<small>${progress}</small>` : ''}</em></article>`;
+    return `<article class="weekly-item-row"><div class="weekly-item-icon ${color}">${icon(iconName)}</div><div><strong>${escapeHtml(summary.title)}</strong><span>${summary.sessions} ${summary.sessions === 1 ? 'sessão' : 'sessões'} · ${weeklyFormatDuration(summary.durationMs)}</span><span>${summary.sessionKinds.deep} Deep Work · ${summary.sessionKinds.normal} Normal</span></div><em>${escapeHtml(delta)}${progress ? `<small>${progress}</small>` : ''}</em></article>`;
   }).join('');
 }
 

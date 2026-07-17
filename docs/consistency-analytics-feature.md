@@ -84,6 +84,7 @@ O histórico reúne sessões de todos os livros e estudos e exibe:
 - objetivo da sessão;
 - observação final;
 - evidências vinculadas.
+- tipo da sessão: **Deep Work** ou **Normal**.
 
 A busca consulta título, contexto do item, objetivo, observação e conteúdo das evidências. Ela filtra somente o histórico, sem alterar os KPIs.
 
@@ -92,6 +93,7 @@ A busca consulta título, contexto do item, objetivo, observação e conteúdo d
 A exportação respeita período, domínio e busca atuais. O arquivo contém:
 
 - data;
+- tipo da sessão;
 - domínio;
 - item;
 - duração em minutos;
@@ -107,6 +109,7 @@ A exportação respeita período, domínio e busca atuais. O arquivo contém:
 - itens removidos continuam aparecendo como `Item removido`;
 - evidências são recuperadas pelo `sessionId`;
 - os dados são derivados localmente e não exigem nova persistência;
+- sessões antigas sem marcador explícito são apresentadas como **Normal**;
 - a funcionalidade permanece disponível offline.
 
 ## Critérios de aceite

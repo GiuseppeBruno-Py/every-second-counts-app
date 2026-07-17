@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Transformar as prioridades semanais e frentes ativas em uma lista diária curta, executável e conectada ao ciclo de evidências do Compasso.
+Unificar direção e execução em uma única central diária, conectada ao Journal, ao foco semanal, às sessões e às frentes do Compasso.
 
 ## Fluxo
 
@@ -12,6 +12,11 @@ Transformar as prioridades semanais e frentes ativas em uma lista diária curta,
 4. Sugestões usam o campo **Próxima evidência** do item como descrição operacional.
 5. Ações vinculadas a leituras e estudos podem iniciar uma sessão diretamente da visão **Hoje**.
 6. Ao final, a sessão registra progresso e evidência; qualquer ação pode ser marcada como concluída.
+7. Uma sessão ativa, normal ou Deep Work, aparece no topo e pode ser retomada sem procurar sua frente.
+8. Intenção do Journal, até três focos semanais e pendências que exigem decisão ficam visíveis sem duplicar tarefas.
+9. O progresso das frentes permanece recolhido por padrão.
+
+Rotas antigas para `overview` são redirecionadas para `today`. A Visão geral legada não aparece como destino concorrente na navegação.
 
 ## Persistência
 
@@ -41,3 +46,6 @@ Os planos são salvos em `state.data.dailyPlans`:
 - Ações podem ser concluídas, reabertas e removidas.
 - Leituras e estudos iniciam o fluxo de sessão existente.
 - O contador da navegação mostra apenas ações pendentes.
+- A rota inicial e a rota legada de Visão geral abrem Hoje.
+- Estados sem plano, com sessão ativa e com dia encerrado permanecem utilizáveis.
+- A central funciona em 360 px sem overflow horizontal.
