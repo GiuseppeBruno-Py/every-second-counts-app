@@ -4,6 +4,7 @@
  */
 
 const SESSIONS_FEATURE_VERSION = 1;
+const sessionTimerModel = globalThis.CompassoSessionTimerModel;
 state.data.sessions = Array.isArray(state.data.sessions) ? state.data.sessions : [];
 
 const sessionRuntime = {
@@ -14,15 +15,10 @@ const sessionRuntime = {
 
 function sessionNow() { return Date.now(); }
 function sessionId() { return `s${Date.now()}${Math.random().toString(36).slice(2,7)}`; }
-function sessionActive() { return state.data.sessions.find(session => session.status === 'active' || session.status === 'paused') || null; }
+function sessionActive() { return state.data.sessions.find(session => sessionTimerModel.isCurrent(session)) || null; }
 function sessionItem(session) { return session ? state.data[session.domain]?.find(item => item.id === session.itemId) || null : null; }
 function sessionElapsedMs(session, at = sessionNow()) {
-  if (!session) return 0;
-  const end = session.endedAt ? new Date(session.endedAt).getTime() : at;
-  const pausedNow = session.status === 'paused' && session.pauseStartedAt
-    ? Math.max(0, end - new Date(session.pauseStartedAt).getTime())
-    : 0;
-  return Math.max(0, end - new Date(session.startedAt).getTime() - positiveNumber(session.pausedMs) - pausedNow);
+  return sessionTimerModel.elapsed(session, at);
 }
 function formatDuration(ms) {
   const totalMinutes = Math.max(0, Math.round(ms / 60000));
@@ -103,12 +99,14 @@ function renderSessionBanner() {
   banner.hidden = !session;
   if (!session) { clearInterval(sessionRuntime.tick); sessionRuntime.tick = null; return; }
   const item = sessionItem(session);
-  banner.classList.toggle('paused', session.status === 'paused');
-  document.getElementById('sessionBannerLabel').textContent = session.status === 'paused' ? 'Sessão pausada' : 'Sessão em andamento';
+  banner.classList.toggle('paused', session.status === 'paused' || session.status === 'finishing');
+  document.getElementById('sessionBannerLabel').textContent = session.status === 'finishing' ? 'Concluindo sessão' : session.status === 'paused' ? 'Sessão pausada' : 'Sessão em andamento';
   document.getElementById('sessionBannerTitle').textContent = item?.title || 'Item removido';
-  document.getElementById('sessionPauseBtn').textContent = session.status === 'paused' ? 'Retomar' : 'Pausar';
+  document.getElementById('sessionPauseBtn').textContent = session.status === 'finishing' ? 'Tempo congelado' : session.status === 'paused' ? 'Retomar' : 'Pausar';
+  document.getElementById('sessionPauseBtn').disabled = session.status === 'finishing';
+  document.getElementById('sessionFinishBtn').disabled = session.status === 'finishing';
   const tick = () => { document.getElementById('sessionTimer').textContent = formatClock(sessionElapsedMs(session)); };
-  tick(); clearInterval(sessionRuntime.tick); sessionRuntime.tick = setInterval(tick, 1000);
+  tick(); clearInterval(sessionRuntime.tick); sessionRuntime.tick = session.status === 'finishing' ? null : setInterval(tick, 1000);
 }
 
 function enhanceSessionCards(domain) {
@@ -171,7 +169,7 @@ function createSession() {
 
 function toggleSessionPause() {
   const session = sessionActive();
-  if (!session) return;
+  if (!session || session.status === 'finishing') return;
   if (session.status === 'active') {
     session.status = 'paused';
     session.pauseStartedAt = new Date().toISOString();
@@ -185,10 +183,16 @@ function toggleSessionPause() {
 }
 
 function openSessionFinish() {
-  const session = sessionActive();
+  let session = sessionActive();
   if (!session) return;
   const item = sessionItem(session);
   if (!item) { showToast('O item desta sessão não existe mais'); return; }
+  if (session.status !== 'finishing') {
+    Object.assign(session, sessionTimerModel.begin(session, sessionNow()));
+    clearInterval(sessionRuntime.tick);
+    sessionRuntime.tick = null;
+    saveData();
+  }
   const metric = sessionMetric(item, session.domain);
   let suggested = metric.value;
   if (session.domain === 'study') suggested = Math.round((metric.value + sessionElapsedMs(session) / 3600000) * 10) / 10;
@@ -200,27 +204,41 @@ function openSessionFinish() {
   input.max = metric.config.isPercent ? '100' : '';
   input.value = suggested;
   document.getElementById('sessionReflection').value = '';
-  document.getElementById('sessionFinishDialog').showModal();
+  const dialog = document.getElementById('sessionFinishDialog');
+  if (!dialog.open) dialog.showModal();
+  renderSessionBanner();
+}
+
+function cancelSessionFinish() {
+  const session = sessionActive();
+  const dialog = document.getElementById('sessionFinishDialog');
+  if (!session || session.status !== 'finishing') { if (dialog?.open) dialog.close(); return; }
+  Object.assign(session, sessionTimerModel.cancel(session, sessionNow()));
+  if (dialog?.open) dialog.close();
+  saveData(session.status === 'paused' ? 'Encerramento cancelado; sessão continua pausada' : 'Encerramento cancelado; sessão retomada');
 }
 
 function finishSession() {
   const session = sessionActive();
-  if (!session) return;
+  if (!session || session.status !== 'finishing') return;
   const item = sessionItem(session);
   if (!item) return;
   const metric = sessionMetric(item, session.domain);
   const endValue = metric.config.isPercent ? clamp(document.getElementById('sessionEndValue').value) : positiveNumber(document.getElementById('sessionEndValue').value);
   if (endValue < positiveNumber(session.startValue)) { showToast('O valor final não pode ser menor que o inicial'); return; }
-  const endedAt = new Date().toISOString();
-  if (session.status === 'paused' && session.pauseStartedAt) {
-    session.pausedMs = positiveNumber(session.pausedMs) + Math.max(0, new Date(endedAt).getTime() - new Date(session.pauseStartedAt).getTime());
-    session.pauseStartedAt = null;
-    session.status = 'active';
+  const frozen = sessionTimerModel.finish(session);
+  if (session.statusBeforeFinishing === 'paused' && session.pauseStartedAt) {
+    session.pausedMs = positiveNumber(session.pausedMs) + Math.max(0, new Date(frozen.endedAt).getTime() - new Date(session.pauseStartedAt).getTime());
   }
   session.endValue = endValue;
-  session.endedAt = endedAt;
-  session.durationMs = sessionElapsedMs(session, new Date(endedAt).getTime());
+  session.endedAt = frozen.endedAt;
+  session.durationMs = frozen.durationMs;
   session.status = 'completed';
+  session.pauseStartedAt = null;
+  session.statusBeforeFinishing = null;
+  session.finishingStartedAt = null;
+  session.frozenDurationMs = null;
+  session.updatedAt = new Date().toISOString();
   session.reflection = document.getElementById('sessionReflection').value.trim();
   item[metric.config.currentKey] = endValue;
   if (metric.config.isPercent) item[metric.config.totalKey] = 100;
@@ -276,9 +294,12 @@ document.addEventListener('click', event => {
   const history = event.target.closest('[data-session-history]');
   if (history) { const [domain,itemId] = history.dataset.sessionHistory.split(':'); openSessionHistory(domain,itemId); }
   const close = event.target.closest('[data-session-close]');
-  if (close) document.getElementById(close.dataset.sessionClose)?.close();
+  if (close && close.dataset.sessionClose === 'sessionFinishDialog') cancelSessionFinish();
+  else if (close) document.getElementById(close.dataset.sessionClose)?.close();
   const remove = event.target.closest('[data-delete-session]');
   if (remove) deleteSession(remove.dataset.deleteSession);
 });
 
 window.addEventListener('beforeunload', () => window.CompassoStorage?.flush?.(STORAGE_KEY));
+document.getElementById('sessionFinishDialog').addEventListener('cancel', event => { event.preventDefault(); cancelSessionFinish(); });
+if (sessionActive()?.status === 'finishing') queueMicrotask(openSessionFinish);

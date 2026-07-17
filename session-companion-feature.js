@@ -18,7 +18,7 @@
       return {
         id: `deep:${deep.id}`,
         kind: "deep",
-        label: deep.state === "paused" ? "Deep Work pausado" : "Deep Work",
+        label: deep.state === "finishing" ? "Deep Work · tempo congelado" : deep.state === "paused" ? "Deep Work pausado" : "Deep Work",
         title: item?.title || "Sessão focada",
         status: deep.state,
         elapsedMs: deepModel.elapsedMs(deep),
@@ -34,7 +34,7 @@
       id: `session:${session.id}`,
       kind: "session",
       label:
-        session.status === "paused" ? "Sessão pausada" : "Sessão em andamento",
+        session.status === "finishing" ? "Sessão · tempo congelado" : session.status === "paused" ? "Sessão pausada" : "Sessão em andamento",
       title: item?.title || "Item removido",
       status: session.status,
       elapsedMs: sessionElapsedMs(session),
@@ -149,6 +149,8 @@
     if (current.kind === "deep") {
       if (!deepDialog.open) deepDialog.showModal();
       deepTick();
+      const session = deepActive();
+      if (session?.state === "finishing") deepShowFinish(session.finishingKind || "complete");
       return;
     }
     if (labels[current.domain]) switchView(current.domain);
@@ -291,7 +293,8 @@
     sessionCompanionTitle.textContent = current.title;
     sessionCompanionTime.textContent = clock(current.elapsedMs);
     sessionCompanionPause.textContent =
-      current.status === "paused" ? "▶" : "Ⅱ";
+      current.status === "finishing" ? "■" : current.status === "paused" ? "▶" : "Ⅱ";
+    sessionCompanionPause.disabled = current.status === "finishing";
     sessionCompanionPause.setAttribute(
       "aria-label",
       current.status === "paused" ? "Retomar sessão" : "Pausar sessão",
@@ -309,7 +312,7 @@
     updatePip(current);
     updateBadge(current);
     showNotification(current);
-    if (current.status === "paused") {
+    if (["paused", "finishing"].includes(current.status)) {
       clearInterval(runtime.timer);
       runtime.timer = null;
     } else if (!runtime.timer) runtime.timer = setInterval(render, 1000);
