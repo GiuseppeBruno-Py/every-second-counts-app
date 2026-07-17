@@ -252,8 +252,8 @@ renderWeeklyEvidence = function(evidence) {
   document.querySelectorAll('#weeklyEvidenceList .weekly-evidence-card').forEach((card, index) => {
     const entry = evidence[index];
     if (!entry) return;
-    if (entry.editedAt) card.querySelector('header')?.insertAdjacentHTML('beforeend', '<span class="history-edited">Editado</span>');
-    card.insertAdjacentHTML('beforeend', `<div class="evidence-edit-actions"><button type="button" data-evidence-edit="${escapeHtml(entry.id)}">Editar</button><button type="button" class="danger" data-evidence-delete="${escapeHtml(entry.id)}">Excluir</button></div>`);
+    if (entry.editedAt && !card.querySelector('.history-edited')) card.querySelector('header')?.insertAdjacentHTML('beforeend', '<span class="history-edited">Editado</span>');
+    if (!card.querySelector('[data-evidence-edit]')) card.insertAdjacentHTML('beforeend', `<div class="evidence-edit-actions"><button type="button" data-evidence-edit="${escapeHtml(entry.id)}">Editar</button><button type="button" class="danger" data-evidence-delete="${escapeHtml(entry.id)}">Excluir</button></div>`);
   });
 };
 
