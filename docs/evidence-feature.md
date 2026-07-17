@@ -18,7 +18,7 @@ Transformar tempo investido em registro verificável. Ao encerrar uma sessão de
 - Cada evidência fica vinculada ao `sessionId`, `itemId` e domínio.
 - O histórico da sessão mostra a evidência logo abaixo do registro de duração e progresso.
 - O botão **Histórico** exibe um contador com o total de evidências do item.
-- Evidências já salvas podem ter tipo, síntese, detalhes, data e sessão vinculada corrigidos.
+- Evidências já salvas podem ter tipo, síntese, detalhes, data e sessão vinculada corrigidos diretamente no histórico ou na Revisão semanal.
 - Uma correção preserva o `id`, registra `updatedAt`/`editedAt` e recebe o selo **Editado**.
 - Excluir apenas a evidência exige confirmação, preserva a sessão e cria um tombstone para impedir que uma cópia antiga do Drive reapareça.
 - Excluir uma sessão também exclui suas evidências vinculadas.
