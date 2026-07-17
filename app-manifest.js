@@ -8,6 +8,7 @@
     ['today-feature.js','/* Compasso · Hoje e próximas ações'],
     ['session-timer-model.js','CompassoSessionTimerModel'],
     ['history-evidence-model.js','CompassoHistoryEvidenceModel'],
+    ['session-kind-model.js','CompassoSessionKindModel'],
     ['sessions-feature.js','/* Compasso · Sessões de leitura e estudo'],
     ['goal-links-feature.js','/* Compasso · Metas conectadas a leituras e estudos'],
     ['contingency-model.js','CompassoContingencyModel'],
@@ -76,7 +77,7 @@
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v58',
+    cacheName:'compasso-pages-v59',
     bootstrapScript:'bootstrap-diagnostics.js',
     modules:Object.freeze(moduleEntries),
     collections:Object.freeze(collections),
