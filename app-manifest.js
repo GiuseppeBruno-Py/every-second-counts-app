@@ -74,7 +74,7 @@
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v52',
+    cacheName:'compasso-pages-v53',
     bootstrapScript:'bootstrap-diagnostics.js',
     modules:Object.freeze(moduleEntries),
     collections:Object.freeze(collections),

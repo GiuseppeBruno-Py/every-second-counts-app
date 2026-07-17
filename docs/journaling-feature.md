@@ -40,6 +40,8 @@ Ele pertence ao nível **Essencial** e funciona inteiramente no navegador, inclu
 
 O schema atual é `journalSchemaVersion: 1`. Cada entrada possui um ID permanente, tipo, conteúdo, data do Journal, estado, marcadores, referências opcionais, histórico e timestamps `createdAt`/`updatedAt`.
 
+`entryType` é uma decisão explícita. Editar texto, data, vínculos, coleções ou marcadores não reaplica o valor do seletor nem um default; valores ausentes ou inválidos em atualizações parciais preservam a categoria válida já armazenada. O default `note` existe apenas para criação sem escolha e para legado realmente sem categoria válida. Mover uma entrada para outro dia cria um destino rastreável, preservando categoria, vínculos, histórico e referência de origem. Uma troca de categoria só ocorre por seleção manual no formulário ou por atalho explícito durante a criação.
+
 Tarefas usam estados explícitos:
 
 - `open`: ainda requer decisão;
