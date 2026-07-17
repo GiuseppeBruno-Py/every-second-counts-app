@@ -17,7 +17,7 @@ A revisão não depende apenas da percepção do usuário. Ela consolida automat
 
 | Indicador | Cálculo |
 | --- | --- |
-| Sessões concluídas | Sessões encerradas dentro da semana |
+| Sessões concluídas | Sessões encerradas dentro da semana, separadas entre Deep Work e Normal |
 | Tempo focado | Soma da duração efetiva, sem períodos pausados |
 | Evidências | Evidências vinculadas às sessões da semana |
 | Itens trabalhados | Leituras e estudos distintos com sessão concluída |
@@ -40,6 +40,7 @@ Cada leitura ou estudo trabalhado mostra:
 - tempo focado;
 - avanço registrado em páginas, percentual ou horas;
 - progresso atual do item.
+- quantidade de sessões Deep Work e Normal.
 
 ## Fechamento reflexivo
 
@@ -52,9 +53,9 @@ A revisão permite registrar:
 - avaliação da qualidade da semana, de 1 a 5;
 - até três prioridades para a semana seguinte.
 
-## Integração com o dashboard
+## Integração com Hoje
 
-Ao salvar uma revisão, as prioridades selecionadas atualizam o bloco **Foco da semana** da visão geral.
+Ao salvar uma revisão, as prioridades selecionadas atualizam o bloco **Foco da semana** da central Hoje.
 
 ## Persistência
 
@@ -87,7 +88,7 @@ Elas são persistidas no IndexedDB, mantidas no fallback local e incluídas no b
 5. O tempo pausado não entra no total focado.
 6. É possível navegar por semanas anteriores.
 7. A revisão pode ser salva e atualizada.
-8. As prioridades atualizam o foco da visão geral.
+8. As prioridades atualizam o foco de Hoje.
 9. A revisão persiste após fechar e abrir o PWA.
 10. O recurso funciona offline e entra no backup JSON.
 
