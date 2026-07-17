@@ -10,7 +10,6 @@
     {id:'more',label:'Mais',icon:'more',level:'essential',order:50,route:'more'}
   ]);
   const views=Object.freeze([
-    {id:'overview',area:'fronts',label:'Visão geral',description:'Veja o panorama das frentes em andamento.',icon:'home',level:'essential',order:10,route:'overview'},
     {id:'reading',area:'fronts',label:'Leituras',description:'Livros físicos e digitais em progresso.',icon:'book',level:'essential',order:20,route:'reading'},
     {id:'study',area:'fronts',label:'Estudos',description:'Cursos, certificações e prática deliberada.',icon:'study',level:'essential',order:30,route:'study'},
     {id:'goal',area:'fronts',label:'Metas',description:'Resultados conectados à execução.',icon:'target',level:'essential',order:40,route:'goal'},
@@ -27,10 +26,10 @@
   function mode(value){const normalized=aliases[value]||value;return modes.includes(normalized)?normalized:'essential'}
   function area(id){return areas.find(item=>item.id===id)||null}
   function view(id){return views.find(item=>item.id===id)||null}
-  function areaFor(route){return area(route)?.id||view(route)?.area||'today'}
+  function areaFor(route){if(route==='overview')return'today';return area(route)?.id||view(route)?.area||'today'}
   function visible(level,current){return rank[level]<=rank[mode(current)]}
   function viewsFor(areaId,current,{includeHidden=false}={}){return views.filter(item=>item.area===areaId&&(includeHidden||visible(item.level,current))).sort((a,b)=>a.order-b.order)}
-  function resolve(route,{fallback='today'}={}){return area(route)?.route||view(route)?.route||fallback}
+  function resolve(route,{fallback='today'}={}){if(route==='overview')return'today';return area(route)?.route||view(route)?.route||fallback}
   function migratePreference(value){return mode(value)}
   return Object.freeze({modes,areas,views,mode,area,view,areaFor,visible,viewsFor,resolve,migratePreference});
 });
