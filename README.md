@@ -66,7 +66,7 @@ O percentual e o restante são calculados automaticamente.
 - Histórico de sessões por item e histórico global pesquisável.
 - Métricas de tempo focado, dias ativos, consistência e sequências.
 - Tendência das últimas oito semanas e ranking por investimento.
-- Revisão semanal guiada por sessões e evidências.
+- Revisão unificada e retomável em Observar, Decidir, Planejar e Histórico, preservando sessões, evidências, planos e consistência.
 - Wizard semanal em 10 etapas, orientado por 2–3 resultados observáveis.
 - Prioridades semanais conectadas ao foco do dashboard.
 - Grafo interativo de leituras, estudos, metas e notas.

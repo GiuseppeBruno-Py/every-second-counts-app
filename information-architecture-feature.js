@@ -2,6 +2,7 @@
 (function(root){
   const model=root.CompassoInformationArchitectureModel,runtime=root.CompassoFeatures;if(!model||!runtime)return;
   const MODE_KEY='compasso.ux.mode.v1';
+  const legacyReviewStage={weekly:'observe',outcomes:'decide',analytics:'history'};
   const hubs={fronts:{title:'Frentes',kicker:'Direção e execução',lead:'Organize aquilo que está lendo, estudando e construindo.'},review:{title:'Revisão',kicker:'Evidências e decisões',lead:'Feche ciclos, identifique padrões e escolha o próximo ajuste.'},more:{title:'Mais',kicker:'Conhecimento e sistema',lead:'Notas, recursos avançados, integrações, exportações e configurações.'}};
   const state={area:'today',view:'today',started:false,suppressHistory:false,opening:false};
   const icon=name=>`<svg aria-hidden="true"><use href="#i-${name}"></use></svg>`;
@@ -36,11 +37,13 @@
     if(state.suppressHistory)return;const url=new URL(location.href);url.searchParams.set('view',view);history[replace?'replaceState':'pushState']({compassoView:view},'',url);
   }
   function open(route,{replace=false,history=true}={}){
+    const reviewStage=legacyReviewStage[route];
     const target=model.resolve(route),area=model.area(target),view=model.view(target);
     const destination=area?(hubs[area.id]?area.id:area.route):view.route;
     if(hubs[destination])renderHub(destination);
     state.opening=true;
     try{switchView(destination)}finally{state.opening=false}
+    if(reviewStage)root.CompassoReviewCycle?.select?.(reviewStage);
     setActive(target);
     if(history)updateUrl(target,replace);
     return target;
