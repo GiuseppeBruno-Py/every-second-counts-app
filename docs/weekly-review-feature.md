@@ -1,11 +1,5 @@
 # Revisão semanal guiada por evidências
 
-## Jornada unificada
-
-A rota **Revisão** reúne quatro etapas retomáveis: **Observar**, **Decidir**, **Planejar** e **Histórico**. As superfícies existentes são incorporadas sem copiar registros: `weeklyReviews`, `weeklyPlans`, `bookSyntheses`, evidências e execuções mantêm seus IDs e continuam no backup e no Google Drive.
-
-O cabeçalho indica a primeira etapa incompleta. Sem sessões ou evidências, as métricas exibem **Amostra insuficiente**, nunca um zero que pareça desempenho real. Resultados são deduplicados por identidade antes de aparecerem no resumo.
-
 ## Objetivo
 
 Transformar sessões e evidências registradas durante a semana em interpretação, decisão e foco para a semana seguinte.

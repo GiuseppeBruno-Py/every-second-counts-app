@@ -331,7 +331,7 @@ document.getElementById('weeklyReviewForm').addEventListener('submit', event => 
 
 document.addEventListener('click', event => {
   const weeklyAction = event.target.closest('[data-action="weekly"]');
-  if (weeklyAction) { globalThis.CompassoReviewCycle?.select?.('observe'); (globalThis.CompassoInformationArchitecture?.open?.('review') || switchView('review')); }
+  if (weeklyAction) switchView('weekly');
   const navigation = event.target.closest('[data-week-nav]');
   if (navigation) {
     weeklyReviewRuntime.offset = Math.min(0, weeklyReviewRuntime.offset + Number(navigation.dataset.weekNav));
