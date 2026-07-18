@@ -14,3 +14,9 @@ test('uma rota reúne Observar, Decidir, Planejar e Histórico',()=>{
 test('layout móvel não cria navegação horizontal global',()=>{
   const feature=read('review-cycle-feature.js');assert.match(feature,/@media\(max-width:720px\)/);assert.match(feature,/grid-template-columns:1fr 1fr/);assert.match(feature,/min-width:0/);
 });
+
+test('aliases legados abrem a etapa correspondente da revisão',()=>{
+  const architecture=read('information-architecture-feature.js');
+  assert.match(architecture,/weekly:'observe'/);assert.match(architecture,/outcomes:'decide'/);assert.match(architecture,/analytics:'history'/);
+  assert.match(architecture,/CompassoReviewCycle\?\.select\?\.\(reviewStage\)/);
+});
