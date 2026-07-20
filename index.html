@@ -1229,8 +1229,12 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     if (requestedView && labels[requestedView]) switchView(requestedView);
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
       let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => { if (refreshing) return; refreshing = true; location.reload(); });
       const workerVersion = globalThis.CompassoAppManifest?.cacheName || 'compasso-pages-v66';
+      const standalone = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!standalone || refreshing || sessionStorage.getItem('compasso.sw.reload') === workerVersion) return;
+        refreshing = true; sessionStorage.setItem('compasso.sw.reload', workerVersion); location.reload();
+      });
       navigator.serviceWorker.register(`./service-worker.js?version=${encodeURIComponent(workerVersion)}`).then(registration => registration.update()).catch(() => {});
     }
   </script>

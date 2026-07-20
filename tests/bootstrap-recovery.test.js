@@ -11,6 +11,6 @@ test('falha oferece recuperação de cache sem apagar dados locais',()=>{
   assert.match(diagnostic,/Atualizar e tentar novamente/);assert.match(diagnostic,/Detalhe:/);
 });
 
-test('registro do service worker muda com a versão e recarrega após ativação',()=>{
-  const html=read('index.html');assert.match(html,/service-worker\.js\?version=/);assert.match(html,/controllerchange/);assert.match(html,/registration\.update\(\)/);
+test('registro muda com a versão e só recarrega automaticamente o PWA instalado',()=>{
+  const html=read('index.html');assert.match(html,/service-worker\.js\?version=/);assert.match(html,/controllerchange/);assert.match(html,/display-mode: standalone/);assert.match(html,/compasso\.sw\.reload/);assert.match(html,/registration\.update\(\)/);
 });
