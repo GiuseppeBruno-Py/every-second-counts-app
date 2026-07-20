@@ -16,6 +16,12 @@ test('normalizes legacy drafts without losing identity or timestamps',()=>{
   assert.deepEqual(normalized.outcomes,[]);
 });
 
+test('ignora rascunhos nulos e normaliza coleções parcialmente corrompidas',()=>{
+  const plans=plan.normalizeCollection([null,false,'inválido',{id:'wp-ok',weekStart:'2026-07-20',outcomes:null}]);
+  assert.equal(plans.length,1);assert.equal(plans[0].id,'wp-ok');assert.deepEqual(plans[0].outcomes,[]);
+  assert.doesNotThrow(()=>plan.normalize(null));assert.deepEqual(plan.normalize(null).goalRefs,[]);
+});
+
 test('requires goals, 2-3 outcomes and actions before confirmation',()=>{
   const base=plan.normalize({weekStart:'2026-07-13',goalRefs:['g1'],actionRefs:['goal:g1'],outcomes:[{description:'A'},{description:'B'}]});
   assert.equal(plan.canConfirm(base),true);
@@ -43,4 +49,3 @@ test('confirmed snapshot fields are separate from action references',()=>{
   normalized.actionRefs.push('reading:b');
   assert.deepEqual(normalized.snapshots,[{actionId:'a',title:'Original'}]);
 });
-
