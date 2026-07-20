@@ -1,7 +1,7 @@
 /* Compasso · Planejamento semanal guiado por resultados */
 
 const WEEKLY_PLAN_VERSION=1;
-state.data.weeklyPlans=window.CompassoWeeklyPlanModel.normalizeCollection(state.data.weeklyPlans);
+state.data.weeklyPlans=typeof window.CompassoWeeklyPlanModel.normalizeCollection==='function'?window.CompassoWeeklyPlanModel.normalizeCollection(state.data.weeklyPlans):(Array.isArray(state.data.weeklyPlans)?state.data.weeklyPlans.filter(plan=>plan&&typeof plan==='object'&&!Array.isArray(plan)):[]);
 const weeklyPlanRuntime={plan:null,step:1};
 
 function weeklyPlanTimezone(){return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}
@@ -55,7 +55,7 @@ function weeklyPlanConfirm(){
 
 installWeeklyPlanStyles();installWeeklyPlanUi();
 document.addEventListener('click',event=>{
- if(event.target.closest('#weeklyPlanLaunch'))openWeeklyPlan();
+ if(event.target.closest('#weeklyPlanLaunch')){try{openWeeklyPlan();}catch(error){globalThis.CompassoBootstrapDiagnostic?.fail?.('weekly-plan-feature.js',error);showToast('Não foi possível abrir o planejamento · atualize o aplicativo');}}
  if(event.target.closest('[data-weekly-plan-close]'))document.getElementById('weeklyPlanDialog').close();
  if(event.target.closest('#weeklyPlanBack')){weeklyPlanRuntime.step=Math.max(1,weeklyPlanRuntime.step-1);weeklyPlanSave();renderWeeklyPlan();}
  if(event.target.closest('#weeklyPlanNext')){if(weeklyPlanRuntime.step===10){weeklyPlanConfirm();return;}weeklyPlanRuntime.step=Math.min(10,weeklyPlanRuntime.step+1);weeklyPlanSave();renderWeeklyPlan();}
