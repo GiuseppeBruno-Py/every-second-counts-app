@@ -5,9 +5,7 @@ const APP_SHELL=MANIFEST.assets;
 const STORAGE_KEY='compasso.app.v1';
 
 self.addEventListener('install',event=>event.waitUntil(
-  caches.open(CACHE_NAME).then(cache=>Promise.all(APP_SHELL.map(async path=>{
-    try{const response=await fetch(path);if(response.ok)await cache.put(path,response)}catch{/* módulo opcional */}
-  }))).then(()=>self.skipWaiting())
+  caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting())
 ));
 self.addEventListener('activate',event=>event.waitUntil(
   caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim())
@@ -38,7 +36,7 @@ function integrateFeature(html,featureCode,module){
   return html.replace(point,()=>`    ${code}\n\n    renderAll();\n    const requestedView`);
 }
 async function readCachedText(path,module){
-  const cached=await caches.match(path,{ignoreSearch:true});if(cached)return cached.text();
+  const cache=await caches.open(CACHE_NAME),cached=await cache.match(path,{ignoreSearch:true});if(cached)return cached.text();
   // Módulos opcionais entram no cache durante a instalação. Não prolongamos uma
   // navegação offline tentando descobrir arquivos que não pertencem ao pacote.
   if(!module?.required)return'';
@@ -53,7 +51,7 @@ async function enhanceHtmlResponse(response){
   return new Response(enhanced,{status:response.status,statusText:response.statusText,headers});
 }
 async function appShellResponse(request){
-  const cached=await caches.match(request,{ignoreSearch:true})||await caches.match('./index.html');if(cached)return enhanceHtmlResponse(cached);
+  const cache=await caches.open(CACHE_NAME),cached=await cache.match(request,{ignoreSearch:true})||await cache.match('./index.html');if(cached)return enhanceHtmlResponse(cached);
   try{const network=await fetch(request);if(network.ok){const copy=network.clone();caches.open(CACHE_NAME).then(cache=>cache.put('./index.html',copy))}return enhanceHtmlResponse(network)}catch{return Response.error()}
 }
 self.addEventListener('fetch',event=>{
@@ -61,7 +59,7 @@ self.addEventListener('fetch',event=>{
   if(!same)return;
   const documentRequest=event.request.mode==='navigate'||(same&&(url.pathname.endsWith('/')||url.pathname.endsWith('/index.html')));
   if(documentRequest){event.respondWith(appShellResponse(event.request));return}
-  event.respondWith(caches.match(event.request,{ignoreSearch:true}).then(cached=>cached||fetch(event.request).then(response=>{if(response.ok&&same){const copy=response.clone();caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy))}return response}).catch(()=>Response.error())));
+  event.respondWith(caches.open(CACHE_NAME).then(cache=>cache.match(event.request,{ignoreSearch:true}).then(cached=>cached||fetch(event.request).then(response=>{if(response.ok&&same){const copy=response.clone();cache.put(event.request,copy)}return response}).catch(()=>Response.error()))));
 });
 self.addEventListener('notificationclick',event=>{
   const target=event.notification?.data?.url||'./';event.notification?.close();event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(windows=>{const visible=windows.find(client=>'focus'in client);if(visible){visible.navigate?.(target);return visible.focus()}return clients.openWindow?clients.openWindow(target):null}));

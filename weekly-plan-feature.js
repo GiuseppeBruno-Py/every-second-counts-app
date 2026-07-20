@@ -1,7 +1,7 @@
 /* Compasso · Planejamento semanal guiado por resultados */
 
 const WEEKLY_PLAN_VERSION=1;
-state.data.weeklyPlans=typeof window.CompassoWeeklyPlanModel.normalizeCollection==='function'?window.CompassoWeeklyPlanModel.normalizeCollection(state.data.weeklyPlans):(Array.isArray(state.data.weeklyPlans)?state.data.weeklyPlans.filter(plan=>plan&&typeof plan==='object'&&!Array.isArray(plan)):[]);
+state.data.weeklyPlans=typeof window.CompassoWeeklyPlanModel?.normalizeCollection==='function'?window.CompassoWeeklyPlanModel.normalizeCollection(state.data.weeklyPlans):(Array.isArray(state.data.weeklyPlans)?state.data.weeklyPlans.filter(plan=>plan&&typeof plan==='object'&&!Array.isArray(plan)):[]);
 const weeklyPlanRuntime={plan:null,step:1};
 
 function weeklyPlanTimezone(){return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}

@@ -26,7 +26,17 @@ test('service worker insere o modelo de capturas antes da feature no HTML de pro
         const file = path.join(root, raw.replace(/^\.\//, '') || 'index.html');
         return fs.existsSync(file) ? new Response(fs.readFileSync(file)) : undefined;
       },
-      async open() { return { put() {} }; },
+      async open() {
+        return {
+          put() {},
+          async addAll() {},
+          async match(request) {
+            const raw = typeof request === 'string' ? request : request.url;
+            const file = path.join(root, raw.replace(/^\.\//, '') || 'index.html');
+            return fs.existsSync(file) ? new Response(fs.readFileSync(file)) : undefined;
+          }
+        };
+      },
       async keys() { return []; },
       async delete() { return true; }
     },
