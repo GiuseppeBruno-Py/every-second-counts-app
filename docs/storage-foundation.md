@@ -6,12 +6,14 @@ Migrar a persistência do estado principal para IndexedDB sem interromper o func
 
 ## Estratégia de migração
 
-1. O service worker injeta a camada `storage.js` antes da inicialização do aplicativo.
+1. O documento carrega `storage.js` diretamente antes da inicialização; o funcionamento não depende da composição do service worker.
 2. `CompassoStorage.ready()` abre o banco `compasso-db` e cria o schema versionado.
 3. Quando ainda não existe estado no IndexedDB, o conteúdo atual de `compasso.app.v1` é copiado do `localStorage`.
 4. Quando os dois armazenamentos divergem, o valor visível no aplicativo legado tem precedência e é migrado.
-5. Toda gravação atualiza primeiro um espelho síncrono no `localStorage` e depois entra em uma fila de escrita no IndexedDB.
-6. Se o IndexedDB estiver indisponível ou falhar, o aplicativo continua usando o espelho legado.
+5. Toda gravação atualiza a memória e entra em uma fila serial de escrita no IndexedDB.
+6. O `localStorage` recebe apenas estados pequenos (até 256 KiB) para compatibilidade; estados maiores permanecem exclusivamente no IndexedDB.
+7. Falta de espaço no `localStorage` é capturada, o espelho é removido e nunca interrompe o bootstrap ou a gravação principal.
+8. Se o IndexedDB estiver indisponível, o aplicativo tenta o espelho legado sem propagar erros de quota.
 
 ## Stores da versão 1
 
@@ -29,8 +31,8 @@ Migrar a persistência do estado principal para IndexedDB sem interromper o func
 ## Compatibilidade e rollback
 
 - O formato do backup JSON permanece inalterado.
-- O `localStorage` continua como espelho temporário.
-- Uma reversão para a versão anterior do aplicativo ainda encontra o último estado salvo.
+- O `localStorage` continua como espelho temporário somente enquanto o estado for pequeno.
+- Estados grandes exigem uma versão com suporte ao IndexedDB, evitando o limite reduzido do armazenamento legado.
 - Nenhum dado pessoal é enviado ao GitHub ou a serviços externos.
 
 ## Diagnóstico

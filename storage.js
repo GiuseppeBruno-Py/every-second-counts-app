@@ -5,11 +5,45 @@
   const DB_VERSION = 1;
   const STATE_STORE = 'appState';
   const SCHEMA_VERSION = 1;
+  const LOCAL_MIRROR_LIMIT = 256 * 1024;
 
   let databasePromise = null;
   const memory = new Map();
   const writeQueues = new Map();
   let persistenceMode = 'indexeddb';
+
+  function readLocal(key) {
+    try { return localStorage.getItem(key); }
+    catch (error) {
+      console.warn('[CompassoStorage] localStorage indisponível para leitura.', error);
+      return null;
+    }
+  }
+
+  function removeLocal(key) {
+    try { localStorage.removeItem(key); return true; }
+    catch (error) {
+      console.warn('[CompassoStorage] Não foi possível remover o espelho local.', error);
+      return false;
+    }
+  }
+
+  function mirrorLocally(key, serialized, { allowLarge = false } = {}) {
+    if (!allowLarge && serialized.length > LOCAL_MIRROR_LIMIT) {
+      removeLocal(key);
+      return false;
+    }
+    try {
+      localStorage.setItem(key, serialized);
+      return true;
+    } catch (error) {
+      // O IndexedDB é a fonte de verdade. Um espelho cheio nunca pode impedir
+      // o bootstrap nem uma gravação válida no banco principal.
+      removeLocal(key);
+      console.warn('[CompassoStorage] Espelho local ignorado por falta de espaço.', error);
+      return false;
+    }
+  }
 
   function clone(value) {
     if (value == null) return value;
@@ -109,7 +143,7 @@
 
   async function writeStateRecord(key, serialized) {
     const db = await openDatabase();
-    if (!db) return;
+    if (!db) return false;
 
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([STATE_STORE, 'meta'], 'readwrite');
@@ -125,7 +159,7 @@
         schemaVersion: SCHEMA_VERSION,
         updatedAt: new Date().toISOString()
       });
-      transaction.oncomplete = () => resolve();
+      transaction.oncomplete = () => resolve(true);
       transaction.onerror = () => reject(transaction.error || new Error('Falha ao persistir o estado'));
       transaction.onabort = () => reject(transaction.error || new Error('Persistência cancelada'));
     });
@@ -137,8 +171,9 @@
       .catch(() => undefined)
       .then(() => writeStateRecord(key, serialized))
       .catch(error => {
-        persistenceMode = 'localstorage-fallback';
+        persistenceMode = 'memory-fallback';
         console.error('[CompassoStorage] Falha ao gravar no IndexedDB.', error);
+        return false;
       });
 
     writeQueues.set(key, next);
@@ -152,7 +187,7 @@
   }
 
   async function ready(key) {
-    const legacySerialized = localStorage.getItem(key);
+    const legacySerialized = readLocal(key);
     let record = null;
 
     try {
@@ -162,27 +197,27 @@
       console.warn('[CompassoStorage] Falha ao ler o IndexedDB; preservando o estado legado.', error);
     }
 
-    // Se o app legado alterou o localStorage depois da última sincronização,
-    // essa versão visível ao usuário tem precedência e é migrada para o IndexedDB.
+    // Um espelho legado diferente pode conter a última gravação síncrona feita
+    // antes de a fila do IndexedDB terminar. Migre-o uma vez e, se for grande,
+    // remova-o somente depois de confirmar a escrita no banco principal.
     if (legacySerialized && (!record || legacySerialized !== record.serialized)) {
       memory.set(key, legacySerialized);
-      await enqueueWrite(key, legacySerialized);
-      announceReady(true);
+      const migrated = await enqueueWrite(key, legacySerialized);
+      if (migrated) mirrorLocally(key, legacySerialized);
+      announceReady(Boolean(migrated));
       return;
     }
 
     if (record?.serialized) {
       memory.set(key, record.serialized);
-      localStorage.setItem(key, record.serialized);
-    } else if (legacySerialized) {
-      memory.set(key, legacySerialized);
+      mirrorLocally(key, record.serialized);
     }
 
-    announceReady(Boolean(legacySerialized && !record));
+    announceReady(false);
   }
 
   function getSerialized(key) {
-    return memory.get(key) ?? localStorage.getItem(key);
+    return memory.get(key) ?? readLocal(key);
   }
 
   function load(key, fallback = null) {
@@ -198,13 +233,20 @@
   }
 
   function save(key, value) {
-    const serialized = JSON.stringify(value);
+    let serialized;
+    try { serialized = JSON.stringify(value); }
+    catch (error) {
+      console.error('[CompassoStorage] Estado não serializável; gravação ignorada.', error);
+      return Promise.resolve(false);
+    }
     memory.set(key, serialized);
-
-    // Espelho temporário para rollback, compatibilidade com backups antigos
-    // e primeiras visitas ainda não controladas pelo service worker.
-    localStorage.setItem(key, serialized);
-    return enqueueWrite(key, serialized);
+    const write = enqueueWrite(key, serialized);
+    if (serialized.length <= LOCAL_MIRROR_LIMIT || persistenceMode === 'localstorage-fallback') {
+      mirrorLocally(key, serialized, { allowLarge: persistenceMode === 'localstorage-fallback' });
+    } else {
+      write.then(persisted => { if (persisted) removeLocal(key); });
+    }
+    return write;
   }
 
   async function flush(key) {
@@ -218,6 +260,7 @@
       version: DB_VERSION,
       schemaVersion: SCHEMA_VERSION,
       mode: db ? 'indexeddb' : 'localstorage-fallback',
+      localMirrorLimit: LOCAL_MIRROR_LIMIT,
       stores: db ? Array.from(db.objectStoreNames) : []
     };
   }

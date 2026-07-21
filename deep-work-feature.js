@@ -32,7 +32,7 @@ function deepWorkRegisterEvidence(session){
   const createdAt=session.endedAt||new Date().toISOString();
   state.data.evidence.unshift({id:`e${Date.now()}${Math.random().toString(36).slice(2,7)}`,schemaVersion:2,sessionId,itemId:session.actionId,domain:session.domain,type:'deliverable',summary,details:(session.nextAction||'').trim(),createdAt,updatedAt:createdAt,editedAt:null});
 }
-function deepSave(message){executionSyncAll();window.CompassoStorage?.save?.(STORAGE_KEY,state.data);localStorage.setItem(STORAGE_KEY,JSON.stringify(state.data));renderAll();if(message)showToast(message)}
+function deepSave(message){executionSyncAll();window.CompassoStorage?.save?.(STORAGE_KEY,state.data);renderAll();if(message)showToast(message)}
 function deepLock(sessionId){localStorage.setItem(deepRuntime.lockKey,JSON.stringify({tabId:deepRuntime.tabId,sessionId,updatedAt:Date.now()}))}
 function deepUnlock(){try{const x=JSON.parse(localStorage.getItem(deepRuntime.lockKey)||'{}');if(x.tabId===deepRuntime.tabId)localStorage.removeItem(deepRuntime.lockKey)}catch{}}
 function deepLockedElsewhere(){try{const x=JSON.parse(localStorage.getItem(deepRuntime.lockKey)||'{}');return x.tabId&&x.tabId!==deepRuntime.tabId&&Date.now()-x.updatedAt<15000}catch{return false}}
