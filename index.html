@@ -767,7 +767,13 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       renderNotes();
       renderFileTree();
     }
-    globalThis.renderAll = renderAll;
+    // Keep the global hook linked to the live binding: feature-runtime replaces
+    // renderAll during installation and extensions must observe that wrapper.
+    Object.defineProperty(globalThis, 'renderAll', {
+      configurable: true,
+      get: () => renderAll,
+      set: value => { renderAll = value; }
+    });
 
     function appVersionLabel() {
       const manifest = globalThis.CompassoAppManifest;

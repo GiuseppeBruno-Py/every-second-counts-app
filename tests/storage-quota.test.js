@@ -43,5 +43,6 @@ test('documento usa IndexedDB diretamente e não grava o estado principal por fo
 test('carregamento modular preserva os hooks públicos usados pelas extensões',()=>{
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   assert.match(html,/globalThis\.state\s*=\s*state/);
-  assert.match(html,/globalThis\.renderAll\s*=\s*renderAll/);
+  assert.match(html,/Object\.defineProperty\(globalThis, 'renderAll'/);
+  assert.match(html,/get:\s*\(\)\s*=>\s*renderAll/);
 });
