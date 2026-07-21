@@ -672,6 +672,9 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       collapsedFolders: new Set(),
       editorMode: 'split'
     };
+    // Preserve the public runtime hooks that existed while the app used a classic
+    // script. Browser diagnostics and feature extensions still rely on them.
+    globalThis.state = state;
 
     function loadData() {
       try {
@@ -764,6 +767,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       renderNotes();
       renderFileTree();
     }
+    globalThis.renderAll = renderAll;
 
     function appVersionLabel() {
       const manifest = globalThis.CompassoAppManifest;

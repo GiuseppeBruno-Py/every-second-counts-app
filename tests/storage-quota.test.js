@@ -39,3 +39,9 @@ test('documento usa IndexedDB diretamente e não grava o estado principal por fo
   assert.match(html,/<script src="\.\/storage\.js"><\/script>\s*<script type="module">\s*await window\.CompassoStorage\.ready/);
   assert.doesNotMatch([html,deep,ritual].join('\n'),/localStorage\.setItem\(STORAGE_KEY/);
 });
+
+test('carregamento modular preserva os hooks públicos usados pelas extensões',()=>{
+  const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  assert.match(html,/globalThis\.state\s*=\s*state/);
+  assert.match(html,/globalThis\.renderAll\s*=\s*renderAll/);
+});
