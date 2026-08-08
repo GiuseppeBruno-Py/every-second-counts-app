@@ -13,3 +13,4 @@ Thumbs.db
 .test-dist/
 test-results/
 node_modules/
+.codegraph/
