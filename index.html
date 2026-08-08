@@ -14,6 +14,11 @@
   <link rel="shortcut icon" href="./compasso.ico" />
   <link rel="apple-touch-icon" href="./compasso-icon-192.png" />
   <title>Compasso — Every Second Counts</title>
+  <!-- COMPASSO:COMPOSITION:SLOT -->
+  <link rel="stylesheet" href="./app-ui.css" data-compasso-support="app-ui">
+  <link rel="stylesheet" href="./design-system.css" data-compasso-support="design-system">
+  <script src="./app-manifest.js" data-compasso-support="manifest"></script>
+  <script src="./bootstrap-diagnostics.js" data-compasso-support="bootstrap"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
 
@@ -433,6 +438,30 @@
   </style>
 </head>
 <body>
+  <section id="compassoBootstrap" class="compasso-bootstrap" role="status" aria-live="polite" aria-atomic="true">
+    <div class="compasso-bootstrap-card">
+      <div class="eyebrow">Compasso</div>
+      <h1 id="compassoBootstrapTitle" tabindex="-1">Abrindo seu espaço</h1>
+      <p id="compassoBootstrapStatus">Preparando a versão atual do aplicativo.</p>
+      <p id="compassoBootstrapDetail" class="compasso-bootstrap-detail">Se a preparação não terminar, você poderá tentar novamente sem apagar seus dados.</p>
+      <div class="compasso-bootstrap-actions">
+        <button id="compassoBootstrapRetry" type="button" data-ds-component="button" hidden>Tentar novamente</button>
+        <button id="compassoBootstrapReset" type="button" data-ds-component="button" hidden>Redefinir somente o aplicativo offline</button>
+      </div>
+    </div>
+  </section>
+
+  <dialog id="compassoShellResetDialog" class="compasso-bootstrap-dialog" aria-labelledby="compassoShellResetTitle">
+    <form method="dialog">
+      <h2 id="compassoShellResetTitle">Redefinir o aplicativo offline?</h2>
+      <p>Esta ação substitui apenas o Service Worker e os caches do Compasso. Seus dados locais, backups e arquivos Markdown não serão apagados.</p>
+      <p id="compassoShellResetStatus" class="compasso-bootstrap-detail" role="status" aria-live="polite"></p>
+      <div class="compasso-bootstrap-actions">
+        <button id="compassoShellResetCancel" type="submit" value="cancel" data-ds-component="button">Cancelar</button>
+        <button id="compassoShellResetConfirm" type="button" data-ds-component="button">Confirmar redefinição</button>
+      </div>
+    </form>
+  </dialog>
   <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
     <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m15.5 8.5-2.1 4.9-4.9 2.1 2.1-4.9 4.9-2.1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path d="m4 10 8-6 8 6v9a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
@@ -463,7 +492,7 @@
     <symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 4v16" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
   </svg>
 
-  <div class="app-shell">
+  <div class="app-shell" hidden inert aria-hidden="true">
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark"><svg><use href="#i-compass"/></svg></div>
@@ -487,7 +516,7 @@
         <strong>Feche a semana com evidências, não impressões.</strong>
         <button data-action="weekly">Ver foco da semana →</button>
       </div>
-      <div class="profile"><div class="avatar">EC</div><div><strong>Meu espaço</strong><span id="sidebarAppVersion">Compasso v69</span></div></div>
+      <div class="profile"><div class="avatar">EC</div><div><strong>Meu espaço</strong><span id="sidebarAppVersion">Compasso v70</span></div></div>
     </aside>
 
     <main class="main">
@@ -505,11 +534,12 @@
 
       <div class="menu" id="settingsMenu">
         <button id="installBtn" hidden><svg><use href="#i-compass"/></svg>Instalar Compasso</button>
-        <button id="updateAppBtn"><svg><use href="#i-reset"/></svg>Verificar atualização</button>
+        <button id="updateAppBtn" aria-describedby="compassoUpdateStatus"><svg><use href="#i-reset"/></svg>Verificar atualização</button>
+        <span id="compassoUpdateStatus" class="compasso-update-status" role="status" aria-live="polite"></span>
         <button id="exportBtn"><svg><use href="#i-export"/></svg>Exportar dados</button>
         <label><svg><use href="#i-import"/></svg>Importar dados<input type="file" id="importInput" accept="application/json"></label>
         <button id="resetBtn"><svg><use href="#i-reset"/></svg>Restaurar exemplo</button>
-        <div class="menu-version" id="settingsAppVersion">Compasso v69</div>
+        <div class="menu-version" id="settingsAppVersion">Compasso v70</div>
       </div>
 
       <div class="content">
@@ -777,7 +807,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
 
     function appVersionLabel() {
       const manifest = globalThis.CompassoAppManifest;
-      const cacheName = manifest?.cacheName || 'compasso-pages-v69';
+      const cacheName = manifest?.cacheName || 'compasso-pages-v70';
       const cacheVersion = String(cacheName).match(/v(\d+)$/)?.[1];
       return `Compasso v${cacheVersion || manifest?.version || '59'}`;
     }
@@ -1166,10 +1196,9 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     window.addEventListener('appinstalled', () => showToast('Compasso instalado'));
     document.getElementById('updateAppBtn').addEventListener('click', async () => {
       if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) { showToast('Abra pelo inicializador para atualizar'); return; }
-      const registration = await navigator.serviceWorker.getRegistration();
-      if (registration) await registration.update();
-      showToast('Atualização verificada · recarregando');
-      setTimeout(() => location.reload(), 900);
+      const lifecycle = globalThis.CompassoPwaLifecycle;
+      if (!lifecycle) { showToast('Não foi possível verificar a atualização'); return; }
+      await lifecycle.checkForUpdate(document.getElementById('updateAppBtn'));
     });
     ['reading','study','goal'].forEach(domain => document.getElementById(`${domain}Search`).addEventListener('input', e => { state.search[domain] = e.target.value; renderGrid(domain); }));
     document.getElementById('currentUnitField').addEventListener('input', updateMetricPreview);
@@ -1236,19 +1265,10 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     });
     document.getElementById('resetBtn').addEventListener('click', () => { if (confirm('Restaurar os dados iniciais? Suas alterações locais serão substituídas.')) { state.data = normalizeData(structuredClone(initialData)); saveData('Painel restaurado'); } });
 
+    /* COMPASSO:MODULES:SLOT */
     renderAll();
     const requestedView = new URLSearchParams(location.search).get('view');
     if (requestedView && labels[requestedView]) switchView(requestedView);
-    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
-      let refreshing = false;
-      const workerVersion = globalThis.CompassoAppManifest?.cacheName || 'compasso-pages-v69';
-      const standalone = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!standalone || refreshing || sessionStorage.getItem('compasso.sw.reload') === workerVersion) return;
-        refreshing = true; sessionStorage.setItem('compasso.sw.reload', workerVersion); location.reload();
-      });
-      navigator.serviceWorker.register(`./service-worker.js?version=${encodeURIComponent(workerVersion)}`).then(registration => registration.update()).catch(() => {});
-    }
   </script>
 </body>
 </html>

@@ -61,6 +61,19 @@
     'ux-consolidation-model.js','ux-consolidation-feature.js','information-architecture-model.js','information-architecture-feature.js','design-system-feature.js'
   ]);
   const moduleEntries = modules.map(([file,marker],order)=>({file,marker,order,required:order<3,browserJourney:browserJourneyModules.has(file)}));
+  const cachePrefix='compasso-pages-v';
+  const isOwnedCacheName=name=>new RegExp(`^${cachePrefix}\\d+$`).test(String(name||''));
+  const composition=Object.freeze({
+    generationSlot:'<!-- COMPASSO:COMPOSITION:SLOT -->',
+    moduleSlot:'/* COMPASSO:MODULES:SLOT */',
+    supportPrerequisites:Object.freeze([
+      Object.freeze({id:'app-ui',token:'href="./app-ui.css"'}),
+      Object.freeze({id:'design-system',token:'href="./design-system.css"'}),
+      Object.freeze({id:'manifest',token:'src="./app-manifest.js"'}),
+      Object.freeze({id:'bootstrap',token:'src="./bootstrap-diagnostics.js"'}),
+      Object.freeze({id:'storage',token:'src="./storage.js"'})
+    ])
+  });
 
   const arrayCollections = [
     'reading','study','goal','focus','folders','notes','captures','sessions','deepWorkSessions','executionSessions','dailyPlans',
@@ -73,13 +86,16 @@
     {name:'dailyJournals',type:'keyed-map',identity:'date',merge:'entry-timestamp',sync:true}
   ];
   const assets = [
-    './','./index.html','./app-manifest.js','./bootstrap-diagnostics.js','./app-ui.css','./design-system.css','./service-worker.js','./storage.js',
+    './','./index.html','./app-manifest.js','./app-composition.js','./bootstrap-diagnostics.js','./app-ui.css','./design-system.css','./service-worker.js','./storage.js',
     ...moduleEntries.map(item=>`./${item.file}`),
     './manifest.webmanifest','./compasso-icon.svg','./compasso.ico','./compasso-icon-192.png','./compasso-icon-512.png'
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v69',
+    cacheName:'compasso-pages-v70',
+    cachePrefix,
+    isOwnedCacheName,
+    composition,
     bootstrapScript:'bootstrap-diagnostics.js',
     modules:Object.freeze(moduleEntries),
     collections:Object.freeze(collections),
