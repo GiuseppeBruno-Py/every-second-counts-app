@@ -1,9 +1,10 @@
 /* Compasso · Domínio canônico de execução */
 (function(root,factory){
-  const api=factory();
+  const outcomeModel=root.CompassoLearningOutcomeModel||(typeof module==='object'&&module.exports?require('./learning-outcome-model.js'):null);
+  const api=factory(outcomeModel);
   if(typeof module==='object'&&module.exports)module.exports=api;
   root.CompassoExecutionSessionModel=api;
-})(typeof globalThis!=='undefined'?globalThis:this,function(){
+})(typeof globalThis!=='undefined'?globalThis:this,function(outcomeModel){
   const MODES=new Set(['quick','deep','minimum','contingency']);
   const ACTIVE=new Set(['running','paused','finishing']);
   const FINAL=new Set(['completed','interrupted']);
@@ -24,6 +25,7 @@
       id,schemaVersion:1,mode,status,
       source:{collection:sourceCollection,id:sourceId},
       domain:text(input.domain,30),itemId:text(input.itemId||input.actionId,90),
+      learningContext:outcomeModel?.normalizeExecutionContext(input.learningContext)||null,
       expectedOutcome:text(input.expectedOutcome||input.intent),completionCriterion:text(input.completionCriterion),
       ritualSnapshot:clone(input.ritualSnapshot)||null,ritualChecklist:clone(input.ritualChecklist)||[],
       contingencySnapshot:clone(input.contingencySnapshot)||null,
@@ -77,6 +79,7 @@
       id:session.id,source:session.mode==='deep'?'deep-work':'execution',executionMode:session.mode,status:'completed',domain:session.domain,itemId:session.itemId,
       startedAt:session.startedAt,endedAt:session.endedAt||session.startedAt,durationMs:number(session.durationMs),intent:session.expectedOutcome,reflection:session.result,nextAction:session.nextAction,
       completionCriterion:session.completionCriterion,readingFormat:session.readingFormat,studyUnit:session.studyUnit,startValue:session.startValue,endValue:session.endValue,
+      learningContext:clone(session.learningContext),
       updatedAt:session.updatedAt,editedAt:session.editedAt
     })).sort((a,b)=>String(b.endedAt||b.startedAt).localeCompare(String(a.endedAt||a.startedAt)));
   }

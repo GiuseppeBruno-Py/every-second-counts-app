@@ -94,6 +94,7 @@ finishSession = function() {
   if (previousStatus !== 'completed' && session.status === 'completed') {
     state.data.evidence.unshift(evidence);
     saveData('Sessão concluída com evidência');
+    CompassoFeatures.emit('execution:recorded',{sessionId:session.id});
   }
 };
 

@@ -94,7 +94,7 @@
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v71',
+    cacheName:'compasso-pages-v72',
     cachePrefix,
     isOwnedCacheName,
     composition,

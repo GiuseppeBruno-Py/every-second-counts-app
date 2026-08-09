@@ -116,3 +116,13 @@ test('round-trip JSON mantém correções e marca de edição', () => {
   assert.equal(roundTrip.sessions[0].editedAt, '2026-07-17T12:00:00.000Z');
   assert.equal(roundTrip.evidence[0].editedAt, '2026-07-17T12:01:00.000Z');
 });
+
+test('evidência aceita alvo neutro e continua derivando proveniência pela sessão', () => {
+  const neutral=model.normalizeEvidence({...evidence,id:'e2',sessionId:'s-outcome',domain:'learningOutcome',itemId:'o1'});
+  assert.equal(neutral.domain,'learningOutcome');
+  assert.equal(neutral.itemId,'o1');
+  assert.equal('learningContext' in neutral,false);
+  const missingSession=model.normalizeEvidence({...neutral,sessionId:'missing'});
+  assert.equal(missingSession.sessionId,'missing');
+  assert.equal(missingSession.domain,'learningOutcome');
+});

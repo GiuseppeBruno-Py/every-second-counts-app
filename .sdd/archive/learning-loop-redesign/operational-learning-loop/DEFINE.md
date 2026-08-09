@@ -1,7 +1,7 @@
 # Learning Loop Redesign — Define
 
 **Delivery:** 2 — Operational Learning Loop
-**Status:** Complete (Built)
+**Status:** Shipped — Operational Learning Loop
 **Initiative:** `learning-loop-redesign`
 **Baseline inspected:** `origin/main` at `7b1196c819fe2375346ceb803143125f8fd4c25c`
 **Prior delivery:** [Slice 1 archive](../../archive/learning-loop-redesign/SHIPPED.md) — `Actionable Outcome Foundation`, shipped and unchanged

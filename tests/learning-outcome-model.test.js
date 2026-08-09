@@ -119,3 +119,12 @@ test('round-trip JSON preserva capacidade completa, arquivo e referências',()=>
   const full=model.archiveOutcome(model.createOutcome({capability:'Diagnosticar plano',proofCriterion:'Justificar o gargalo',nextAttempt:'Analisar caso novo',resourceRefs:[{type:'study',id:'s1'},{type:'reading',id:'r1'}]},{now:T1,idFactory:ids(['o1','a1'])}),{now:T2});
   assert.deepEqual(model.normalizeCollection(JSON.parse(JSON.stringify([full]))),[full]);
 });
+
+test('contexto de execução captura a tentativa atual e normaliza apenas a forma completa',()=>{
+  const outcome=minimal(),context=model.createExecutionContext(outcome);
+  assert.deepEqual(context,{outcomeId:'o1',attemptId:'a1',attemptText:'Analisar um plano'});
+  model.updateOutcome(outcome,{nextAttempt:'Outra tentativa'},{now:T2});
+  assert.deepEqual(context,{outcomeId:'o1',attemptId:'a1',attemptText:'Analisar um plano'});
+  assert.deepEqual(model.normalizeExecutionContext({...context,attemptText:'  Analisar um plano  '}),context);
+  for(const value of [null,{}, {outcomeId:'o1',attemptId:'a1'}, {outcomeId:'o1',attemptId:'',attemptText:'x'}])assert.equal(model.normalizeExecutionContext(value),null);
+});

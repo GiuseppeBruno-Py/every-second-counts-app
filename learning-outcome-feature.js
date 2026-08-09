@@ -99,18 +99,40 @@ function outcomeResourceLabel(ref) {
   const prefix = ref.type === 'study' ? 'Estudo' : 'Leitura';
   return ref.available ? `${prefix}: ${ref.title}` : `${prefix}: Recurso indisponível`;
 }
+function outcomeExecutions(id) {
+  return (state.data.executionSessions || []).filter(session => session.learningContext?.outcomeId === id && ['completed','interrupted'].includes(session.status))
+    .sort((left,right) => String(right.endedAt || right.startedAt || right.createdAt).localeCompare(String(left.endedAt || left.startedAt || left.createdAt)));
+}
+function outcomeExecutionContext(outcome) {
+  const session = outcomeExecutions(outcome.id)[0];
+  if (!session) return '';
+  const evidence = (state.data.evidence || []).filter(item => item.sessionId === session.id);
+  const minutes = Math.max(0,Math.round(Number(session.durationMs || 0) / 60000));
+  let resource = '';
+  if (['study','reading'].includes(session.domain)) {
+    const item = state.data[session.domain]?.find(candidate => candidate.id === session.itemId);
+    resource = item ? `${session.domain === 'study' ? 'Estudo' : 'Leitura'}: ${item.title || item.id}` : 'Recurso indisponível';
+  }
+  return `<section class="learning-outcome-execution" aria-label="Última execução desta capacidade">
+    <span>Última execução</span><strong>${escapeHtml(session.learningContext.attemptText)}</strong>
+    <p>${escapeHtml(outcomeDate(session.endedAt || session.startedAt || session.createdAt))}${minutes ? ` · ${minutes} min` : ''}${resource ? ` · ${escapeHtml(resource)}` : ''}</p>
+    ${session.result ? `<p>Registro: ${escapeHtml(session.result)}</p>` : ''}
+    ${evidence.length ? `<div class="learning-outcome-evidence">${evidence.map(item => `<p><b>Evidência:</b> ${escapeHtml(item.summary)}</p>`).join('')}</div>` : '<p>Nenhuma evidência vinculada.</p>'}
+  </section>`;
+}
 function outcomeCard(outcome) {
   const resources = outcomeResolved(outcome);
   const archived = outcome.status === 'archived';
-  return `<article class="learning-outcome-card${archived ? ' is-archived' : ''}" data-outcome-card="${escapeHtml(outcome.id)}">
+  return `<article class="learning-outcome-card${archived ? ' is-archived' : ''}" data-outcome-card="${escapeHtml(outcome.id)}" tabindex="-1">
     <div class="learning-outcome-card-head">
       <div><span class="learning-outcome-status">${archived ? 'Arquivada' : 'Ativa'}</span><h3>${escapeHtml(outcome.capability)}</h3></div>
       <button class="secondary-btn" type="button" data-outcome-edit="${escapeHtml(outcome.id)}">Editar</button>
     </div>
     ${outcome.proofCriterion ? `<div class="learning-outcome-proof"><span>Como vou saber</span><p>${escapeHtml(outcome.proofCriterion)}</p></div>` : ''}
     <div class="learning-outcome-attempt"><span>Próxima tentativa</span><strong>${escapeHtml(outcome.nextAttempt.text)}</strong></div>
+    ${outcomeExecutionContext(outcome)}
     ${resources.length ? `<div class="learning-outcome-chips" aria-label="Recursos vinculados">${resources.map(ref => `<span class="learning-outcome-chip${ref.available ? '' : ' unavailable'}">${escapeHtml(outcomeResourceLabel(ref))}<button type="button" data-outcome-unlink="${escapeHtml(outcome.id)}" data-resource-type="${ref.type}" data-resource-id="${escapeHtml(ref.id)}" aria-label="Desvincular ${escapeHtml(outcomeResourceLabel(ref))}">×</button></span>`).join('')}</div>` : ''}
-    <div class="learning-outcome-card-foot"><span>Atualizada em ${outcomeDate(outcome.updatedAt)}</span><button class="quiet-btn" type="button" data-outcome-status="${escapeHtml(outcome.id)}">${archived ? 'Reativar' : 'Arquivar'}</button></div>
+    <div class="learning-outcome-card-foot"><span>Atualizada em ${outcomeDate(outcome.updatedAt)}</span><div>${archived ? '' : `<button class="primary-btn" type="button" data-outcome-execute="${escapeHtml(outcome.id)}">Executar tentativa</button>`}<button class="quiet-btn" type="button" data-outcome-status="${escapeHtml(outcome.id)}">${archived ? 'Reativar' : 'Arquivar'}</button></div></div>
   </article>`;
 }
 function outcomeRender() {
@@ -248,6 +270,25 @@ async function outcomeDelete(id = learningOutcomeRuntime.editingId) {
   if (await outcomePersist(candidate, 'Capacidade excluída')) outcomeClose(true);
 }
 
+function outcomeStartExecution(id, trigger) {
+  const outcome = outcomeFind(id);
+  if (!outcome || outcome.status !== 'active') return;
+  const learningContext = learningOutcomeModel.createExecutionContext(outcome);
+  if (!learningContext) return showToast('A tentativa atual não está disponível');
+  learningOutcomeRuntime.returnFocus = trigger || document.activeElement;
+  openOutcomeSessionStart(outcome.id,{learningContext,resources:outcomeResolved(outcome)});
+}
+
+CompassoFeatures.on('execution:recorded',({sessionId}={}) => {
+  const session=(state.data.executionSessions || []).find(item => item.id === sessionId);
+  const outcomeId=session?.learningContext?.outcomeId;
+  if (!outcomeId) return;
+  learningOutcomeRuntime.mode='active';
+  switchView('capabilities');
+  outcomeRender();
+  queueMicrotask(() => outcomeElement('learningOutcomeList')?.querySelector(`[data-outcome-card="${CSS.escape(outcomeId)}"]`)?.focus?.());
+});
+
 CompassoFeatures.register('learning-outcomes', {
   order:68,
   install() {
@@ -260,6 +301,7 @@ CompassoFeatures.register('learning-outcomes', {
 });
 CompassoFeatures.action('[data-outcome-new]', ({ target }) => outcomeOpen(null, target));
 CompassoFeatures.action('[data-outcome-edit]', ({ target }) => outcomeOpen(outcomeFind(target.dataset.outcomeEdit), target));
+CompassoFeatures.action('[data-outcome-execute]', ({ target }) => outcomeStartExecution(target.dataset.outcomeExecute,target));
 CompassoFeatures.action('[data-outcome-cancel]', () => outcomeClose());
 CompassoFeatures.action('[data-outcome-mode]', ({ target }) => { learningOutcomeRuntime.mode = target.dataset.outcomeMode; outcomeRender(); });
 CompassoFeatures.action('[data-outcome-status]', ({ target }) => outcomeToggleStatus(target.dataset.outcomeStatus));

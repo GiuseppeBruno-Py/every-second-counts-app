@@ -16,7 +16,15 @@ const sessionRuntime = {
 function sessionNow() { return Date.now(); }
 function sessionId() { return `s${Date.now()}${Math.random().toString(36).slice(2,7)}`; }
 function sessionActive() { return state.data.sessions.find(session => sessionTimerModel.isCurrent(session)) || null; }
-function sessionItem(session) { return session ? state.data[session.domain]?.find(item => item.id === session.itemId) || null : null; }
+function sessionItem(session) {
+  if (!session) return null;
+  if (session.domain === 'learningOutcome') {
+    const outcome = state.data.learningOutcomes?.find(item => item.id === session.learningContext?.outcomeId || item.id === session.itemId);
+    return outcome ? {...outcome,title:outcome.capability} : session.learningContext ? {id:session.itemId,title:session.learningContext.attemptText} : null;
+  }
+  return state.data[session.domain]?.find(item => item.id === session.itemId) || null;
+}
+function sessionUsesResourceMetric(session) { return ['study','reading'].includes(session?.domain); }
 function sessionElapsedMs(session, at = sessionNow()) {
   return sessionTimerModel.elapsed(session, at);
 }
@@ -38,6 +46,7 @@ function sessionMetric(item, domain) {
   return { config, value: positiveNumber(item?.[config.currentKey]) };
 }
 function sessionMetricLabel(session) {
+  if (!sessionUsesResourceMetric(session)) return 'Sem métrica de recurso';
   const item = sessionItem(session);
   const config = metricConfig(session.domain, session.domain === 'study' ? item?.studyUnit || session.studyUnit : item?.readingFormat || session.readingFormat || 'physical');
   const start = positiveNumber(session.startValue);
@@ -73,14 +82,14 @@ function installSessionUi() {
     <dialog class="session-dialog" id="sessionStartDialog">
       <form method="dialog" id="sessionStartForm">
         <div class="session-dialog-head"><div><div class="eyebrow">Nova sessão</div><h2 id="sessionStartTitle">Iniciar sessão</h2></div><button class="close-btn" type="button" data-session-close="sessionStartDialog">${icon('x')}</button></div>
-        <div class="session-dialog-body"><div class="session-summary" id="sessionStartSummary"></div><div class="field"><label for="sessionMode">Modo de execução</label><select id="sessionMode"><option value="quick">Sessão rápida</option><option value="deep">Deep Work</option></select><small id="sessionModeHelp">Cronômetro simples com registro de progresso.</small></div><div class="field"><label for="sessionIntent">Objetivo desta sessão</label><textarea id="sessionIntent" maxlength="220" placeholder="Ex.: ler o capítulo 4 e identificar o argumento central."></textarea></div></div>
+        <div class="session-dialog-body"><div class="session-summary" id="sessionStartSummary"></div><div class="field" id="sessionOutcomeResourceField" hidden><label for="sessionOutcomeResource">Apoio nesta sessão</label><select id="sessionOutcomeResource"></select><small>Opcional. A capacidade continua sendo o objetivo.</small></div><div class="field"><label for="sessionMode">Modo de execução</label><select id="sessionMode"><option value="quick">Sessão rápida</option><option value="deep">Deep Work</option></select><small id="sessionModeHelp">Cronômetro simples com registro de progresso.</small></div><div class="field"><label for="sessionIntent">Objetivo desta sessão</label><textarea id="sessionIntent" maxlength="220" placeholder="Ex.: ler o capítulo 4 e identificar o argumento central."></textarea></div></div>
         <div class="session-dialog-foot"><button type="button" class="quiet-btn" data-session-close="sessionStartDialog">Cancelar</button><button type="submit" class="primary-btn">Iniciar</button></div>
       </form>
     </dialog>
     <dialog class="session-dialog" id="sessionFinishDialog">
       <form method="dialog" id="sessionFinishForm">
         <div class="session-dialog-head"><div><div class="eyebrow">Encerrar sessão</div><h2 id="sessionFinishTitle">Registrar progresso</h2></div><button class="close-btn" type="button" data-session-close="sessionFinishDialog">${icon('x')}</button></div>
-        <div class="session-dialog-body"><div class="session-summary" id="sessionFinishSummary"></div><div class="field"><label id="sessionEndValueLabel" for="sessionEndValue">Valor final</label><input id="sessionEndValue" type="number" min="0" inputmode="decimal" required></div><div class="field"><label for="sessionReflection">Observação da sessão</label><textarea id="sessionReflection" maxlength="300" placeholder="O que avançou, onde parou ou o que precisa retomar?"></textarea></div></div>
+        <div class="session-dialog-body"><div class="session-summary" id="sessionFinishSummary"></div><div class="field" id="sessionEndValueField"><label id="sessionEndValueLabel" for="sessionEndValue">Valor final</label><input id="sessionEndValue" type="number" min="0" inputmode="decimal" required></div><div class="field"><label for="sessionReflection">Observação da sessão</label><textarea id="sessionReflection" maxlength="300" placeholder="O que avançou, onde parou ou o que precisa retomar?"></textarea></div></div>
         <div class="session-dialog-foot"><button type="button" class="quiet-btn" data-session-close="sessionFinishDialog">Cancelar</button><button type="submit" class="primary-btn">${icon('check')}Salvar sessão</button></div>
       </form>
     </dialog>
@@ -127,16 +136,26 @@ function enhanceSessionCards(domain) {
 
 CompassoFeatures.register('sessions',{order:20,afterGrid:enhanceSessionCards,afterRender:renderSessionBanner});
 
-function openSessionStart(domain, itemId) {
+function openSessionStartCore(domain, itemId, options = {}) {
   const active = executionActive();
   if (active) { showToast('Encerre a sessão atual antes de iniciar outra'); return; }
-  const item = state.data[domain].find(candidate => candidate.id === itemId);
+  const context = learningOutcomeModel.normalizeExecutionContext(options.learningContext);
+  const item = domain === 'learningOutcome'
+    ? state.data.learningOutcomes?.find(candidate => candidate.id === itemId)
+    : state.data[domain]?.find(candidate => candidate.id === itemId);
   if (!item) return;
-  sessionRuntime.selectedItem = { domain, itemId };
-  const metric = sessionMetric(item, domain);
-  document.getElementById('sessionStartTitle').textContent = item.title;
-  document.getElementById('sessionStartSummary').textContent = `Início registrado em ${formatNumber(metric.value)} ${metric.config.unit}. O cronômetro continuará mesmo se o aplicativo for fechado.`;
-  document.getElementById('sessionIntent').value = item.note || '';
+  sessionRuntime.selectedItem = { domain, itemId, learningContext:context };
+  const neutral = domain === 'learningOutcome';
+  const metric = neutral ? null : sessionMetric(item, domain);
+  document.getElementById('sessionStartTitle').textContent = item.title || item.capability;
+  document.getElementById('sessionStartSummary').textContent = neutral
+    ? `Tentativa: ${context?.attemptText || item.nextAttempt?.text}. O cronômetro continuará mesmo se o aplicativo for fechado.`
+    : `Início registrado em ${formatNumber(metric.value)} ${metric.config.unit}. O cronômetro continuará mesmo se o aplicativo for fechado.`;
+  document.getElementById('sessionIntent').value = context?.attemptText || item.note || '';
+  const resourceField = document.getElementById('sessionOutcomeResourceField');
+  const resourceSelect = document.getElementById('sessionOutcomeResource');
+  resourceField.hidden = !neutral;
+  resourceSelect.innerHTML = '<option value="">Sem recurso</option>' + (options.resources || []).map(ref => `<option value="${escapeHtml(ref.type)}:${escapeHtml(ref.id)}"${ref.available ? '' : ' disabled'}>${escapeHtml(ref.available ? `${ref.type === 'study' ? 'Estudo' : 'Leitura'}: ${ref.title}` : `${ref.type === 'study' ? 'Estudo' : 'Leitura'} indisponível`)}</option>`).join('');
   const mode = document.getElementById('sessionMode');
   const contingencies = Array.isArray(item.contingencies) ? item.contingencies.filter(option => option?.enabled !== false) : [];
   mode.innerHTML = `<option value="quick">Sessão rápida</option><option value="deep">Deep Work</option>${item.minimumVersion ? '<option value="minimum">Versão mínima</option>' : ''}${contingencies.length ? '<option value="contingency">Plano B</option>' : ''}`;
@@ -145,26 +164,38 @@ function openSessionStart(domain, itemId) {
   mode.onchange = explain; explain();
   document.getElementById('sessionStartDialog').showModal();
 }
+function openSessionStart(domain,itemId) { return openSessionStartCore(domain,itemId); }
+function openOutcomeSessionStart(itemId,options) { return openSessionStartCore('learningOutcome',itemId,options); }
 
 function createSession() {
   const selected = sessionRuntime.selectedItem;
   if (!selected || !executionCanStart()) return;
-  const item = state.data[selected.domain].find(candidate => candidate.id === selected.itemId);
+  let target = {...selected};
+  const selectedResource = selected.domain === 'learningOutcome' ? document.getElementById('sessionOutcomeResource')?.value : '';
+  if (selectedResource) {
+    const [domain,itemId] = selectedResource.split(':');
+    target = {...selected,domain,itemId};
+  }
+  const item = target.domain === 'learningOutcome'
+    ? state.data.learningOutcomes?.find(candidate => candidate.id === target.itemId)
+    : state.data[target.domain]?.find(candidate => candidate.id === target.itemId);
   if (!item) return;
   const mode = document.getElementById('sessionMode')?.value || 'quick';
   if (mode === 'deep') {
     document.getElementById('sessionStartDialog').close();
-    if (typeof deepOpen === 'function') deepOpen(selected.domain, selected.itemId);
+    if (selected.learningContext && typeof deepOpenOutcome === 'function') deepOpenOutcome(target.domain,target.itemId,{learningContext:selected.learningContext});
+    else if (typeof deepOpen === 'function') deepOpen(target.domain,target.itemId);
     return;
   }
-  const metric = sessionMetric(item, selected.domain);
+  const metric = sessionUsesResourceMetric(target) ? sessionMetric(item, target.domain) : null;
   const contingency = mode === 'contingency' ? (item.contingencies || []).find(option => option?.enabled !== false) : null;
   const ritual = state.data.ritualTemplates?.find(candidate => candidate.id === document.getElementById('ritualQuickSelect')?.value);
   const session = {
     id: sessionId(),
     schemaVersion: SESSIONS_FEATURE_VERSION,
-    domain: selected.domain,
-    itemId: selected.itemId,
+    domain: target.domain,
+    itemId: target.itemId,
+    learningContext: selected.learningContext,
     readingFormat: item.readingFormat || null,
     studyUnit: item.studyUnit || null,
     intent: document.getElementById('sessionIntent').value.trim(),
@@ -172,7 +203,7 @@ function createSession() {
     contingencySnapshot: contingency ? JSON.parse(JSON.stringify(contingency)) : null,
     ritualSnapshot: ritual && globalThis.CompassoRitualModel ? globalThis.CompassoRitualModel.snapshot(ritual) : null,
     reflection: '',
-    startValue: metric.value,
+    startValue: metric?.value ?? null,
     endValue: null,
     startedAt: new Date().toISOString(),
     endedAt: null,
@@ -216,16 +247,19 @@ function openSessionFinish() {
     sessionRuntime.tick = null;
     saveData();
   }
-  const metric = sessionMetric(item, session.domain);
-  let suggested = metric.value;
+  const metric = sessionUsesResourceMetric(session) ? sessionMetric(item, session.domain) : null;
+  let suggested = metric?.value ?? null;
   if (session.domain === 'study') suggested = Math.round((metric.value + sessionElapsedMs(session) / 3600000) * 10) / 10;
   document.getElementById('sessionFinishTitle').textContent = item.title;
-  document.getElementById('sessionFinishSummary').textContent = `${formatDuration(sessionElapsedMs(session))} de atividade · início em ${formatNumber(session.startValue)} ${metric.config.unit}.`;
-  document.getElementById('sessionEndValueLabel').textContent = metric.config.currentLabel;
+  document.getElementById('sessionFinishSummary').textContent = metric ? `${formatDuration(sessionElapsedMs(session))} de atividade · início em ${formatNumber(session.startValue)} ${metric.config.unit}.` : `${formatDuration(sessionElapsedMs(session))} de atividade na tentativa registrada.`;
+  const metricField = document.getElementById('sessionEndValueField');
+  metricField.hidden = !metric;
+  document.getElementById('sessionEndValueLabel').textContent = metric?.config.currentLabel || 'Valor final';
   const input = document.getElementById('sessionEndValue');
-  input.step = metric.config.step;
-  input.max = metric.config.isPercent ? '100' : '';
-  input.value = suggested;
+  input.required = Boolean(metric);
+  input.step = metric?.config.step || '1';
+  input.max = metric?.config.isPercent ? '100' : '';
+  input.value = metric ? suggested : '';
   document.getElementById('sessionReflection').value = '';
   const dialog = document.getElementById('sessionFinishDialog');
   if (!dialog.open) dialog.showModal();
@@ -247,9 +281,9 @@ function finishSession() {
   if (!session || session.status !== 'finishing') return;
   const item = sessionItem(session);
   if (!item) return;
-  const metric = sessionMetric(item, session.domain);
-  const endValue = metric.config.isPercent ? clamp(document.getElementById('sessionEndValue').value) : positiveNumber(document.getElementById('sessionEndValue').value);
-  if (endValue < positiveNumber(session.startValue)) { showToast('O valor final não pode ser menor que o inicial'); return; }
+  const metric = sessionUsesResourceMetric(session) ? sessionMetric(item, session.domain) : null;
+  const endValue = metric ? (metric.config.isPercent ? clamp(document.getElementById('sessionEndValue').value) : positiveNumber(document.getElementById('sessionEndValue').value)) : null;
+  if (metric && endValue < positiveNumber(session.startValue)) { showToast('O valor final não pode ser menor que o inicial'); return; }
   const frozen = sessionTimerModel.finish(session);
   if (session.statusBeforeFinishing === 'paused' && session.pauseStartedAt) {
     session.pausedMs = positiveNumber(session.pausedMs) + Math.max(0, new Date(frozen.endedAt).getTime() - new Date(session.pauseStartedAt).getTime());
@@ -265,13 +299,15 @@ function finishSession() {
   session.updatedAt = new Date().toISOString();
   session.reflection = document.getElementById('sessionReflection').value.trim();
   executionSyncRegular(session);
-  item[metric.config.currentKey] = endValue;
-  if (metric.config.isPercent) item[metric.config.totalKey] = 100;
-  const total = positiveNumber(item[metric.config.totalKey]);
-  if (total > 0) item.progress = clamp(Math.round((Math.min(endValue,total) / total) * 100));
-  if (item.progress >= 100) item.status = 'done';
+  if (metric) {
+    item[metric.config.currentKey] = endValue;
+    if (metric.config.isPercent) item[metric.config.totalKey] = 100;
+    const total = positiveNumber(item[metric.config.totalKey]);
+    if (total > 0) item.progress = clamp(Math.round((Math.min(endValue,total) / total) * 100));
+    if (item.progress >= 100) item.status = 'done';
+  }
   document.getElementById('sessionFinishDialog').close();
-  saveData('Sessão concluída e progresso atualizado');
+  saveData(metric ? 'Sessão concluída e progresso atualizado' : 'Sessão concluída sem alterar progresso de recurso');
 }
 
 function openSessionHistory(domain, itemId) {

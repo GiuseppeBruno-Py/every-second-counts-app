@@ -1,12 +1,12 @@
 # Learning Loop Redesign — Technical Design
 
 **Delivery:** 2 — Operational Learning Loop
-**Status:** Complete (Built)
+**Status:** Shipped — Operational Learning Loop
 **Revision:** 1 — 2026-08-09
 **Baseline:** `7b1196c819fe2375346ceb803143125f8fd4c25c` on `codex/operational-learning-loop-define`
 **Authoritative requirements:** `DEFINE.md`, clarity 15/15, 12 requirements, 12 acceptance criteria
 **Prior delivery:** Slice 1 remains shipped and unchanged under `.sdd/archive/learning-loop-redesign/`
-**Phase boundary:** Build completed within the closed manifest; independent Ship verification remains pending.
+**Phase boundary:** Build and independent Ship verification completed within the closed manifest.
 
 ## 1. Design gate
 

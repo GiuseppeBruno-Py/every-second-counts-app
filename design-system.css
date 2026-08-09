@@ -747,6 +747,28 @@ dialog[data-ds-component] form {
   font-size: .78rem;
   line-height: 1.55;
 }
+.learning-outcome-execution {
+  margin-top: 1rem;
+  padding: .85rem 1rem;
+  border: 1px solid var(--ds-color-border, var(--line));
+  border-radius: .75rem;
+  background: var(--green-soft);
+  overflow-wrap: anywhere;
+}
+.learning-outcome-execution > span {
+  display: block;
+  color: var(--muted);
+  font-size: .61rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.learning-outcome-execution > strong { display: block; margin-top: .35rem; }
+.learning-outcome-execution p { margin: .35rem 0 0; color: var(--muted); font-size: .72rem; line-height: 1.5; }
+.learning-outcome-evidence { margin-top: .45rem; }
+.learning-outcome-card-foot > div { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.learning-outcome-card:focus-visible { outline: 3px solid var(--violet); outline-offset: 3px; }
+.session-dialog .field[hidden] { display: none; }
 .learning-outcome-chips {
   display: flex;
   flex-wrap: wrap;
@@ -884,4 +906,5 @@ dialog[data-ds-component] form {
   .learning-outcome-dialog-foot .learning-outcome-delete { grid-column: 1 / -1; }
   .learning-outcome-card-foot { align-items: stretch; flex-direction: column; }
   .learning-outcome-card-foot .quiet-btn { align-self: flex-start; }
+  .learning-outcome-card-foot > div { align-items: stretch; width: 100%; }
 }

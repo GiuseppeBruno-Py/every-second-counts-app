@@ -47,6 +47,17 @@
     };
   }
 
+  function normalizeExecutionContext(value){
+    if(!value||typeof value!=='object'||Array.isArray(value))return null;
+    const outcomeId=cleanText(value.outcomeId),attemptId=cleanText(value.attemptId),attemptText=cleanText(value.attemptText);
+    return outcomeId&&attemptId&&attemptText?{outcomeId,attemptId,attemptText}:null;
+  }
+
+  function createExecutionContext(value){
+    const outcome=normalizeOutcome(value);
+    return outcome?{outcomeId:outcome.id,attemptId:outcome.nextAttempt.id,attemptText:outcome.nextAttempt.text}:null;
+  }
+
   function normalizeOutcome(value){
     if(!value||typeof value!=='object'||Array.isArray(value))return null;
     const id=cleanText(value.id),capability=cleanText(value.capability);
@@ -151,7 +162,7 @@
   }
 
   return Object.freeze({
-    EPOCH,STATUSES,RESOURCE_TYPES,normalizeProof,normalizeRefs,normalizeAttempt,normalizeOutcome,normalizeCollection,
+    EPOCH,STATUSES,RESOURCE_TYPES,normalizeProof,normalizeRefs,normalizeAttempt,normalizeExecutionContext,createExecutionContext,normalizeOutcome,normalizeCollection,
     createOutcome,updateOutcome,archiveOutcome,reactivateOutcome,deleteOutcome,sortOutcomes,resolveRefs
   });
 });
