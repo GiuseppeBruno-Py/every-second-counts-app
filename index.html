@@ -649,6 +649,7 @@
       focus: ['Exemplo de leitura', 'Curso de exemplo', 'Meta de exemplo'],
       captures: [],
       learningOutcomes: [],
+      learningSignals: [],
       folders: [
         { id:'f-inbox', name:'00 · Inbox', parent:null, domain:'inbox' },
         { id:'f-reading', name:'01 · Leituras', parent:null, domain:'reading' },
@@ -798,6 +799,9 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       normalized.learningOutcomes = globalThis.CompassoLearningOutcomeModel
         ? globalThis.CompassoLearningOutcomeModel.normalizeCollection(normalized.learningOutcomes)
         : (Array.isArray(normalized.learningOutcomes) ? normalized.learningOutcomes : []);
+      normalized.learningSignals = globalThis.CompassoCapabilityContextModel
+        ? globalThis.CompassoCapabilityContextModel.normalizeSignalCollection(normalized.learningSignals)
+        : (Array.isArray(normalized.learningSignals) ? normalized.learningSignals : []);
       return normalized;
     }
     function average(items) { return Array.isArray(items) && items.length ? Math.round(items.reduce((sum, item) => sum + clamp(item.progress), 0) / items.length) : 0; }

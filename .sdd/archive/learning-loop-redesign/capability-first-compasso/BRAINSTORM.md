@@ -1,6 +1,6 @@
 # Learning Loop Redesign — Brainstorm
 
-**Status:** Complete (Defined) — Deliveries 1–2 shipped; Capability-first Compasso ready for Design; initiative remains open
+**Status:** Shipped — Capability-first Compasso; initiative roadmap remains open
 **Initiative:** `learning-loop-redesign`
 **Baseline:** `origin/main` at `934d7bad50d3a72d534d14890457e44e34e772ac`
 **Roadmap amendment:** 1 — 2026-08-09

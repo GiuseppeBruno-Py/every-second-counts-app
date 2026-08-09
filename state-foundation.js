@@ -19,6 +19,8 @@
     }
     data.learningOutcomes=Array.isArray(data.learningOutcomes)?data.learningOutcomes:[];
     if(root.CompassoLearningOutcomeModel?.normalizeCollection)data.learningOutcomes=root.CompassoLearningOutcomeModel.normalizeCollection(data.learningOutcomes);
+    data.learningSignals=Array.isArray(data.learningSignals)?data.learningSignals:[];
+    if(root.CompassoCapabilityContextModel?.normalizeSignalCollection)data.learningSignals=root.CompassoCapabilityContextModel.normalizeSignalCollection(data.learningSignals);
     data._schema=data._schema&&typeof data._schema==='object'?data._schema:{};
     data._schema.version=3;
     data._schema.migratedAt=data._schema.migratedAt||new Date(0).toISOString();

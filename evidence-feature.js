@@ -23,6 +23,16 @@ function evidenceForSession(sessionId) {
   return state.data.evidence.filter(item => item.sessionId === sessionId);
 }
 
+function evidenceCapabilityProjection(evidence) {
+  const execution=(state.data.executionSessions||[]).find(item=>item.id===evidence.sessionId);
+  const capabilityRef=capabilityContextModel.evidenceContext(evidence,execution?[execution]:[]);
+  if(!capabilityRef)return'';
+  const resolved=capabilityContextModel.resolveCapabilityRef(capabilityRef,state.data.learningOutcomes||[]);
+  return resolved.available
+    ? `<div class="evidence-capability"><span>Capacidade · ${escapeHtml(resolved.outcome.capability)}</span><strong>Tentativa: ${escapeHtml(resolved.attemptText)}</strong><button type="button" data-evidence-capability="${escapeHtml(capabilityRef.outcomeId)}">Abrir capacidade</button></div>`
+    : `<div class="evidence-capability unavailable"><span>Capacidade indisponível</span><strong>Tentativa registrada: ${escapeHtml(resolved.attemptText)}</strong></div>`;
+}
+
 function installEvidenceStyles() {
   const style = document.getElementById('compassoSessionStyles');
   if (!style || style.textContent.includes('.evidence-box')) return;
@@ -101,7 +111,7 @@ finishSession = function() {
 function renderEvidenceForSession(session) {
   const items = evidenceForSession(session.id);
   if (!items.length) return '';
-  return items.map(item => `<div class="evidence-history"><b>${escapeHtml(evidenceTypeLabels[item.type] || 'Evidência')}</b><strong>${escapeHtml(item.summary)}</strong>${item.details ? `<span>${escapeHtml(item.details)}</span>` : ''}</div>`).join('');
+  return items.map(item => `<div class="evidence-history"><b>${escapeHtml(evidenceTypeLabels[item.type] || 'Evidência')}</b><strong>${escapeHtml(item.summary)}</strong>${item.details ? `<span>${escapeHtml(item.details)}</span>` : ''}${evidenceCapabilityProjection(item)}</div>`).join('');
 }
 
 const renderSessionHistoryWithoutEvidence = renderSessionHistory;
@@ -150,3 +160,7 @@ deleteSession = function(id) {
 
 installEvidenceStyles();
 installEvidenceFields();
+CompassoFeatures.action('[data-evidence-capability]',({target})=>{
+  const outcome=(state.data.learningOutcomes||[]).find(item=>item.id===target.dataset.evidenceCapability);if(!outcome)return;
+  learningOutcomeRuntime.mode=outcome.status==='archived'?'archived':'active';switchView('capabilities');outcomeRender();requestAnimationFrame(()=>document.querySelector(`[data-outcome-card="${CSS.escape(outcome.id)}"]`)?.focus?.());
+});

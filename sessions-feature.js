@@ -82,7 +82,7 @@ function installSessionUi() {
     <dialog class="session-dialog" id="sessionStartDialog">
       <form method="dialog" id="sessionStartForm">
         <div class="session-dialog-head"><div><div class="eyebrow">Nova sessão</div><h2 id="sessionStartTitle">Iniciar sessão</h2></div><button class="close-btn" type="button" data-session-close="sessionStartDialog">${icon('x')}</button></div>
-        <div class="session-dialog-body"><div class="session-summary" id="sessionStartSummary"></div><div class="field" id="sessionOutcomeResourceField" hidden><label for="sessionOutcomeResource">Apoio nesta sessão</label><select id="sessionOutcomeResource"></select><small>Opcional. A capacidade continua sendo o objetivo.</small></div><div class="field"><label for="sessionMode">Modo de execução</label><select id="sessionMode"><option value="quick">Sessão rápida</option><option value="deep">Deep Work</option></select><small id="sessionModeHelp">Cronômetro simples com registro de progresso.</small></div><div class="field"><label for="sessionIntent">Objetivo desta sessão</label><textarea id="sessionIntent" maxlength="220" placeholder="Ex.: ler o capítulo 4 e identificar o argumento central."></textarea></div></div>
+        <div class="session-dialog-body"><div class="session-summary" id="sessionStartSummary"></div><div class="field" id="sessionOutcomeResourceField" hidden><label for="sessionOutcomeResource">Apoio nesta sessão</label><select id="sessionOutcomeResource"></select><small>Opcional. A capacidade continua sendo o objetivo.</small></div><div class="field" id="sessionCapabilityField" hidden><label for="sessionCapability">Capacidade e tentativa (opcional)</label><select id="sessionCapability"><option value="">Sem capacidade</option></select><small id="sessionCapabilityStatus">A escolha registra contexto na sessão; não altera vínculos nem progresso.</small></div><div class="field"><label for="sessionMode">Modo de execução</label><select id="sessionMode"><option value="quick">Sessão rápida</option><option value="deep">Deep Work</option></select><small id="sessionModeHelp">Cronômetro simples com registro de progresso.</small></div><div class="field"><label for="sessionIntent">Objetivo desta sessão</label><textarea id="sessionIntent" maxlength="220" placeholder="Ex.: ler o capítulo 4 e identificar o argumento central."></textarea></div></div>
         <div class="session-dialog-foot"><button type="button" class="quiet-btn" data-session-close="sessionStartDialog">Cancelar</button><button type="submit" class="primary-btn">Iniciar</button></div>
       </form>
     </dialog>
@@ -156,6 +156,15 @@ function openSessionStartCore(domain, itemId, options = {}) {
   const resourceSelect = document.getElementById('sessionOutcomeResource');
   resourceField.hidden = !neutral;
   resourceSelect.innerHTML = '<option value="">Sem recurso</option>' + (options.resources || []).map(ref => `<option value="${escapeHtml(ref.type)}:${escapeHtml(ref.id)}"${ref.available ? '' : ' disabled'}>${escapeHtml(ref.available ? `${ref.type === 'study' ? 'Estudo' : 'Leitura'}: ${ref.title}` : `${ref.type === 'study' ? 'Estudo' : 'Leitura'} indisponível`)}</option>`).join('');
+  const capabilityField=document.getElementById('sessionCapabilityField'),capabilitySelect=document.getElementById('sessionCapability'),capabilityStatus=document.getElementById('sessionCapabilityStatus');
+  capabilityField.hidden=neutral||!['study','reading'].includes(domain);capabilityStatus.textContent='A escolha registra contexto na sessão; não altera vínculos nem progresso.';
+  if(!capabilityField.hidden){
+    const active=(state.data.learningOutcomes||[]).filter(candidate=>candidate.status==='active');
+    const linked=active.filter(candidate=>candidate.resourceRefs?.some(ref=>ref.type===domain&&ref.id===itemId));
+    const linkedIds=new Set(linked.map(candidate=>candidate.id)),other=active.filter(candidate=>!linkedIds.has(candidate.id));
+    const optionsFor=list=>list.map(candidate=>`<option value="${escapeHtml(candidate.id)}">${escapeHtml(candidate.capability)} · ${escapeHtml(candidate.nextAttempt.text)}</option>`).join('');
+    capabilitySelect.innerHTML='<option value="">Sem capacidade</option>'+(linked.length?`<optgroup label="Vinculadas a este recurso">${optionsFor(linked)}</optgroup>`:'')+(other.length?`<optgroup label="Outras capacidades ativas">${optionsFor(other)}</optgroup>`:'');capabilitySelect.value='';
+  }
   const mode = document.getElementById('sessionMode');
   const contingencies = Array.isArray(item.contingencies) ? item.contingencies.filter(option => option?.enabled !== false) : [];
   mode.innerHTML = `<option value="quick">Sessão rápida</option><option value="deep">Deep Work</option>${item.minimumVersion ? '<option value="minimum">Versão mínima</option>' : ''}${contingencies.length ? '<option value="contingency">Plano B</option>' : ''}`;
@@ -176,6 +185,14 @@ function createSession() {
     const [domain,itemId] = selectedResource.split(':');
     target = {...selected,domain,itemId};
   }
+  if(['study','reading'].includes(selected.domain)){
+    const outcomeId=document.getElementById('sessionCapability')?.value;
+    if(outcomeId){
+      const outcome=(state.data.learningOutcomes||[]).find(candidate=>candidate.id===outcomeId),context=capabilityContextModel.createCapabilityRef(outcome);
+      if(!context){const status=document.getElementById('sessionCapabilityStatus');status.textContent='A capacidade mudou ou não está mais ativa. Escolha Sem capacidade para continuar.';document.getElementById('sessionCapability').focus();return}
+      target.learningContext=context;
+    }else target.learningContext=null;
+  }
   const item = target.domain === 'learningOutcome'
     ? state.data.learningOutcomes?.find(candidate => candidate.id === target.itemId)
     : state.data[target.domain]?.find(candidate => candidate.id === target.itemId);
@@ -183,7 +200,7 @@ function createSession() {
   const mode = document.getElementById('sessionMode')?.value || 'quick';
   if (mode === 'deep') {
     document.getElementById('sessionStartDialog').close();
-    if (selected.learningContext && typeof deepOpenOutcome === 'function') deepOpenOutcome(target.domain,target.itemId,{learningContext:selected.learningContext});
+    if (target.learningContext && typeof deepOpenOutcome === 'function') deepOpenOutcome(target.domain,target.itemId,{learningContext:target.learningContext});
     else if (typeof deepOpen === 'function') deepOpen(target.domain,target.itemId);
     return;
   }
@@ -195,7 +212,7 @@ function createSession() {
     schemaVersion: SESSIONS_FEATURE_VERSION,
     domain: target.domain,
     itemId: target.itemId,
-    learningContext: selected.learningContext,
+    learningContext: target.learningContext,
     readingFormat: item.readingFormat || null,
     studyUnit: item.studyUnit || null,
     intent: document.getElementById('sessionIntent').value.trim(),

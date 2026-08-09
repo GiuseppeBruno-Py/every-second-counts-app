@@ -169,6 +169,10 @@ test('Service Worker usa a composição compartilhada e só sinaliza sucesso com
   assert.equal(response.headers.get('x-compasso-generation'), manifest.cacheName);
   assert.equal(composition.count(html, composition.startSentinel('capture-model.js')), 1);
   assert.equal(composition.count(html, composition.startSentinel('journal-feature.js')), 1);
+  assert.equal(composition.count(html, composition.startSentinel('capability-context-model.js')), 1);
+  for (const preserved of ['context-rag-feature.js','context-learning-feature.js','markdown-vault-feature.js','dictionary-relations-feature.js']) {
+    assert.equal(composition.count(html, composition.startSentinel(preserved)), 1);
+  }
 
   const missing = serviceWorkerContext({ missing: 'capture-model.js' });
   const failed = await missing.context.enhanceHtmlResponse(new Response(rawHtml));
