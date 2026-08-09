@@ -1,7 +1,7 @@
 # Learning Loop Redesign — Define
 
 **Delivery:** 3 — Capability-first Compasso
-**Status:** Complete (Built) — Ready for Ship
+**Status:** Shipped — Capability-first Compasso
 **Initiative:** `learning-loop-redesign`
 **Baseline inspected:** shipped Operational Learning Loop tree at `f00e7c1eeeb07ffa9960d20f07b12ab20f22e37c`; product-equivalent integration is on `main`
 **Primary source:** `BRAINSTORM.md`, Amendment 1 — future roadmap consolidation

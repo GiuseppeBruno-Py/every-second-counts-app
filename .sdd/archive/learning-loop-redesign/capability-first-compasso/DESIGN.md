@@ -1,7 +1,7 @@
 # Learning Loop Redesign — Technical Design
 
 **Delivery:** 3 — Capability-first Compasso
-**Status:** Complete (Built) — Ready for Ship
+**Status:** Shipped — Capability-first Compasso
 **Revision:** 1 — 2026-08-09
 **Worktree baseline:** `f00e7c1eeeb07ffa9960d20f07b12ab20f22e37c` on `codex/operational-learning-loop-define`
 **Integrated equivalent:** `origin/main` at `bc08ac12f93053b9a5193976258e503096853efe`; `git diff HEAD..origin/main` is empty
