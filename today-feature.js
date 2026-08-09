@@ -25,10 +25,12 @@ function todayPlan() {
 }
 
 function todayItem(ref) {
+  if (ref?.type === 'capability-attempt') return capabilityContextModel.resolveCapabilityRef(ref.capabilityRef,state.data.learningOutcomes || []).outcome;
   return ref?.domain && ref?.itemId ? state.data[ref.domain]?.find(item => item.id === ref.itemId) || null : null;
 }
 
 function todayRefKey(ref) {
+  if (ref?.type === 'capability-attempt') return `capability:${capabilityContextModel.refKey(ref.capabilityRef)}`;
   return ref.type === 'custom' ? `custom:${ref.id}` : `${ref.domain}:${ref.itemId}`;
 }
 
@@ -110,7 +112,7 @@ function todayInstallUi() {
 
 function renderToday() {
   const plan = todayPlan();
-  plan.items = plan.items.filter(ref => ref.type === 'custom' || todayItem(ref));
+  plan.items = plan.items.filter(ref => ref.type === 'custom' || ref.type === 'capability-attempt' || todayItem(ref));
   const completed = plan.items.filter(ref => ref.completedAt).length;
   const journal = todayJournal();
   const dateLabel = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date());
@@ -134,6 +136,15 @@ function renderToday() {
   document.getElementById('todayProgress').innerHTML = ['reading', 'study', 'goal'].map(domain => { const activeItems = state.data[domain].filter(item => ['active', 'planned'].includes(item.status)); const average = activeItems.length ? Math.round(activeItems.reduce((sum, item) => sum + positiveNumber(item.progress), 0) / activeItems.length) : 0; return `<div><strong>${average}%</strong><span>${escapeHtml(domainLabels[domain])} · ${activeItems.length} ativas</span></div>`; }).join('');
 
   document.getElementById('todayList').innerHTML = plan.items.length ? plan.items.map(ref => {
+    if (ref.type === 'capability-attempt') {
+      const normalized = capabilityContextModel.normalizeTodayItem(ref);
+      if (!normalized) return '';
+      const resolved = capabilityContextModel.resolveCapabilityRef(normalized.capabilityRef,state.data.learningOutcomes || []);
+      const key = todayRefKey(normalized), unavailable=!resolved.available, archived=resolved.available&&!resolved.active, stale=resolved.available&&!resolved.current;
+      const status=unavailable?'Capacidade indisponível':archived?'Capacidade arquivada':stale?'Tentativa histórica':'Próxima tentativa atual';
+      const canStart=resolved.active&&resolved.current&&!normalized.completedAt;
+      return `<article class="today-row capability-attempt${normalized.completedAt?' done':''}${unavailable||archived?' unavailable':''}" data-today-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}" tabindex="-1"><button class="today-check" data-today-toggle="${escapeHtml(key)}" aria-label="${normalized.completedAt?'Reabrir':'Concluir'} referência da capacidade">${normalized.completedAt?icon('check'):''}</button><div class="today-row-main"><strong>${escapeHtml(resolved.attemptText)}</strong><span>${escapeHtml(status)}${resolved.outcome?` · ${escapeHtml(resolved.outcome.capability)}`:''}</span></div><div class="today-actions">${canStart?`<button class="primary" data-today-start-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}">Iniciar sessão</button>`:''}${resolved.available?`<button data-today-open-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}">Abrir capacidade</button>`:`<button disabled aria-disabled="true">Capacidade indisponível</button>`}<button class="remove" data-today-remove="${escapeHtml(key)}">Remover</button></div></article>`;
+    }
     const item = todayItem(ref);
     const custom = ref.type === 'custom';
     const action = custom ? ref.title : item.note?.trim() || `Avançar em ${item.title}`;
@@ -146,6 +157,25 @@ function renderToday() {
   const selected = new Set(plan.items.filter(ref => ref.type !== 'custom').map(ref => `${ref.domain}:${ref.itemId}`));
   const candidates = todayAllCandidates().filter(entry => !selected.has(`${entry.domain}:${entry.item.id}`)).slice(0, 6);
   document.getElementById('todayCandidates').innerHTML = candidates.length ? candidates.map(({ item, domain }) => `<article class="today-candidate"><div><strong>${escapeHtml(item.note || item.title)}</strong><span>${escapeHtml(item.title)} · ${escapeHtml(domainLabels[domain])}</span></div><button data-today-add="${domain}:${item.id}">Adicionar</button></article>`).join('') : '<div class="today-empty">Todas as frentes disponíveis já estão no plano.</div>';
+}
+
+async function todaySaveCapabilityChange(key,mutation,message){
+  const previous=state.data,candidate=typeof structuredClone==='function'?structuredClone(state.data):JSON.parse(JSON.stringify(state.data));
+  const date=todayDateKey(),plan=(candidate.dailyPlans||[]).find(item=>item.date===date),ref=plan?.items?.find(item=>todayRefKey(item)===key);
+  if(!plan||!ref)return false;
+  mutation(plan,ref);plan.updatedAt=new Date().toISOString();state.data=candidate;
+  if(await saveData(message))return true;
+  state.data=previous;try{await window.CompassoStorage.save(STORAGE_KEY,previous)}catch{}renderAll();showToast('Não foi possível salvar o plano de Hoje.');return false;
+}
+
+function todayOpenCapability(outcomeId){
+  const outcome=(state.data.learningOutcomes||[]).find(item=>item.id===outcomeId);if(!outcome)return;
+  learningOutcomeRuntime.mode=outcome.status==='archived'?'archived':'active';switchView('capabilities');outcomeRender();requestAnimationFrame(()=>document.querySelector(`[data-outcome-card="${CSS.escape(outcomeId)}"]`)?.focus?.());
+}
+function todayStartCapability(outcomeId){
+  const outcome=(state.data.learningOutcomes||[]).find(item=>item.id===outcomeId),ref=capabilityContextModel.createCapabilityRef(outcome);
+  if(!ref){showToast('A capacidade ou tentativa atual não está disponível');return}
+  openOutcomeSessionStart(outcome.id,{learningContext:ref,resources:learningOutcomeModel.resolveRefs(outcome,{study:state.data.study||[],reading:state.data.reading||[]})});
 }
 
 function openTodayDialog() {
@@ -189,15 +219,18 @@ document.addEventListener('click', event => {
   const toggle = event.target.closest('[data-today-toggle]');
   if (toggle) {
     const ref = todayPlan().items.find(candidate => todayRefKey(candidate) === toggle.dataset.todayToggle);
-    if (ref) ref.completedAt = ref.completedAt ? null : new Date().toISOString();
-    todaySave(ref?.completedAt ? 'Ação concluída' : 'Ação reaberta');
+    if(ref?.type==='capability-attempt')todaySaveCapabilityChange(toggle.dataset.todayToggle,(_plan,item)=>{item.completedAt=item.completedAt?null:new Date().toISOString()},ref.completedAt?'Referência reaberta':'Referência concluída');
+    else{if (ref) ref.completedAt = ref.completedAt ? null : new Date().toISOString();todaySave(ref?.completedAt ? 'Ação concluída' : 'Ação reaberta');}
   }
   const remove = event.target.closest('[data-today-remove]');
   if (remove) {
     const plan = todayPlan();
-    plan.items = plan.items.filter(ref => todayRefKey(ref) !== remove.dataset.todayRemove);
-    todaySave('Ação removida do dia');
+    const ref=plan.items.find(item=>todayRefKey(item)===remove.dataset.todayRemove);
+    if(ref?.type==='capability-attempt')todaySaveCapabilityChange(remove.dataset.todayRemove,(candidate)=>{candidate.items=candidate.items.filter(item=>todayRefKey(item)!==remove.dataset.todayRemove)},'Referência removida de Hoje');
+    else{plan.items = plan.items.filter(ref => todayRefKey(ref) !== remove.dataset.todayRemove);todaySave('Ação removida do dia');}
   }
+  const openCapability=event.target.closest('[data-today-open-capability]');if(openCapability)todayOpenCapability(openCapability.dataset.todayOpenCapability);
+  const startCapability=event.target.closest('[data-today-start-capability]');if(startCapability)todayStartCapability(startCapability.dataset.todayStartCapability);
   const open = event.target.closest('[data-today-open]');
   if (open) {
     const [domain, itemId] = open.dataset.todayOpen.split(':');

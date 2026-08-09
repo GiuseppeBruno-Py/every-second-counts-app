@@ -6,6 +6,7 @@
     ['app-services.js','/* Compasso · Serviços de domínio'],
     ['design-system-model.js','/* Compasso · Contrato declarativo do design system'],
     ['learning-outcome-model.js','CompassoLearningOutcomeModel'],
+    ['capability-context-model.js','CompassoCapabilityContextModel'],
     ['today-feature.js','/* Compasso · Hoje e próximas ações'],
     ['session-timer-model.js','CompassoSessionTimerModel'],
     ['history-evidence-model.js','CompassoHistoryEvidenceModel'],
@@ -56,7 +57,7 @@
     ['design-system-feature.js','/* Compasso · Comportamento acessível do design system']
   ];
   const browserJourneyModules=new Set([
-    'state-foundation.js','feature-runtime.js','app-services.js','design-system-model.js','learning-outcome-model.js','today-feature.js','session-timer-model.js','history-evidence-model.js','session-kind-model.js',
+    'state-foundation.js','feature-runtime.js','app-services.js','design-system-model.js','learning-outcome-model.js','capability-context-model.js','today-feature.js','session-timer-model.js','history-evidence-model.js','session-kind-model.js',
     'contingency-model.js','deep-work-model.js','ritual-model.js','execution-session-model.js','execution-session-feature.js','sessions-feature.js','goal-links-feature.js',
     'contingency-feature.js','deep-work-feature.js','session-companion-feature.js','ritual-feature.js','evidence-feature.js','recall-feature.js','weakness-feature.js','outcomes-feature.js',
     'weekly-review-feature.js','weekly-plan-model.js','weekly-plan-feature.js','analytics-feature.js','history-edit-feature.js','capture-model.js','capture-feature.js','journal-model.js','journal-feature.js','learning-outcome-feature.js',
@@ -81,7 +82,7 @@
     'reading','study','goal','focus','folders','notes','captures','sessions','deepWorkSessions','executionSessions','dailyPlans',
     'energyCheckins','flowEvents','evidence','reviewItems','weeklyReviews','weeklyPlans',
     'bookSyntheses','errorEntries','errorNotebook','ritualTemplates','explanationEvaluations',
-    'journalEntries','journalCollections','journalFutureItems','journalMonthlyPlans','journalConflicts','learningOutcomes'
+    'journalEntries','journalCollections','journalFutureItems','journalMonthlyPlans','journalConflicts','learningOutcomes','learningSignals'
   ];
   const collections = [
     ...arrayCollections.map(name=>({name,type:'array',identity:'id',merge:'record-timestamp',sync:true})),
@@ -94,7 +95,7 @@
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v72',
+    cacheName:'compasso-pages-v73',
     cachePrefix,
     isOwnedCacheName,
     composition,

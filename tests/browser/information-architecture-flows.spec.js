@@ -28,6 +28,7 @@ test('níveis alteram subvisões sem alterar as cinco áreas',async({page})=>{
   await expect(page.locator('#moreView [data-ia-view="dictionary"]')).toHaveCount(0);
   await page.locator('[data-ux-mode="advanced"]').click();
   await expect(page.locator('#moreView [data-ia-view="dictionary"]')).toBeVisible();
+  await expect(page.locator('#moreView [data-ia-view="context"]')).toBeVisible();
   await expect(page.locator('.ia-primary-nav > .nav-item')).toHaveCount(5);
 });
 test('deep link abre subvisão e reload preserva contexto',async({page})=>{
@@ -42,6 +43,10 @@ test('deep link de Capacidades abre a primeira subvisão essencial de Frentes',a
   await expect(page.locator('#capabilitiesView')).toBeVisible();
   await expect(page.locator('[data-ia-area="fronts"]')).toHaveAttribute('aria-current','page');
   await expect(page.locator('#frontsView [data-ia-view]').first()).toHaveAttribute('data-ia-view','capabilities');
+});
+test('deep links preservam Notes, Relações e IA contextual nesta entrega',async({page})=>{
+  await open(page,'/?view=notes','advanced');await expect(page.locator('#notesView')).toBeVisible();await expect(page.locator('[data-ia-area="more"]')).toHaveAttribute('aria-current','page');
+  for(const route of ['dictionary','context']){await page.goto(`/?view=${route}`,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>globalThis.CompassoInformationArchitecture?.current().view===new URLSearchParams(location.search).get('view'));await expect(page.locator('[data-ia-area="more"]')).toHaveAttribute('aria-current','page');expect(await page.evaluate(()=>CompassoInformationArchitecture.current().view)).toBe(route);expect(new URL(page.url()).searchParams.get('view')).toBe(route)}
 });
 test('preferência inválida e rota antiga indisponível voltam para área válida',async({page})=>{
   await open(page,'/?view=unknown','legacy-invalid');

@@ -8,6 +8,7 @@ const analyticsSessionKindModel = globalThis.CompassoSessionKindModel;
 const analyticsRuntime = {
   period: '30',
   domain: 'all',
+  capability: 'all',
   query: '',
   limit: 40
 };
@@ -37,7 +38,7 @@ function analyticsAddDays(value, days) {
 }
 
 function analyticsCompletedSessions(domain = analyticsRuntime.domain) {
-  return completedExecutionSessions(domain);
+  return capabilityContextModel.filterExecutionsByCapability(completedExecutionSessions(domain),analyticsRuntime.capability);
 }
 
 function analyticsPeriodStart(period = analyticsRuntime.period) {
@@ -51,6 +52,10 @@ function analyticsEvidenceForSession(sessionId) {
 }
 
 function analyticsItemForSession(session) {
+  if(session.domain==='learningOutcome'){
+    const outcome=(state.data.learningOutcomes||[]).find(item=>item.id===session.learningContext?.outcomeId||item.id===session.itemId);
+    return outcome?{...outcome,title:outcome.capability}:session.learningContext?{id:session.itemId,title:session.learningContext.attemptText}:null;
+  }
   return state.data[session.domain]?.find(item => item.id === session.itemId) || null;
 }
 
@@ -60,6 +65,8 @@ function analyticsSearchText(session) {
   return [
     item?.title,
     item?.meta,
+    session.learningContext?.attemptText,
+    (state.data.learningOutcomes||[]).find(outcome=>outcome.id===session.learningContext?.outcomeId)?.capability,
     session.intent,
     session.reflection,
     ...evidence.flatMap(entry => [entry.summary, entry.details])
@@ -221,8 +228,8 @@ function installAnalyticsUi() {
     <section class="view" id="analyticsView">
       <div class="analytics-shell">
         <section class="analytics-hero">
-          <div><div class="eyebrow">Métricas de consistência</div><h2>Ritmo sustentável, não apenas volume</h2><p>Use sessões concluídas para entender frequência, sequência, tempo focado e onde sua energia realmente foi investida.</p></div>
-          <div class="analytics-controls"><button data-analytics-period="7">7 dias</button><button data-analytics-period="30" class="active">30 dias</button><button data-analytics-period="90">90 dias</button><button data-analytics-period="all">Tudo</button><select id="analyticsDomain"><option value="all">Todos os domínios</option><option value="reading">Leituras</option><option value="study">Estudos</option></select></div>
+          <div><div class="eyebrow">Métricas de consistência</div><h2>Ritmo sustentável, não apenas volume</h2><p>Use sessões concluídas para entender frequência, sequência, tempo focado e onde sua energia realmente foi investida. Cadência, streak, frequência, duração e volume são ritmo de execução — não progresso, domínio ou conclusão de uma capacidade.</p></div>
+          <div class="analytics-controls"><button data-analytics-period="7">7 dias</button><button data-analytics-period="30" class="active">30 dias</button><button data-analytics-period="90">90 dias</button><button data-analytics-period="all">Tudo</button><select id="analyticsDomain" aria-label="Filtrar domínio"><option value="all">Todos os domínios</option><option value="reading">Leituras</option><option value="study">Estudos</option></select><select id="analyticsCapability" aria-label="Filtrar capacidade"></select></div>
         </section>
         <div class="analytics-kpis" id="analyticsKpis"></div>
         <div class="analytics-grid">
@@ -305,6 +312,7 @@ function renderAnalyticsInsight(periodSessions, allDomainSessions) {
 }
 
 function analyticsProgressLabel(session) {
+  if(!['study','reading'].includes(session.domain))return'Sem métrica de recurso';
   if (session.source === 'deep-work') return session.completionCriterion ? `Critério: ${session.completionCriterion}` : 'Deep Work concluído';
   const item = analyticsItemForSession(session);
   const config = metricConfig(session.domain, session.domain === 'study' ? item?.studyUnit || session.studyUnit : item?.readingFormat || session.readingFormat || 'physical');
@@ -327,7 +335,9 @@ function renderAnalyticsHistory(historySessions) {
     const evidenceHtml = evidence.map(entry => `<div class="analytics-history-evidence"><strong>${escapeHtml((typeof evidenceTypeLabels === 'object' && evidenceTypeLabels[entry.type]) || 'Evidência')}:</strong> ${escapeHtml(entry.summary)}${entry.details ? `<br>${escapeHtml(entry.details)}` : ''}</div>`).join('');
     const sourceKind = analyticsSessionKindModel.kind(session);
     const source = `<span class="${sourceKind === 'deep' ? 'deep-work' : 'normal'}">${analyticsSessionKindModel.label(session)}</span>`;
-    return `<article class="analytics-history-row"><div><header><b>${escapeHtml(item?.title || 'Item removido')}</b><span>${escapeHtml(domainLabels[session.domain] || session.domain)}</span>${source}</header>${session.intent ? `<p><strong>Objetivo:</strong> ${escapeHtml(session.intent)}</p>` : ''}${session.reflection ? `<p><strong>Resultado:</strong> ${escapeHtml(session.reflection)}</p>` : ''}${session.nextAction ? `<p><strong>Próxima ação:</strong> ${escapeHtml(session.nextAction)}</p>` : ''}${evidenceHtml}</div><aside><time>${escapeHtml(date)}</time><strong>${analyticsDurationLabel(session.durationMs)}</strong><p>${escapeHtml(analyticsProgressLabel(session))}</p><button type="button" data-analytics-delete="${escapeHtml(session.id)}">Excluir</button></aside></article>`;
+    const capabilityRef=capabilityContextModel.executionContext(session),resolved=capabilityContextModel.resolveCapabilityRef(capabilityRef,state.data.learningOutcomes||[]);
+    const capability=capabilityRef?`<p class="analytics-capability"><strong>${resolved.available?`Capacidade: ${escapeHtml(resolved.outcome.capability)}`:'Capacidade indisponível'}</strong><br>Tentativa: ${escapeHtml(resolved.attemptText)}</p>`:'<p class="analytics-capability">Sem capacidade associada</p>';
+    return `<article class="analytics-history-row"><div><header><b>${escapeHtml(item?.title || 'Item removido')}</b><span>${escapeHtml(domainLabels[session.domain] || session.domain)}</span>${source}</header>${capability}${session.intent ? `<p><strong>Objetivo:</strong> ${escapeHtml(session.intent)}</p>` : ''}${session.reflection ? `<p><strong>Resultado:</strong> ${escapeHtml(session.reflection)}</p>` : ''}${session.nextAction ? `<p><strong>Próxima ação:</strong> ${escapeHtml(session.nextAction)}</p>` : ''}${evidenceHtml}</div><aside><time>${escapeHtml(date)}</time><strong>${analyticsDurationLabel(session.durationMs)}</strong><p>${escapeHtml(analyticsProgressLabel(session))}</p><button type="button" data-analytics-delete="${escapeHtml(session.id)}">Excluir</button></aside></article>`;
   }).join('');
   const wrap = document.getElementById('analyticsLoadWrap');
   wrap.hidden = visible.length >= historySessions.length;
@@ -347,6 +357,10 @@ function renderAnalytics() {
   renderAnalyticsHistory(historySessions);
   document.querySelectorAll('[data-analytics-period]').forEach(button => button.classList.toggle('active', button.dataset.analyticsPeriod === analyticsRuntime.period));
   document.getElementById('analyticsDomain').value = analyticsRuntime.domain;
+  const capabilitySelect=document.getElementById('analyticsCapability'),contexts=new Map();
+  for(const session of completedExecutionSessions()){const ref=capabilityContextModel.executionContext(session);if(ref&&!contexts.has(ref.outcomeId))contexts.set(ref.outcomeId,ref)}
+  capabilitySelect.innerHTML='<option value="all">Todas as capacidades</option><option value="unlinked">Sem capacidade</option>'+[...contexts.values()].map(ref=>{const resolved=capabilityContextModel.resolveCapabilityRef(ref,state.data.learningOutcomes||[]);return`<option value="${escapeHtml(ref.outcomeId)}">${escapeHtml(resolved.outcome?.capability||`Indisponível · ${resolved.attemptText}`)}</option>`}).join('');
+  capabilitySelect.value=analyticsRuntime.capability;
   document.getElementById('analyticsSearch').value = analyticsRuntime.query;
 }
 
@@ -419,6 +433,7 @@ document.getElementById('analyticsDomain').addEventListener('change', event => {
   analyticsRuntime.limit = 40;
   renderAnalytics();
 });
+document.getElementById('analyticsCapability').addEventListener('change',event=>{analyticsRuntime.capability=event.target.value;analyticsRuntime.limit=40;renderAnalytics()});
 
 document.getElementById('analyticsSearch').addEventListener('input', event => {
   analyticsRuntime.query = event.target.value;

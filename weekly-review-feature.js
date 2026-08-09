@@ -104,18 +104,19 @@ function weeklyAggregateItems(sessions) {
     const last = itemSessions[itemSessions.length - 1];
     const durationMs = itemSessions.reduce((sum, session) => sum + positiveNumber(session.durationMs), 0);
     const delta = Math.max(0, positiveNumber(last.endValue) - positiveNumber(first.startValue));
-    const config = metricConfig(domain, domain === 'study' ? item?.studyUnit || last.studyUnit : item?.readingFormat || last.readingFormat || 'physical');
+    const outcomeOnly=domain==='learningOutcome';
+    const config = outcomeOnly?{unit:''}:metricConfig(domain, domain === 'study' ? item?.studyUnit || last.studyUnit : item?.readingFormat || last.readingFormat || 'physical');
     return {
       key,
       domain,
       itemId,
       item,
-      title: item?.title || 'Item removido',
+      title: item?.title || (outcomeOnly?(state.data.learningOutcomes||[]).find(candidate=>candidate.id===itemId)?.capability||last.learningContext?.attemptText:'Item removido'),
       sessions: itemSessions.length,
       durationMs,
-      delta,
+      delta:outcomeOnly?null:delta,
       unit: config.unit,
-      progress: item ? metricInfo(item, domain).progress : null,
+      progress: item&&!outcomeOnly ? metricInfo(item, domain).progress : null,
       sessionKinds: weeklySessionKindModel.breakdown(itemSessions)
     };
   }).sort((a, b) => b.durationMs - a.durationMs);
@@ -167,6 +168,7 @@ function installWeeklyReviewUi() {
             <section class="weekly-panel"><div class="weekly-panel-head"><div><div class="eyebrow">Evidências</div><h3>O que a semana produziu</h3><p>Resultados verificáveis registrados ao encerrar sessões.</p></div><span class="weekly-panel-badge" id="weeklyEvidenceBadge"></span></div><div class="weekly-evidence-list" id="weeklyEvidenceList"></div></section>
             <section class="weekly-panel"><div class="weekly-panel-head"><div><div class="eyebrow">Execução</div><h3>Itens trabalhados</h3><p>Tempo, sessões e avanço por frente.</p></div></div><div class="weekly-item-list" id="weeklyItemList"></div></section>
           </div>
+          <section class="weekly-panel capability-week-panel"><div class="weekly-panel-head"><div><div class="eyebrow">Capacidades da semana</div><h3>Evidências, sinais e decisão</h3><p>Atividade informa a reflexão; ela não mede domínio nem conclui uma capacidade.</p></div></div><div id="weeklyCapabilities" class="weekly-capability-list"></div></section>
           <section class="weekly-panel"><div class="weekly-panel-head"><div><div class="eyebrow">Fechamento</div><h3>Interprete antes de planejar</h3><p>Transforme os dados da semana em decisões para a próxima.</p></div></div>
             <form class="weekly-review-form" id="weeklyReviewForm">
               <div class="weekly-form-grid">
@@ -212,9 +214,10 @@ function renderWeeklyEvidence(evidence) {
   const typeLabels = typeof evidenceTypeLabels === 'object' ? evidenceTypeLabels : {};
   list.innerHTML = evidence.map(item => {
     const linked = weeklyItemFor(item.domain, item.itemId);
+    const capabilityRef=capabilityContextModel.evidenceContext(item,state.data.executionSessions||[]),resolved=capabilityContextModel.resolveCapabilityRef(capabilityRef,state.data.learningOutcomes||[]);
     const date = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).format(new Date(item.createdAt));
     const edited = item.editedAt ? '<span class="history-edited">Editado</span>' : '';
-    return `<article class="weekly-evidence-card"><header><b>${escapeHtml(typeLabels[item.type] || 'Evidência')}</b><span>${edited}<time>${escapeHtml(date)}</time></span></header><strong>${escapeHtml(item.summary)}</strong>${item.details ? `<p>${escapeHtml(item.details)}</p>` : ''}<footer>${escapeHtml(linked?.title || 'Item removido')} · ${escapeHtml(domainLabels[item.domain] || item.domain)}</footer><div class="weekly-evidence-actions"><button type="button" data-evidence-edit="${escapeHtml(item.id)}">Editar</button><button type="button" class="danger" data-evidence-delete="${escapeHtml(item.id)}">Excluir</button></div></article>`;
+    return `<article class="weekly-evidence-card"><header><b>${escapeHtml(typeLabels[item.type] || 'Evidência')}</b><span>${edited}<time>${escapeHtml(date)}</time></span></header><strong>${escapeHtml(item.summary)}</strong>${item.details ? `<p>${escapeHtml(item.details)}</p>` : ''}<footer>${escapeHtml(linked?.title || (resolved.outcome?.capability) || 'Item removido')} · ${escapeHtml(domainLabels[item.domain] || item.domain)}</footer>${capabilityRef?`<p><b>${resolved.available?`Capacidade: ${escapeHtml(resolved.outcome.capability)}`:'Capacidade indisponível'}</b><br>Tentativa: ${escapeHtml(resolved.attemptText)}</p>`:''}<div class="weekly-evidence-actions">${resolved.available?`<button type="button" data-weekly-open-capability="${escapeHtml(capabilityRef.outcomeId)}">Abrir capacidade</button>`:''}<button type="button" data-evidence-edit="${escapeHtml(item.id)}">Editar</button><button type="button" class="danger" data-evidence-delete="${escapeHtml(item.id)}">Excluir</button></div></article>`;
   }).join('');
 }
 
@@ -227,9 +230,30 @@ function renderWeeklyItems(itemSummaries) {
   list.innerHTML = itemSummaries.map(summary => {
     const color = domainColors[summary.domain] || 'violet';
     const iconName = domainIcons[summary.domain] || 'target';
-    const delta = summary.delta > 0 ? `+${formatNumber(summary.delta)} ${summary.unit}` : 'sem avanço informado';
+    const delta = summary.delta==null ? 'Sem métrica de recurso' : summary.delta > 0 ? `+${formatNumber(summary.delta)} ${summary.unit}` : 'sem avanço informado';
     const progress = summary.progress == null ? '' : `${summary.progress}% atual`;
     return `<article class="weekly-item-row"><div class="weekly-item-icon ${color}">${icon(iconName)}</div><div><strong>${escapeHtml(summary.title)}</strong><span>${summary.sessions} ${summary.sessions === 1 ? 'sessão' : 'sessões'} · ${weeklyFormatDuration(summary.durationMs)}</span><span>${summary.sessionKinds.deep} Deep Work · ${summary.sessionKinds.normal} Normal</span></div><em>${escapeHtml(delta)}${progress ? `<small>${progress}</small>` : ''}</em></article>`;
+  }).join('');
+}
+
+function weeklyCapabilityGroups(range,review){
+  if(typeof executionSyncAll==='function')executionSyncAll();
+  const executions=(state.data.executionSessions||[]).filter(session=>['completed','interrupted'].includes(session.status)&&weeklyDateInRange(session.endedAt||session.startedAt||session.createdAt,range)&&capabilityContextModel.executionContext(session));
+  const byId=new Map();
+  const ensure=ref=>{const id=ref.outcomeId;if(!byId.has(id))byId.set(id,{capabilityRef:ref,executions:[],evidence:[],signals:[]});return byId.get(id)};
+  for(const execution of executions){const ref=capabilityContextModel.executionContext(execution);ensure(ref).executions.push(execution)}
+  for(const group of byId.values()){const ids=new Set(group.executions.map(item=>item.id));group.evidence=(state.data.evidence||[]).filter(item=>ids.has(item.sessionId))}
+  for(const signal of capabilityContextModel.normalizeSignalCollection(state.data.learningSignals)){if(weeklyDateInRange(signal.createdAt,range))ensure(signal.capabilityRef).signals.push(signal)}
+  for(const reflection of capabilityContextModel.normalizeReflections(review?.capabilityReflections)){if(!byId.has(reflection.capabilityRef.outcomeId))byId.set(reflection.capabilityRef.outcomeId,{capabilityRef:reflection.capabilityRef,executions:[],evidence:[],signals:[]})}
+  return[...byId.values()].sort((a,b)=>a.capabilityRef.attemptText.localeCompare(b.capabilityRef.attemptText,'pt-BR'));
+}
+function renderWeeklyCapabilities(range,review){
+  const list=document.getElementById('weeklyCapabilities'),groups=weeklyCapabilityGroups(range,review),existing=new Map(capabilityContextModel.normalizeReflections(review?.capabilityReflections).map(item=>[item.capabilityRef.outcomeId,item]));
+  if(!groups.length){list.innerHTML='<div class="weekly-empty">Nenhuma execução com contexto de capacidade neste período. A atividade sem capacidade continua nos painéis acima.</div>';return}
+  list.innerHTML=groups.map(group=>{
+    const resolved=capabilityContextModel.resolveCapabilityRef(group.capabilityRef,state.data.learningOutcomes||[]),reflection=existing.get(group.capabilityRef.outcomeId),editable=resolved.active&&resolved.current;
+    const evidence=group.evidence.map(item=>escapeHtml(item.summary)).join(' · '),signals=group.signals.map(item=>`${outcomeSignalLabel(item.kind)}: ${escapeHtml(item.text)}`).join(' · ');
+    return `<article class="weekly-capability-card${editable?'':' unavailable'}" data-weekly-capability="${escapeHtml(group.capabilityRef.outcomeId)}" data-attempt-id="${escapeHtml(group.capabilityRef.attemptId)}" data-attempt-text="${escapeHtml(group.capabilityRef.attemptText)}"><header><div><strong>${escapeHtml(resolved.outcome?.capability||'Capacidade indisponível')}</strong><span>Tentativa: ${escapeHtml(resolved.attemptText)}</span></div><span>${group.executions.length} tentativas finalizadas</span></header>${evidence?`<p><b>Evidence:</b> ${evidence}</p>`:''}${signals?`<p><b>Sinais:</b> ${signals}</p>`:''}${editable?`<div class="weekly-capability-fields"><label>Reflexão<textarea data-weekly-reflection maxlength="1000">${escapeHtml(reflection?.reflection||'')}</textarea></label><label>Decisão<select data-weekly-decision><option value="">Escolha</option><option value="keep" ${reflection?.decision==='keep'?'selected':''}>Manter tentativa</option><option value="revise" ${reflection?.decision==='revise'?'selected':''}>Revisar tentativa</option></select></label><label>Próxima tentativa após a decisão<input data-weekly-attempt maxlength="1000" value="${escapeHtml(reflection?.decidedAttemptText||resolved.attemptText)}"></label></div>`:`<p>${reflection?`${reflection.decision==='revise'?'Tentativa revisada':'Tentativa mantida'}: ${escapeHtml(reflection.decidedAttemptText)}`:'Contexto histórico; novas decisões exigem uma capacidade ativa com a tentativa atual.'}</p>`}</article>`;
   }).join('');
 }
 
@@ -280,6 +304,7 @@ function renderWeeklyReview() {
   renderWeeklyStats(sessions, evidence, itemSummaries);
   renderWeeklyEvidence(evidence);
   renderWeeklyItems(itemSummaries);
+  renderWeeklyCapabilities(range,review);
   renderWeeklyForm(review);
 
   const currentReview = weeklyReviewFor(weeklyRange(0));
@@ -287,8 +312,9 @@ function renderWeeklyReview() {
   if (badge) badge.textContent = currentReview ? '✓' : '•';
 }
 
-function saveWeeklyReview() {
+async function saveWeeklyReview() {
   const range = weeklyRange();
+  const draft={fields:Object.fromEntries(['weeklyWins','weeklyLessons','weeklyBlockers','weeklyDecision','weeklyQuality','weeklyPriority1','weeklyPriority2','weeklyPriority3'].map(id=>[id,document.getElementById(id).value])),capabilities:[...document.querySelectorAll('[data-weekly-capability]')].map(card=>({id:card.dataset.weeklyCapability,reflection:card.querySelector('[data-weekly-reflection]')?.value||'',decision:card.querySelector('[data-weekly-decision]')?.value||'',attempt:card.querySelector('[data-weekly-attempt]')?.value||''}))};
   const values = ['weeklyPriority1', 'weeklyPriority2', 'weeklyPriority3'].map(id => document.getElementById(id).value).filter(Boolean);
   const uniqueValues = [...new Set(values)];
   const priorities = uniqueValues.map(value => {
@@ -296,8 +322,24 @@ function saveWeeklyReview() {
     return { domain, itemId };
   });
 
+  const existing=weeklyReviewFor(range),now=new Date().toISOString();
+  let outcomes=(state.data.learningOutcomes||[]).map(item=>({...item}));
+  const reflections=capabilityContextModel.normalizeReflections(existing?.capabilityReflections);
+  const reflectionById=new Map(reflections.map(item=>[item.capabilityRef.outcomeId,item]));
+  for(const card of document.querySelectorAll('[data-weekly-capability]')){
+    const decision=card.querySelector('[data-weekly-decision]')?.value;if(!decision)continue;
+    const outcomeId=card.dataset.weeklyCapability,outcome=outcomes.find(item=>item.id===outcomeId),capabilityRef=capabilityContextModel.createCapabilityRef(outcome);
+    if(!capabilityRef)continue;
+    const reflection=card.querySelector('[data-weekly-reflection]').value.trim(),decidedAttemptText=card.querySelector('[data-weekly-attempt]').value.trim();
+    if(decision==='revise'&&!decidedAttemptText){showToast('Informe a tentativa revisada');card.querySelector('[data-weekly-attempt]').focus();return}
+    const current=reflectionById.get(outcomeId);
+    if(current&&current.decision===decision&&current.reflection===reflection&&current.decidedAttemptText===(decision==='keep'?capabilityRef.attemptText:decidedAttemptText))continue;
+    if(decision==='revise')outcomes=outcomes.map(item=>item.id===outcomeId?learningOutcomeModel.updateOutcome(item,{nextAttempt:decidedAttemptText},{now}):item);
+    const post=outcomes.find(item=>item.id===outcomeId),entry=capabilityContextModel.createReflection({capabilityRef,reflection,decision,decidedAttemptText:decision==='revise'?post.nextAttempt.text:capabilityRef.attemptText},{now});reflectionById.set(outcomeId,entry);
+  }
   const payload = {
-    id: weeklyReviewFor(range)?.id || `wr${Date.now()}`,
+    ...(existing||{}),
+    id: existing?.id || `wr${Date.now()}`,
     schemaVersion: WEEKLY_REVIEW_VERSION,
     weekStart: range.key,
     weekEnd: weeklyDateKey(weeklyAddDays(range.end, -1)),
@@ -307,16 +349,16 @@ function saveWeeklyReview() {
     decision: document.getElementById('weeklyDecision').value.trim(),
     quality: positiveNumber(document.getElementById('weeklyQuality').value) || null,
     priorities,
-    reviewedAt: new Date().toISOString()
+    capabilityReflections:capabilityContextModel.normalizeReflections([...reflectionById.values()]),
+    reviewedAt: now,
+    updatedAt:now
   };
-
-  const existingIndex = state.data.weeklyReviews.findIndex(review => review.weekStart === range.key);
-  if (existingIndex >= 0) state.data.weeklyReviews[existingIndex] = payload;
-  else state.data.weeklyReviews.unshift(payload);
-
-  const focusTitles = priorities.map(priority => weeklyItemFor(priority.domain, priority.itemId)?.title).filter(Boolean);
-  if (focusTitles.length) state.data.focus = focusTitles;
-  saveData(existingIndex >= 0 ? 'Revisão semanal atualizada' : 'Revisão semanal concluída');
+  const previous=state.data,candidate=typeof structuredClone==='function'?structuredClone(state.data):JSON.parse(JSON.stringify(state.data));candidate.learningOutcomes=outcomes;
+  const existingIndex=candidate.weeklyReviews.findIndex(review=>review.weekStart===range.key);if(existingIndex>=0)candidate.weeklyReviews[existingIndex]=payload;else candidate.weeklyReviews.unshift(payload);
+  const focusTitles=priorities.map(priority=>candidate[priority.domain]?.find(item=>item.id===priority.itemId)?.title).filter(Boolean);if(focusTitles.length)candidate.focus=focusTitles;
+  state.data=candidate;if(await saveData(existingIndex>=0?'Revisão semanal atualizada':'Revisão semanal concluída'))return;
+  state.data=previous;try{await window.CompassoStorage.save(STORAGE_KEY,previous)}catch{}renderAll();showToast('Não foi possível salvar a revisão. Suas capacidades não foram alteradas.');
+  Object.entries(draft.fields).forEach(([id,value])=>{const field=document.getElementById(id);if(field)field.value=value});draft.capabilities.forEach(item=>{const card=document.querySelector(`[data-weekly-capability="${CSS.escape(item.id)}"]`);if(!card)return;const reflection=card.querySelector('[data-weekly-reflection]'),decision=card.querySelector('[data-weekly-decision]'),attempt=card.querySelector('[data-weekly-attempt]');if(reflection)reflection.value=item.reflection;if(decision)decision.value=item.decision;if(attempt)attempt.value=item.attempt});const meta=document.getElementById('weeklyReviewMeta');meta.hidden=false;meta.textContent='Não foi possível salvar. Revise e tente novamente.';
 }
 
 installWeeklyReviewStyles();
@@ -330,6 +372,7 @@ document.getElementById('weeklyReviewForm').addEventListener('submit', event => 
 });
 
 document.addEventListener('click', event => {
+  const capability=event.target.closest('[data-weekly-open-capability]');if(capability){const outcome=(state.data.learningOutcomes||[]).find(item=>item.id===capability.dataset.weeklyOpenCapability);if(outcome){learningOutcomeRuntime.mode=outcome.status==='archived'?'archived':'active';switchView('capabilities');outcomeRender();requestAnimationFrame(()=>document.querySelector(`[data-outcome-card="${CSS.escape(outcome.id)}"]`)?.focus?.())}}
   const weeklyAction = event.target.closest('[data-action="weekly"]');
   if (weeklyAction) switchView('weekly');
   const navigation = event.target.closest('[data-week-nav]');

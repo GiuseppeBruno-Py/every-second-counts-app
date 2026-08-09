@@ -886,6 +886,57 @@ dialog[data-ds-component] form {
 .learning-outcome-error { margin: .5rem 0 0; padding: .7rem; border-radius: .6rem; background: var(--red-soft); color: var(--red); font-size: .7rem; font-weight: 700; }
 .learning-outcome-delete { color: var(--red); }
 
+/* Capability-first Compasso · additive cross-surface context */
+.capability-context-summary { margin-top: .8rem; border: 1px solid var(--line); border-radius: .8rem; background: var(--canvas); }
+.capability-context-summary > summary { min-height: 2.75rem; padding: .8rem; cursor: pointer; font-size: .72rem; font-weight: 800; }
+.capability-context-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,15rem),1fr)); gap: .65rem; padding: 0 .8rem .8rem; }
+.capability-context-block { min-width: 0; padding: .75rem; border: 1px solid var(--line); border-radius: .65rem; background: var(--surface-strong); overflow-wrap: anywhere; }
+.capability-context-block h4 { margin: 0 0 .45rem; font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; }
+.capability-context-block article + article { margin-top: .55rem; padding-top: .55rem; border-top: 1px solid var(--line); }
+.capability-context-block strong,.capability-context-block span { display: block; font-size: .68rem; line-height: 1.45; }
+.capability-context-block span,.capability-context-block p { color: var(--muted); }
+.capability-context-block p { margin: .3rem 0; font-size: .65rem; line-height: 1.5; }
+.capability-context-block button,.evidence-capability button { min-height: 2.25rem; margin-top: .4rem; border: 1px solid var(--line); border-radius: .55rem; background: #fff; color: var(--violet); font-size: .62rem; font-weight: 800; cursor: pointer; }
+.learning-signal-row button { justify-self: start; }
+.capability-resource-option { display: flex; align-items: flex-start; gap: .65rem; min-height: 2.75rem; padding: .65rem; border: 1px solid var(--line); border-radius: .65rem; }
+.capability-resource-option + .capability-resource-option { margin-top: .5rem; }
+.capability-resource-option input { margin-top: .2rem; }
+.capability-resource-option span,.capability-resource-option strong,.capability-resource-option small { display: block; min-width: 0; overflow-wrap: anywhere; }
+.capability-resource-option small { margin-top: .2rem; color: var(--muted); }
+.capability-resource-option.is-archived { background: var(--canvas); }
+.learning-signal-dialog select,.weekly-capability-fields select,.weekly-capability-fields input,.analytics-controls select { width: 100%; min-height: 2.75rem; border: 1px solid var(--line); border-radius: .65rem; background: #fff; color: var(--ink); padding: .65rem; }
+.today-row.capability-attempt { border-left: 3px solid var(--violet); }
+.today-row.unavailable,.capability-result-card.unavailable,.weekly-capability-card.unavailable,.evidence-capability.unavailable { border-style: dashed; }
+.today-actions button:disabled { opacity: .65; cursor: not-allowed; }
+.evidence-capability { margin-top: .6rem; padding-top: .6rem; border-top: 1px solid currentColor; overflow-wrap: anywhere; }
+.evidence-capability span,.evidence-capability strong { display: block; }
+.weekly-capability-list,.capability-results-list { display: grid; gap: .75rem; }
+.weekly-capability-card,.capability-result-card { padding: .9rem; border: 1px solid var(--line); border-radius: .75rem; overflow-wrap: anywhere; }
+.weekly-capability-card header,.capability-result-card header { display: flex; justify-content: space-between; gap: .75rem; }
+.weekly-capability-card header span,.capability-result-card header span { display: block; color: var(--muted); font-size: .66rem; }
+.weekly-capability-card p,.capability-result-card p { margin: .45rem 0 0; color: var(--muted); font-size: .68rem; line-height: 1.5; }
+.weekly-capability-fields { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(9rem,.5fr) minmax(0,1fr); gap: .65rem; margin-top: .75rem; }
+.weekly-capability-fields label { font-size: .66rem; font-weight: 800; }
+.weekly-capability-fields textarea { width: 100%; min-height: 4.5rem; margin-top: .35rem; border: 1px solid var(--line); border-radius: .65rem; padding: .65rem; resize: vertical; }
+.weekly-capability-fields select,.weekly-capability-fields input { margin-top: .35rem; }
+.capability-result-card { display: grid; grid-template-columns: minmax(0,1fr) repeat(3,minmax(0,1fr)); gap: .75rem; }
+.capability-result-card > div { padding-left: .75rem; border-left: 1px solid var(--line); }
+.outcomes-support { display: grid; gap: .75rem; }
+.analytics-capability { padding: .5rem; border-radius: .55rem; background: var(--violet-soft); color: var(--violet)!important; }
+
+@media (pointer:coarse) {
+  .capability-context-block button,.evidence-capability button,.capability-resource-option,.learning-signal-dialog select,.weekly-capability-fields select,.weekly-capability-fields input,.analytics-controls select { min-height: 44px; }
+}
+@media (max-width: 900px) {
+  .weekly-capability-fields,.capability-result-card { grid-template-columns: 1fr; }
+  .capability-result-card > div { padding: .65rem 0 0; border-top: 1px solid var(--line); border-left: 0; }
+}
+@media (max-width: 620px) {
+  .weekly-capability-card header,.capability-result-card header { flex-direction: column; }
+  .analytics-controls select { width: 100%; }
+  .learning-outcome-card button { min-height: 44px; }
+}
+
 @media (max-width: 768px) {
   .learning-outcome-hero { align-items: stretch; flex-direction: column; }
   .learning-outcome-hero .primary-btn { align-self: flex-start; }
