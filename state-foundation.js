@@ -17,8 +17,10 @@
       if(spec.type==='array'&&!Array.isArray(data[spec.name]))data[spec.name]=[];
       else if(spec.type==='keyed-map'&&(typeof data[spec.name]!=='object'||Array.isArray(data[spec.name])))data[spec.name]={};
     }
+    data.learningOutcomes=Array.isArray(data.learningOutcomes)?data.learningOutcomes:[];
+    if(root.CompassoLearningOutcomeModel?.normalizeCollection)data.learningOutcomes=root.CompassoLearningOutcomeModel.normalizeCollection(data.learningOutcomes);
     data._schema=data._schema&&typeof data._schema==='object'?data._schema:{};
-    data._schema.version=2;
+    data._schema.version=3;
     data._schema.migratedAt=data._schema.migratedAt||new Date(0).toISOString();
     return data;
   }
@@ -55,7 +57,7 @@
     }
     const latest=iso(remote._sync?.updatedAt)>iso(local._sync?.updatedAt)?remote:local;
     for(const [key,value] of Object.entries(latest))if(!catalog.has(key)&&key!=='_sync'&&key!=='_schema')merged[key]=value;
-    merged._sync={...(local._sync||{}),...(remote._sync||{}),schemaVersion:2,updatedAt:now,tombstones,conflicts:[...(local._sync?.conflicts||[]),...(remote._sync?.conflicts||[]),...conflicts]};
+    merged._sync={...(local._sync||{}),...(remote._sync||{}),schemaVersion:3,updatedAt:now,tombstones,conflicts:[...(local._sync?.conflicts||[]),...(remote._sync?.conflicts||[]),...conflicts]};
     return migrate(merged);
   }
   const api={catalog:()=>[...catalog.values()].map(clone),collection:n=>catalog.get(n),collectionNames:type=>[...catalog.values()].filter(x=>!type||x.type===type).map(x=>x.name),migrate,merge};

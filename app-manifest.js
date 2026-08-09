@@ -5,6 +5,7 @@
     ['feature-runtime.js','/* Compasso · Runtime central de features e eventos'],
     ['app-services.js','/* Compasso · Serviços de domínio'],
     ['design-system-model.js','/* Compasso · Contrato declarativo do design system'],
+    ['learning-outcome-model.js','CompassoLearningOutcomeModel'],
     ['today-feature.js','/* Compasso · Hoje e próximas ações'],
     ['session-timer-model.js','CompassoSessionTimerModel'],
     ['history-evidence-model.js','CompassoHistoryEvidenceModel'],
@@ -47,6 +48,7 @@
     ['capture-feature.js','/* Compasso · Capturas, caixa de entrada e destilacao de notas'],
     ['journal-model.js','/* Compasso · Modelo puro de Journaling */'],
     ['journal-feature.js','/* Compasso · Journaling integrado'],
+    ['learning-outcome-feature.js','/* Compasso · Capacidades e próximas tentativas'],
     ['ux-consolidation-model.js','CompassoUxModel'],
     ['ux-consolidation-feature.js','/* Compasso · Consolidação da experiência e hierarquia visual'],
     ['information-architecture-model.js','CompassoInformationArchitectureModel'],
@@ -54,10 +56,10 @@
     ['design-system-feature.js','/* Compasso · Comportamento acessível do design system']
   ];
   const browserJourneyModules=new Set([
-    'state-foundation.js','feature-runtime.js','app-services.js','design-system-model.js','today-feature.js','session-timer-model.js','history-evidence-model.js','session-kind-model.js',
+    'state-foundation.js','feature-runtime.js','app-services.js','design-system-model.js','learning-outcome-model.js','today-feature.js','session-timer-model.js','history-evidence-model.js','session-kind-model.js',
     'contingency-model.js','deep-work-model.js','ritual-model.js','execution-session-model.js','execution-session-feature.js','sessions-feature.js','goal-links-feature.js',
     'contingency-feature.js','deep-work-feature.js','session-companion-feature.js','ritual-feature.js','evidence-feature.js','recall-feature.js','weakness-feature.js','outcomes-feature.js',
-    'weekly-review-feature.js','weekly-plan-model.js','weekly-plan-feature.js','analytics-feature.js','history-edit-feature.js','capture-model.js','capture-feature.js','journal-model.js','journal-feature.js',
+    'weekly-review-feature.js','weekly-plan-model.js','weekly-plan-feature.js','analytics-feature.js','history-edit-feature.js','capture-model.js','capture-feature.js','journal-model.js','journal-feature.js','learning-outcome-feature.js',
     'ux-consolidation-model.js','ux-consolidation-feature.js','information-architecture-model.js','information-architecture-feature.js','design-system-feature.js'
   ]);
   const moduleEntries = modules.map(([file,marker],order)=>({file,marker,order,required:order<3,browserJourney:browserJourneyModules.has(file)}));
@@ -79,7 +81,7 @@
     'reading','study','goal','focus','folders','notes','captures','sessions','deepWorkSessions','executionSessions','dailyPlans',
     'energyCheckins','flowEvents','evidence','reviewItems','weeklyReviews','weeklyPlans',
     'bookSyntheses','errorEntries','errorNotebook','ritualTemplates','explanationEvaluations',
-    'journalEntries','journalCollections','journalFutureItems','journalMonthlyPlans','journalConflicts'
+    'journalEntries','journalCollections','journalFutureItems','journalMonthlyPlans','journalConflicts','learningOutcomes'
   ];
   const collections = [
     ...arrayCollections.map(name=>({name,type:'array',identity:'id',merge:'record-timestamp',sync:true})),
@@ -92,7 +94,7 @@
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v70',
+    cacheName:'compasso-pages-v71',
     cachePrefix,
     isOwnedCacheName,
     composition,
@@ -100,7 +102,7 @@
     modules:Object.freeze(moduleEntries),
     collections:Object.freeze(collections),
     assets:Object.freeze([...new Set(assets)]),
-    contracts:Object.freeze({routes:'compasso.route.v1',events:'compasso.event.v1',commands:'compasso.command.v1',services:'compasso.service.v1',state:'compasso.state.v2'})
+    contracts:Object.freeze({routes:'compasso.route.v1',events:'compasso.event.v1',commands:'compasso.command.v1',services:'compasso.service.v1',state:'compasso.state.v3'})
   });
   root.CompassoAppManifest=api;
   if(typeof module==='object'&&module.exports)module.exports=api;

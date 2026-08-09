@@ -516,7 +516,7 @@
         <strong>Feche a semana com evidências, não impressões.</strong>
         <button data-action="weekly">Ver foco da semana →</button>
       </div>
-      <div class="profile"><div class="avatar">EC</div><div><strong>Meu espaço</strong><span id="sidebarAppVersion">Compasso v70</span></div></div>
+      <div class="profile"><div class="avatar">EC</div><div><strong>Meu espaço</strong><span id="sidebarAppVersion">Compasso v71</span></div></div>
     </aside>
 
     <main class="main">
@@ -539,7 +539,7 @@
         <button id="exportBtn"><svg><use href="#i-export"/></svg>Exportar dados</button>
         <label><svg><use href="#i-import"/></svg>Importar dados<input type="file" id="importInput" accept="application/json"></label>
         <button id="resetBtn"><svg><use href="#i-reset"/></svg>Restaurar exemplo</button>
-        <div class="menu-version" id="settingsAppVersion">Compasso v70</div>
+        <div class="menu-version" id="settingsAppVersion">Compasso v71</div>
       </div>
 
       <div class="content">
@@ -648,6 +648,7 @@
       ],
       focus: ['Exemplo de leitura', 'Curso de exemplo', 'Meta de exemplo'],
       captures: [],
+      learningOutcomes: [],
       folders: [
         { id:'f-inbox', name:'00 · Inbox', parent:null, domain:'inbox' },
         { id:'f-reading', name:'01 · Leituras', parent:null, domain:'reading' },
@@ -716,10 +717,22 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       }
       catch { return normalizeData(structuredClone(initialData)); }
     }
-    function saveData(message = 'Progresso salvo') {
+    async function saveData(message = 'Progresso salvo') {
       normalizeData(state.data);
-      window.CompassoStorage.save(STORAGE_KEY, state.data);
-      renderAll(); showToast(message);
+      renderAll();
+      try {
+        const persisted = await window.CompassoStorage.save(STORAGE_KEY, state.data);
+        if (!persisted) {
+          showToast('Não foi possível salvar. Tente novamente.');
+          return false;
+        }
+        showToast(message);
+        return true;
+      } catch (error) {
+        console.error('[Compasso] Falha ao salvar o estado.', error);
+        showToast('Não foi possível salvar. Tente novamente.');
+        return false;
+      }
     }
     function icon(name) { return `<svg aria-hidden="true"><use href="#i-${name}"></use></svg>`; }
     function clamp(n) { return Math.max(0, Math.min(100, Number(n) || 0)); }
@@ -782,6 +795,9 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       normalized.notes = Array.isArray(normalized.notes) ? normalized.notes.filter(item => item && typeof item === 'object') : [];
       normalized.captures = Array.isArray(normalized.captures) ? normalized.captures.filter(item => item && typeof item === 'object') : [];
       if (globalThis.CompassoCaptureModel) normalized.captures = normalized.captures.map(item => globalThis.CompassoCaptureModel.migrateCapture(item)).filter(Boolean);
+      normalized.learningOutcomes = globalThis.CompassoLearningOutcomeModel
+        ? globalThis.CompassoLearningOutcomeModel.normalizeCollection(normalized.learningOutcomes)
+        : (Array.isArray(normalized.learningOutcomes) ? normalized.learningOutcomes : []);
       return normalized;
     }
     function average(items) { return Array.isArray(items) && items.length ? Math.round(items.reduce((sum, item) => sum + clamp(item.progress), 0) / items.length) : 0; }
@@ -807,7 +823,7 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
 
     function appVersionLabel() {
       const manifest = globalThis.CompassoAppManifest;
-      const cacheName = manifest?.cacheName || 'compasso-pages-v70';
+      const cacheName = manifest?.cacheName || 'compasso-pages-v71';
       const cacheVersion = String(cacheName).match(/v(\d+)$/)?.[1];
       return `Compasso v${cacheVersion || manifest?.version || '59'}`;
     }

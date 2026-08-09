@@ -12,6 +12,10 @@ test('navegação primária tem cinco áreas declarativas e estado anunciado',as
   await expect(nav.locator('[data-ia-area="today"]')).toHaveAttribute('aria-current','page');
   await nav.locator('[data-ia-area="fronts"]').click();
   await expect(page.locator('#frontsView')).toBeVisible();
+  await expect(page.locator('#frontsView [data-ia-view]').first()).toHaveAttribute('data-ia-view','capabilities');
+  await page.locator('[data-ia-view="capabilities"]').click();
+  await expect(page.locator('#capabilitiesView')).toBeVisible();
+  await nav.locator('[data-ia-area="fronts"]').click();
   await page.locator('[data-ia-view="study"]').click();
   await expect(page.locator('#studyView')).toBeVisible();
   await expect(nav.locator('[data-ia-area="fronts"]')).toHaveAttribute('aria-current','page');
@@ -32,6 +36,12 @@ test('deep link abre subvisão e reload preserva contexto',async({page})=>{
   await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>globalThis.CompassoInformationArchitecture);
   await expect(page.locator('#goalView')).toBeVisible();
   await expect(page.locator('[data-ia-area="fronts"]')).toHaveAttribute('aria-current','page');
+});
+test('deep link de Capacidades abre a primeira subvisão essencial de Frentes',async({page})=>{
+  await open(page,'/?view=capabilities');
+  await expect(page.locator('#capabilitiesView')).toBeVisible();
+  await expect(page.locator('[data-ia-area="fronts"]')).toHaveAttribute('aria-current','page');
+  await expect(page.locator('#frontsView [data-ia-view]').first()).toHaveAttribute('data-ia-view','capabilities');
 });
 test('preferência inválida e rota antiga indisponível voltam para área válida',async({page})=>{
   await open(page,'/?view=unknown','legacy-invalid');

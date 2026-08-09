@@ -631,3 +631,257 @@ dialog[data-ds-component] form {
     opacity: 1;
   }
 }
+
+/* Capacidades: outcome foundation */
+.learning-outcome-view {
+  min-width: 0;
+}
+.learning-outcome-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ds-space-5, 1.25rem);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--ds-color-border, var(--line));
+  border-radius: var(--ds-radius-xl, 1.25rem);
+  background: linear-gradient(135deg, #302f2a, #454238);
+  color: #fff;
+  box-shadow: var(--ds-shadow-md, var(--shadow));
+}
+.learning-outcome-hero .eyebrow { color: #b9b6ae; }
+.learning-outcome-hero h2 {
+  margin: .45rem 0 .35rem;
+  font: 800 clamp(1.5rem, 4vw, 2.25rem)/1.15 "Manrope", sans-serif;
+  letter-spacing: -.045em;
+}
+.learning-outcome-hero p {
+  max-width: 43rem;
+  margin: 0;
+  color: #d0cdc6;
+  font-size: .78rem;
+  line-height: 1.6;
+}
+.learning-outcome-hero .primary-btn {
+  flex: 0 0 auto;
+  border-color: #f8f6f0;
+  background: #f8f6f0;
+  color: #252521;
+}
+.learning-outcome-toolbar {
+  display: flex;
+  gap: .4rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+.learning-outcome-toolbar button {
+  min-height: 2.65rem;
+  padding: 0 1rem;
+  border: 1px solid var(--ds-color-border, var(--line));
+  border-radius: .7rem;
+  background: var(--ds-color-surface, #fff);
+  font-size: .72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.learning-outcome-toolbar button.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+.learning-outcome-list { display: grid; gap: .85rem; }
+.learning-outcome-card {
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 1.35rem);
+  border: 1px solid var(--ds-color-border, var(--line));
+  border-radius: var(--ds-radius-lg, 1rem);
+  background: var(--ds-color-surface, var(--surface-strong));
+  box-shadow: 0 8px 24px rgba(41, 37, 29, .045);
+}
+.learning-outcome-card.is-archived { background: #f7f6f2; }
+.learning-outcome-card-head,
+.learning-outcome-card-foot {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.learning-outcome-card-head h3 {
+  margin: .35rem 0 0;
+  max-width: 55rem;
+  overflow-wrap: anywhere;
+  font: 800 clamp(1rem, 2vw, 1.2rem)/1.4 "Manrope", sans-serif;
+}
+.learning-outcome-status {
+  display: inline-flex;
+  padding: .27rem .5rem;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: .6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.is-archived .learning-outcome-status { background: #e8e6df; color: #65625c; }
+.learning-outcome-proof,
+.learning-outcome-attempt {
+  margin-top: 1rem;
+  padding: .85rem 1rem;
+  border-radius: .75rem;
+  background: var(--canvas);
+}
+.learning-outcome-proof span,
+.learning-outcome-attempt span {
+  display: block;
+  color: var(--muted);
+  font-size: .61rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.learning-outcome-proof p,
+.learning-outcome-attempt strong {
+  display: block;
+  margin: .35rem 0 0;
+  overflow-wrap: anywhere;
+  font-size: .78rem;
+  line-height: 1.55;
+}
+.learning-outcome-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin-top: .85rem;
+}
+.learning-outcome-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  max-width: 100%;
+  padding: .35rem .4rem .35rem .6rem;
+  border-radius: 999px;
+  background: var(--violet-soft);
+  color: var(--violet);
+  overflow-wrap: anywhere;
+  font-size: .64rem;
+  font-weight: 750;
+}
+.learning-outcome-chip.unavailable { background: var(--red-soft); color: var(--red); }
+.learning-outcome-chip button {
+  width: 1.35rem;
+  height: 1.35rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,.7);
+  color: inherit;
+  cursor: pointer;
+}
+.learning-outcome-card-foot {
+  align-items: center;
+  margin-top: .9rem;
+  padding-top: .7rem;
+  border-top: 1px solid var(--ds-color-border, var(--line));
+  color: var(--muted);
+  font-size: .62rem;
+}
+.learning-outcome-empty {
+  padding: clamp(2rem, 8vw, 4rem) 1rem;
+  border: 1px dashed var(--ds-color-border, var(--line));
+  border-radius: var(--ds-radius-lg, 1rem);
+  text-align: center;
+  color: var(--muted);
+}
+.learning-outcome-empty strong { display: block; color: var(--ink); font: 800 1rem "Manrope", sans-serif; }
+.learning-outcome-empty p { margin: .45rem 0 1rem; font-size: .74rem; }
+
+.learning-outcome-dialog {
+  width: min(46rem, calc(100vw - 2rem));
+  max-height: min(52rem, calc(100dvh - 2rem));
+  padding: 0;
+  border: 0;
+  border-radius: 1.25rem;
+  background: var(--surface-strong);
+  color: var(--ink);
+  box-shadow: 0 24px 80px rgba(25, 23, 18, .3);
+  overflow: auto;
+}
+.learning-outcome-dialog::backdrop { background: rgba(31, 30, 27, .62); backdrop-filter: blur(3px); }
+.learning-outcome-dialog-head,
+.learning-outcome-dialog-foot {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+.learning-outcome-dialog-head { justify-content: space-between; }
+.learning-outcome-dialog-head h2 { margin: .25rem 0 0; font: 800 1.2rem "Manrope", sans-serif; }
+.learning-outcome-dialog-foot {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  position: sticky;
+  bottom: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--surface-strong);
+}
+.learning-outcome-form { display: grid; gap: .45rem; padding: 1.25rem; }
+.learning-outcome-form > label { margin-top: .55rem; font-size: .72rem; font-weight: 800; }
+.learning-outcome-form textarea {
+  width: 100%;
+  min-height: 5.25rem;
+  padding: .75rem;
+  border: 1px solid var(--line);
+  border-radius: .7rem;
+  background: #fff;
+  color: var(--ink);
+  resize: vertical;
+  line-height: 1.5;
+}
+.learning-outcome-form textarea:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(97, 86, 201, .14); outline: 0; }
+.learning-outcome-form textarea[aria-invalid="true"] { border-color: var(--red); }
+.learning-outcome-optional,
+.learning-outcome-resources summary span { color: var(--muted); font-size: .62rem; font-weight: 500; }
+.learning-outcome-hint,
+.learning-outcome-resources > p { margin: 0 0 .25rem; color: var(--muted); font-size: .64rem; line-height: 1.5; }
+.learning-outcome-resources {
+  margin: .6rem 0;
+  padding: .8rem;
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+}
+.learning-outcome-resources summary { cursor: pointer; font-size: .72rem; font-weight: 800; }
+.learning-outcome-resources > p { margin-top: .55rem; }
+#learningOutcomeResourceOptions { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin-top: .7rem; }
+#learningOutcomeResourceOptions fieldset { min-width: 0; margin: 0; padding: .65rem; border: 1px solid var(--line); border-radius: .65rem; }
+#learningOutcomeResourceOptions legend { padding: 0 .3rem; font-size: .63rem; font-weight: 800; }
+#learningOutcomeResourceOptions label { display: flex; align-items: flex-start; gap: .4rem; padding: .35rem; border-radius: .4rem; font-size: .66rem; line-height: 1.4; }
+#learningOutcomeResourceOptions label:hover { background: var(--canvas); }
+#learningOutcomeResourceOptions label.unavailable { color: var(--red); }
+#learningOutcomeResourceOptions input { flex: 0 0 auto; margin-top: .12rem; }
+#learningOutcomeResourceOptions p { margin: .35rem; color: var(--muted); font-size: .62rem; }
+.learning-outcome-error { margin: .5rem 0 0; padding: .7rem; border-radius: .6rem; background: var(--red-soft); color: var(--red); font-size: .7rem; font-weight: 700; }
+.learning-outcome-delete { color: var(--red); }
+
+@media (max-width: 768px) {
+  .learning-outcome-hero { align-items: stretch; flex-direction: column; }
+  .learning-outcome-hero .primary-btn { align-self: flex-start; }
+  .learning-outcome-card-head { align-items: stretch; flex-direction: column; }
+  .learning-outcome-card-head .secondary-btn { align-self: flex-start; }
+  #learningOutcomeResourceOptions { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .learning-outcome-dialog {
+    width: 100vw;
+    max-width: none;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    border-radius: 1.15rem 1.15rem 0 0;
+  }
+  .learning-outcome-dialog-foot { grid-template-columns: 1fr 1fr; }
+  .learning-outcome-dialog-foot > span { display: none; }
+  .learning-outcome-dialog-foot .learning-outcome-delete { grid-column: 1 / -1; }
+  .learning-outcome-card-foot { align-items: stretch; flex-direction: column; }
+  .learning-outcome-card-foot .quiet-btn { align-self: flex-start; }
+}

@@ -171,6 +171,13 @@ test('hard-bypass raw execution exhausts a used budget without a loop or destruc
 test('controlled complete cache reopens offline with composition and local state', async ({ page, context }) => {
   await page.goto(PWA_URL);
   await coherent(page);
+  await page.locator('[data-ia-area="fronts"]').click();
+  await page.locator('[data-ia-view="capabilities"]').click();
+  await page.locator('[data-outcome-new]').first().click();
+  await page.locator('[name="capability"]').fill('Explicar o ciclo offline');
+  await page.locator('[name="nextAttempt"]').fill('Reabrir a capacidade sem rede');
+  await page.locator('#learningOutcomeForm [type="submit"]').click();
+  await expect(page.locator('#learningOutcomeDialog')).toBeHidden();
   await page.evaluate(() => localStorage.setItem('compasso.test.offline', 'preserved'));
   const before = await loads(page);
   await context.setOffline(true);
@@ -178,6 +185,7 @@ test('controlled complete cache reopens offline with composition and local state
   await coherent(page);
   expect(await loads(page)).toBe(before + 1);
   expect(await page.evaluate(() => localStorage.getItem('compasso.test.offline'))).toBe('preserved');
+  await expect(page.locator('[data-outcome-card]')).toContainText('Explicar o ciclo offline');
   await expect(page.locator('link[href="./design-system.css"]')).toHaveCount(1);
   await context.setOffline(false);
 });

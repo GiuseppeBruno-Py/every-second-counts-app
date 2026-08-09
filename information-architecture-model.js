@@ -10,6 +10,7 @@
     {id:'more',label:'Mais',icon:'more',level:'essential',order:50,route:'more'}
   ]);
   const views=Object.freeze([
+    {id:'capabilities',area:'fronts',label:'Capacidades',description:'Defina o que quer conseguir fazer e sua próxima tentativa.',icon:'compass',level:'essential',order:10,route:'capabilities'},
     {id:'reading',area:'fronts',label:'Leituras',description:'Livros físicos e digitais em progresso.',icon:'book',level:'essential',order:20,route:'reading'},
     {id:'study',area:'fronts',label:'Estudos',description:'Cursos, certificações e prática deliberada.',icon:'study',level:'essential',order:30,route:'study'},
     {id:'goal',area:'fronts',label:'Metas',description:'Resultados conectados à execução.',icon:'target',level:'essential',order:40,route:'goal'},
