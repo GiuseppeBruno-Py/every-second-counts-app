@@ -5,7 +5,7 @@
   if(typeof module==='object'&&module.exports)module.exports=api;
 })(globalThis,function(){
   const EVIDENCE_TYPES=Object.freeze(['insight','note','exercise','decision','question','deliverable']);
-  const DOMAINS=Object.freeze(['reading','study']);
+  const DOMAINS=Object.freeze(['reading','study','learningOutcome']);
   const clone=value=>JSON.parse(JSON.stringify(value));
   const text=(value,max=500)=>String(value??'').trim().slice(0,max);
   const timestamp=value=>{

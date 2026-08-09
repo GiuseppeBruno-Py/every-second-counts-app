@@ -4,6 +4,7 @@ const model=require('../execution-session-model.js');
 
 const regular={id:'s1',domain:'study',itemId:'a1',status:'completed',startedAt:'2026-07-17T10:00:00.000Z',endedAt:'2026-07-17T10:30:00.000Z',durationMs:1800000,intent:'Entregar módulo',reflection:'Entregue',executionVariant:{kind:'minimum',contingencyId:null},ritualSnapshot:{id:'r1',version:2}};
 const deep={id:'dw1',domain:'study',actionId:'a1',state:'completed',startedAt:'2026-07-17T11:00:00.000Z',endedAt:'2026-07-17T12:00:00.000Z',actualMinutes:60,expectedOutcome:'Fechar PR',completionNote:'PR aberta',capturedDistractions:[],ritualSnapshot:{id:'r2',version:1}};
+const learningContext={outcomeId:'o1',attemptId:'a1',attemptText:'Explicar o plano sem consulta'};
 
 test('migra sessões legadas sem apagar fontes nem duplicar registros',()=>{
   const data={sessions:[regular],deepWorkSessions:[deep],executionSessions:[]};
@@ -51,4 +52,16 @@ test('concessão entre abas expira e nunca bloqueia a própria aba',()=>{
   assert.equal(model.leaseAvailable(lease,'tab-a',2000),true);
   assert.equal(model.leaseAvailable(lease,'tab-b',2000),false);
   assert.equal(model.leaseAvailable(lease,'tab-b',16000),true);
+});
+
+test('preserva contexto da tentativa nas fontes e no histórico sem fabricar vínculos legados',()=>{
+  const regularLinked=model.fromRegular({...regular,learningContext});
+  const deepLinked=model.fromDeep({...deep,learningContext});
+  assert.deepEqual(regularLinked.learningContext,learningContext);
+  assert.deepEqual(deepLinked.learningContext,learningContext);
+  assert.deepEqual(model.history([regularLinked,deepLinked]).map(item=>item.learningContext),[learningContext,learningContext]);
+  assert.equal(model.fromRegular(regular).learningContext,null);
+  assert.equal(model.fromDeep(deep).learningContext,null);
+  const migrated=model.migrate({sessions:[{...regular,learningContext}],deepWorkSessions:[deep]});
+  assert.deepEqual(model.migrate({sessions:[{...regular,learningContext}],deepWorkSessions:[deep],executionSessions:migrated}),migrated);
 });

@@ -1,8 +1,9 @@
 (function(root,factory){
-  const api=factory();
+  const outcomeModel=root.CompassoLearningOutcomeModel||(typeof module==='object'&&module.exports?require('./learning-outcome-model.js'):null);
+  const api=factory(outcomeModel);
   if(typeof module==='object'&&module.exports)module.exports=api;
   root.CompassoDeepWorkModel=api;
-})(typeof globalThis!=='undefined'?globalThis:this,function(){
+})(typeof globalThis!=='undefined'?globalThis:this,function(outcomeModel){
   const ACTIVE=new Set(['running','paused','finishing']);
   const FINAL=new Set(['completed','interrupted']);
   const iso=value=>typeof value==='string'&&!Number.isNaN(Date.parse(value))?value:null;
@@ -13,6 +14,7 @@
     const state=['idle','running','paused','finishing','completed','interrupted'].includes(session.state)?session.state:'idle';
     return {
       id:text(session.id,90),schemaVersion:2,actionId:text(session.actionId,90),domain:text(session.domain,30),
+      learningContext:outcomeModel?.normalizeExecutionContext(session.learningContext)||null,
       plannedMinutes:Math.max(1,Math.min(1440,Math.round(Number(session.plannedMinutes)||25))),
       actualMinutes:Math.max(0,Number(session.actualMinutes)||0),state,
       createdAt:iso(session.createdAt)||now,startedAt:iso(session.startedAt),pausedAt:iso(session.pausedAt),endedAt:iso(session.endedAt),

@@ -178,6 +178,12 @@ test('controlled complete cache reopens offline with composition and local state
   await page.locator('[name="nextAttempt"]').fill('Reabrir a capacidade sem rede');
   await page.locator('#learningOutcomeForm [type="submit"]').click();
   await expect(page.locator('#learningOutcomeDialog')).toBeHidden();
+  await page.locator('[data-outcome-execute]').click();
+  await page.locator('#sessionStartForm').evaluate(form => form.requestSubmit());
+  await page.locator('#sessionCompanionFinish').click();
+  await page.locator('#sessionEvidenceSummary').fill('Evidência preservada offline');
+  await page.locator('#sessionFinishForm').evaluate(form => form.requestSubmit());
+  await expect(page.locator('[data-outcome-card]')).toContainText('Evidência preservada offline');
   await page.evaluate(() => localStorage.setItem('compasso.test.offline', 'preserved'));
   const before = await loads(page);
   await context.setOffline(true);
@@ -186,6 +192,8 @@ test('controlled complete cache reopens offline with composition and local state
   expect(await loads(page)).toBe(before + 1);
   expect(await page.evaluate(() => localStorage.getItem('compasso.test.offline'))).toBe('preserved');
   await expect(page.locator('[data-outcome-card]')).toContainText('Explicar o ciclo offline');
+  await expect(page.locator('[data-outcome-card]')).toContainText('Evidência preservada offline');
+  expect(await page.evaluate(() => state.data.executionSessions.some(item => item.learningContext?.attemptText === 'Reabrir a capacidade sem rede'))).toBe(true);
   await expect(page.locator('link[href="./design-system.css"]')).toHaveCount(1);
   await context.setOffline(false);
 });

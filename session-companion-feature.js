@@ -26,6 +26,7 @@
         status: deep.state,
         elapsedMs: deepModel.elapsedMs(deep),
         domain: deep.domain,
+        learningContext: deep.learningContext || null,
       };
     }
     const session = state.data.sessions?.find(candidate => candidate.id === canonical.source?.id);
@@ -41,6 +42,7 @@
       status: session.status,
       elapsedMs: sessionElapsedMs(session),
       domain: session.domain,
+      learningContext: session.learningContext || null,
     };
   }
   function clock(ms) {
@@ -155,7 +157,8 @@
       if (session?.state === "finishing") deepShowFinish(session.finishingKind || "complete");
       return;
     }
-    if (labels[current.domain]) switchView(current.domain);
+    if (current.learningContext) switchView('capabilities');
+    else if (labels[current.domain]) switchView(current.domain);
   }
   function togglePause() {
     const current = activity();
