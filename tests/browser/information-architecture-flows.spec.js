@@ -26,9 +26,12 @@ test('navegação primária tem quatro áreas declarativas sem Mais e estado anu
 test('níveis persistem sem recriar Mais e controles de sistema permanecem disponíveis',async({page})=>{
   await open(page,'/','essential');
   await expect(page.locator('#moreView, #iaMoreVault, .ia-system')).toHaveCount(0);
+  await expect(page.locator('.vault-explorer')).toBeHidden();
   await page.locator('#settingsBtn').click();await page.locator('[data-ux-mode="knowledge"]').click();
   await expect(page.locator('#exportBtn')).toBeVisible();await expect(page.locator('#importInput')).toHaveCount(1);
   await page.evaluate(()=>CompassoInformationArchitecture.open('notes'));await expect(page.locator('#notesView')).toBeVisible();
+  if(page.viewportSize().width>1020)await expect(page.locator('.vault-explorer')).toBeVisible();else await expect(page.locator('.vault-explorer')).toBeHidden();
+  await page.evaluate(()=>CompassoInformationArchitecture.open('fronts'));await expect(page.locator('.vault-explorer')).toBeHidden();
   await page.locator('[data-ux-mode="advanced"]').click();
   await expect(page.locator('.ia-primary-nav > .nav-item')).toHaveCount(4);
 });

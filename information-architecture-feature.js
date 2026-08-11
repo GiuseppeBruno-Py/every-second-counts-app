@@ -22,6 +22,7 @@
   function setActive(view){
     const area=model.areaFor(view);state.area=area;state.view=view;
     document.querySelectorAll('[data-ia-area]').forEach(button=>{const active=button.dataset.iaArea===area;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
+    const vault=document.querySelector('.vault-explorer');if(vault){const visible=view==='notes';vault.hidden=!visible;vault.style.display=visible?'':'none'}
   }
   function updateUrl(view,replace=false){
     if(state.suppressHistory)return;const url=new URL(location.href);url.searchParams.set('view',view);history[replace?'replaceState':'pushState']({compassoView:view},'',url);
