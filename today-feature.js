@@ -5,6 +5,7 @@
 
 const TODAY_FEATURE_VERSION = 2;
 state.data.dailyPlans = Array.isArray(state.data.dailyPlans) ? state.data.dailyPlans : [];
+let todayRestorePrimaryFocusAfterRender = false;
 labels.today = { title: 'Hoje', kicker: 'Próximas ações' };
 
 function todayDateKey(date = new Date()) {
@@ -195,6 +196,15 @@ function renderTodayPrimary(primary) {
 
 function renderToday() {
   const plan = todayPlan();
+  const renderedPrimary = todayPrimaryState(plan);
+  const activeElement = document.activeElement;
+  if (
+    activeElement?.closest?.('#todayPrimaryAction') &&
+    renderedPrimary.focusSelector &&
+    activeElement.matches?.(renderedPrimary.focusSelector)
+  ) {
+    todayRestorePrimaryFocusAfterRender = true;
+  }
   plan.items = plan.items.filter(ref => ref.type === 'custom' || ref.type === 'capability-attempt' || todayItem(ref));
   const completed = plan.items.filter(ref => ref.completedAt).length;
   const journal = todayJournal();
@@ -290,6 +300,12 @@ CompassoFeatures.selector('today.primaryState',todayPrimaryState);
 CompassoFeatures.command('today.executePrimary',todayExecutePrimary);
 CompassoFeatures.command('today.openPrimary',todayOpenPrimary);
 CompassoFeatures.register('today',{order:10,afterRender:renderToday});
+CompassoFeatures.on('render:after',()=>{
+  if (!todayRestorePrimaryFocusAfterRender) return;
+  todayRestorePrimaryFocusAfterRender = false;
+  if (state.view !== 'today') return;
+  todayFocusPrimary(todayPrimaryState());
+});
 
 document.getElementById('todayForm').addEventListener('submit', event => { event.preventDefault(); saveTodayCustomAction(); });
 document.addEventListener('click', event => {

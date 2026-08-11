@@ -4,6 +4,8 @@ async function open(page,path='/',mode='essential'){
   await page.addInitScript(value=>localStorage.setItem('compasso.ux.mode.v1',value),mode);
   await page.goto(path,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>globalThis.CompassoFeatures?.installed&&globalThis.CompassoInformationArchitecture);
+  await expect(page.locator('.app-shell')).toBeVisible();
+  await expect(page.locator('.app-shell')).not.toHaveAttribute('inert','');
 }
 test('navegação primária tem cinco áreas declarativas e estado anunciado',async({page})=>{
   await open(page);const nav=page.locator('.ia-primary-nav');
@@ -56,6 +58,7 @@ test('preferência inválida e rota antiga indisponível voltam para área váli
 });
 test('Executar tem nome acessível e usa fallback determinístico sem iniciar ação comum',async({page})=>{
   await open(page,'/','advanced');const execute=page.locator('#iaExecuteBtn');await expect(execute).toHaveAttribute('aria-label','Executar');await execute.focus();await page.keyboard.press('Enter');await expect(page.locator('#todayView')).toBeVisible();await expect(page.locator('#todayPrimaryAction [data-today-primary-action]')).toBeFocused();
+  await page.evaluate(()=>renderAll());await expect(page.locator('#todayPrimaryAction [data-today-primary-action]')).toBeFocused();
   await page.locator('#todayPrimaryAction [data-today-custom]').click();await page.locator('#todayActionTitle').fill('Organizar os materiais da semana');await page.locator('#todayForm').evaluate(form=>form.requestSubmit());await page.locator('[data-ia-area="more"]').click();await execute.click();await expect(page.locator('#todayPrimaryAction [data-today-primary-action]')).toBeFocused();await expect(page.locator('#todayPrimaryAction')).toContainText('Organizar os materiais');expect(await page.evaluate(()=>state.data.sessions.length)).toBe(0);
 });
 test('Executar respeita a ordem armazenada entre tentativas planejadas',async({page})=>{
