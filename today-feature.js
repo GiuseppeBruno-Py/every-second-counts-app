@@ -5,6 +5,7 @@
 
 const TODAY_FEATURE_VERSION = 2;
 state.data.dailyPlans = Array.isArray(state.data.dailyPlans) ? state.data.dailyPlans : [];
+let todayRestorePrimaryFocusAfterRender = false;
 labels.today = { title: 'Hoje', kicker: 'Próximas ações' };
 
 function todayDateKey(date = new Date()) {
@@ -62,6 +63,59 @@ function todayActiveExecution() {
   return normal ? { type: 'normal', session: normal, item: sessionItem(normal) } : null;
 }
 
+function todayPrimaryState(plan = todayPlan()) {
+  const active = todayActiveExecution();
+  if (active) return { kind:'execution', active, focusSelector:'[data-today-resume]' };
+  for (const ref of plan.items) {
+    if (ref?.completedAt || ref?.type !== 'capability-attempt') continue;
+    const normalized = capabilityContextModel.normalizeTodayItem(ref);
+    if (!normalized) continue;
+    const resolved = capabilityContextModel.resolveCapabilityRef(normalized.capabilityRef,state.data.learningOutcomes || []);
+    if (resolved.active && resolved.current) return { kind:'capability', ref:normalized, refKey:todayRefKey(normalized), resolved, focusSelector:'[data-today-primary-start]' };
+  }
+  for (const ref of plan.items) {
+    if (ref?.completedAt || ref?.type === 'capability-attempt') continue;
+    const item = todayItem(ref);
+    if (ref?.type === 'custom' || item) return { kind:'action', ref, refKey:todayRefKey(ref), item, focusSelector:'[data-today-primary-action]' };
+  }
+  return { kind:'planning', focusSelector:'[data-today-custom]' };
+}
+
+function todayCapabilitySessionOptions(outcome) {
+  const learningContext = capabilityContextModel.createCapabilityRef(outcome);
+  if (!learningContext) return null;
+  return { learningContext, resources:learningOutcomeModel.resolveRefs(outcome,{study:state.data.study||[],reading:state.data.reading||[]}) };
+}
+
+function todayFocusPrimary(primary = todayPrimaryState(), preferred = {}) {
+  const outcomeSelector = preferred.outcomeId ? `[data-today-capability="${CSS.escape(preferred.outcomeId)}"]` : '';
+  const preferredTarget = outcomeSelector ? document.querySelector(outcomeSelector) : null;
+  const target = preferredTarget?.querySelector?.('button:not([disabled])') || preferredTarget || document.querySelector(`#todayPrimaryAction ${primary.focusSelector}`) || document.getElementById('todayPrimaryAction') || document.querySelector('[data-today-custom]') || document.querySelector('#todayView h2');
+  target?.scrollIntoView?.({block:'nearest'});
+  target?.focus?.();
+  return target || null;
+}
+
+function todayOpenPrimary(preferred = {}) {
+  switchView('today');
+  renderToday();
+  requestAnimationFrame(() => todayFocusPrimary(todayPrimaryState(),preferred || {}));
+}
+
+function todayExecutePrimary({ trigger = null } = {}) {
+  const primary = todayPrimaryState();
+  if (primary.kind === 'execution') {
+    const command = primary.active.type === 'deep' ? 'deep-work.resume' : 'session.resume';
+    return CompassoFeatures.execute(command,{sessionId:primary.active.session.id,trigger});
+  }
+  if (primary.kind === 'capability') {
+    const options = todayCapabilitySessionOptions(primary.resolved.outcome);
+    if (!options) return todayOpenPrimary();
+    return CompassoFeatures.execute('session.startDefault',{domain:'learningOutcome',itemId:primary.resolved.outcome.id,options,trigger});
+  }
+  return todayOpenPrimary();
+}
+
 function todayPendingDecisions() {
   const decisions = [];
   const journal = todayJournal();
@@ -94,7 +148,7 @@ function todayInstallUi() {
   }
   if (!document.getElementById('todayView')) {
     document.querySelector('.content')?.insertAdjacentHTML('afterbegin', `
-      <section class="view" id="todayView"><div class="today-shell"><section class="today-hero"><div><div class="eyebrow" id="todayDateHeading"></div><h2>Hoje</h2><p class="today-intention" id="todayIntention"></p></div><div class="today-score"><strong id="todayScore">0/0</strong><span>ações concluídas hoje</span></div></section><section class="today-panel today-session" id="todayActiveSession" hidden></section><div class="today-grid"><section class="today-panel"><div class="today-panel-head"><div><div class="eyebrow">Plano do dia</div><h3>Próximas ações</h3><p>Escolha pouco e execute a próxima ação em até dois toques.</p></div><button class="primary-btn" type="button" data-today-custom>${icon('plus')}Nova ação</button></div><div class="today-list" id="todayList"></div></section><section class="today-panel"><div class="today-panel-head"><div><div class="eyebrow">Direção</div><h3>Foco da semana</h3><p>Resultados que orientam as escolhas de hoje.</p></div></div><div class="today-direction-list" id="todayDirections"></div></section></div><div class="today-grid"><section class="today-panel"><div class="today-panel-head"><div><div class="eyebrow">Fila inteligente</div><h3>Sugestões para hoje</h3><p>Prioriza o foco semanal e as frentes ativas.</p></div></div><div class="today-candidates" id="todayCandidates"></div></section><section class="today-panel"><div class="today-panel-head"><div><div class="eyebrow">Decisões</div><h3>O que exige atenção</h3><p>Somente pendências que pedem uma escolha.</p></div></div><div class="today-decision-list" id="todayDecisions"></div><details class="today-progress"><summary>Progresso essencial das frentes</summary><div class="today-progress-grid" id="todayProgress"></div></details></section></div></div></section>
+      <section class="view" id="todayView"><div class="today-shell"><section class="today-hero"><div><div class="eyebrow" id="todayDateHeading"></div><h2>Hoje</h2><p class="today-intention" id="todayIntention"></p></div><div class="today-score"><strong id="todayScore">0/0</strong><span>ações concluídas hoje</span></div></section><section class="today-primary" id="todayPrimaryAction" tabindex="-1" aria-live="polite"><div class="today-primary-card today-session" id="todayActiveSession" hidden></div><div class="today-primary-card" id="todayPrimaryContent"></div></section><div class="today-grid"><section class="today-panel"><div class="today-panel-head"><div><div class="eyebrow">Plano do dia</div><h3>Próximas ações</h3><p>A ação principal aparece acima; o restante do plano mantém sua ordem.</p></div><button class="primary-btn" type="button" data-today-custom>${icon('plus')}Nova ação</button></div><div class="today-list" id="todayList"></div></section><section class="today-panel"><div class="today-panel-head"><div><div class="eyebrow">Direção</div><h3>Foco da semana</h3><p>Resultados que orientam as escolhas de hoje.</p></div></div><div class="today-direction-list" id="todayDirections"></div></section></div><div class="today-grid"><section class="today-panel"><div class="today-panel-head"><div><div class="eyebrow">Fila inteligente</div><h3>Sugestões para hoje</h3><p>Prioriza o foco semanal e as frentes ativas.</p></div></div><div class="today-candidates" id="todayCandidates"></div></section><section class="today-panel"><div class="today-panel-head"><div><div class="eyebrow">Decisões</div><h3>O que exige atenção</h3><p>Somente pendências que pedem uma escolha.</p></div></div><div class="today-decision-list" id="todayDecisions"></div><details class="today-progress"><summary>Progresso essencial das frentes</summary><div class="today-progress-grid" id="todayProgress"></div></details></section></div></div></section>
     `);
   }
   const hero = document.querySelector('#todayView .today-hero');
@@ -110,8 +164,47 @@ function todayInstallUi() {
   }
 }
 
+function renderTodayPrimary(primary) {
+  const activeCard = document.getElementById('todayActiveSession');
+  const content = document.getElementById('todayPrimaryContent');
+  if (!activeCard || !content) return;
+  activeCard.hidden = primary.kind !== 'execution';
+  content.hidden = primary.kind === 'execution';
+  if (primary.kind === 'execution') {
+    delete content.dataset.todayCapability;
+    const active = primary.active;
+    const finishing = active.session.state === 'finishing' || active.session.status === 'finishing';
+    activeCard.innerHTML = `<div class="today-session-copy"><span>${active.type === 'deep' ? 'Deep Work' : 'Sessão normal'} ${finishing ? 'em encerramento' : 'em andamento'}</span><h3 id="todayPrimaryHeading">${escapeHtml(active.item?.title || 'Item removido')}</h3><small>${finishing ? 'Continue o encerramento antes de escolher outra ação.' : active.session.state === 'paused' || active.session.status === 'paused' ? 'Pausada e pronta para retomar.' : 'Retome de onde parou.'}</small></div><button type="button" data-today-resume="${active.type}">${finishing ? 'Continuar encerramento' : 'Retomar sessão'}</button>`;
+    return;
+  }
+  if (primary.kind === 'capability') {
+    content.dataset.todayCapability = primary.resolved.outcome.id;
+    content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima tentativa</div><h3 id="todayPrimaryHeading">${escapeHtml(primary.resolved.attemptText)}</h3><p>${escapeHtml(primary.resolved.outcome.capability)} · atual no seu plano</p></div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-primary-start="${escapeHtml(primary.resolved.outcome.id)}">Iniciar agora</button><button class="secondary-btn" type="button" data-today-primary-configure="${escapeHtml(primary.resolved.outcome.id)}">Ajustar sessão</button><button class="quiet-btn" type="button" data-today-open-capability="${escapeHtml(primary.resolved.outcome.id)}">Abrir capacidade</button><button class="quiet-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button><button class="quiet-btn remove" type="button" data-today-remove="${escapeHtml(primary.refKey)}">Remover do plano</button></div>`;
+    return;
+  }
+  delete content.dataset.todayCapability;
+  if (primary.kind === 'action') {
+    const ref = primary.ref, item = primary.item, custom = ref.type === 'custom';
+    const title = custom ? ref.title : item?.note?.trim() || `Avançar em ${item?.title || 'ação planejada'}`;
+    const detail = item ? `${item.title} · ${domainLabels[ref.domain] || 'Plano'}` : 'Ação manual independente';
+    const primaryAction = item ? `<button class="primary-btn" type="button" data-today-primary-action data-today-open="${ref.domain}:${ref.itemId}">Abrir ação</button>` : `<button class="primary-btn" type="button" data-today-primary-action data-today-toggle="${escapeHtml(primary.refKey)}">Concluir ação</button>`;
+    content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima ação do plano</div><h3 id="todayPrimaryHeading">${escapeHtml(title)}</h3><p>${escapeHtml(detail)} · o Executar global apenas traz você até aqui.</p></div><div class="today-primary-actions">${primaryAction}${item ? `<button class="secondary-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button>` : ''}</div>`;
+    return;
+  }
+  content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Comece pelo plano</div><h3 id="todayPrimaryHeading">Escolha a próxima ação</h3><p>Nenhuma ação executável está planejada. Nada será escolhido automaticamente.</p></div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-custom data-today-primary-action>${icon('plus')}Nova ação</button></div>`;
+}
+
 function renderToday() {
   const plan = todayPlan();
+  const renderedPrimary = todayPrimaryState(plan);
+  const activeElement = document.activeElement;
+  if (
+    activeElement?.closest?.('#todayPrimaryAction') &&
+    renderedPrimary.focusSelector &&
+    activeElement.matches?.(renderedPrimary.focusSelector)
+  ) {
+    todayRestorePrimaryFocusAfterRender = true;
+  }
   plan.items = plan.items.filter(ref => ref.type === 'custom' || ref.type === 'capability-attempt' || todayItem(ref));
   const completed = plan.items.filter(ref => ref.completedAt).length;
   const journal = todayJournal();
@@ -123,10 +216,8 @@ function renderToday() {
   intention.textContent = journal?.intention || 'Defina uma intenção no Journal para orientar as decisões deste dia.';
   intention.classList.toggle('is-empty', !journal?.intention);
 
-  const active = todayActiveExecution();
-  const activeCard = document.getElementById('todayActiveSession');
-  activeCard.hidden = !active;
-  activeCard.innerHTML = active ? `<div class="today-session-copy"><span>${active.type === 'deep' ? 'Deep Work ativo' : 'Sessão normal ativa'}</span><strong>${escapeHtml(active.item?.title || 'Item removido')}</strong><small>${active.session.state === 'paused' || active.session.status === 'paused' ? 'Pausada e pronta para retomar' : 'Em andamento'}</small></div><button type="button" data-today-resume="${active.type}">Retomar sessão</button>` : '';
+  const primary = todayPrimaryState(plan);
+  renderTodayPrimary(primary);
 
   const directions = todayWeeklyDirections();
   document.getElementById('todayDirections').innerHTML = directions.length ? directions.map((label, index) => `<div class="today-direction"><b>${index + 1}</b><span>${escapeHtml(label)}</span></div>`).join('') : '<div class="today-empty">Nenhum foco semanal definido.</div>';
@@ -135,15 +226,16 @@ function renderToday() {
   document.getElementById('todayDecisions').innerHTML = decisions.length ? decisions.map(item => `<div class="today-decision"><span>${escapeHtml(item.label)}</span><button type="button" data-today-decision="${item.type}">Resolver</button></div>`).join('') : '<div class="today-empty">Nenhuma decisão pendente agora.</div>';
   document.getElementById('todayProgress').innerHTML = ['reading', 'study', 'goal'].map(domain => { const activeItems = state.data[domain].filter(item => ['active', 'planned'].includes(item.status)); const average = activeItems.length ? Math.round(activeItems.reduce((sum, item) => sum + positiveNumber(item.progress), 0) / activeItems.length) : 0; return `<div><strong>${average}%</strong><span>${escapeHtml(domainLabels[domain])} · ${activeItems.length} ativas</span></div>`; }).join('');
 
-  document.getElementById('todayList').innerHTML = plan.items.length ? plan.items.map(ref => {
+  const secondaryItems = plan.items.filter(ref => !primary.refKey || todayRefKey(ref) !== primary.refKey);
+  document.getElementById('todayList').innerHTML = secondaryItems.length ? secondaryItems.map(ref => {
     if (ref.type === 'capability-attempt') {
       const normalized = capabilityContextModel.normalizeTodayItem(ref);
       if (!normalized) return '';
       const resolved = capabilityContextModel.resolveCapabilityRef(normalized.capabilityRef,state.data.learningOutcomes || []);
       const key = todayRefKey(normalized), unavailable=!resolved.available, archived=resolved.available&&!resolved.active, stale=resolved.available&&!resolved.current;
-      const status=unavailable?'Capacidade indisponível':archived?'Capacidade arquivada':stale?'Tentativa histórica':'Próxima tentativa atual';
+      const status=normalized.completedAt?'Concluída no plano':unavailable?'Capacidade indisponível':archived?'Capacidade arquivada':stale?'Tentativa histórica':'Próxima tentativa atual';
       const canStart=resolved.active&&resolved.current&&!normalized.completedAt;
-      return `<article class="today-row capability-attempt${normalized.completedAt?' done':''}${unavailable||archived?' unavailable':''}" data-today-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}" tabindex="-1"><button class="today-check" data-today-toggle="${escapeHtml(key)}" aria-label="${normalized.completedAt?'Reabrir':'Concluir'} referência da capacidade">${normalized.completedAt?icon('check'):''}</button><div class="today-row-main"><strong>${escapeHtml(resolved.attemptText)}</strong><span>${escapeHtml(status)}${resolved.outcome?` · ${escapeHtml(resolved.outcome.capability)}`:''}</span></div><div class="today-actions">${canStart?`<button class="primary" data-today-start-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}">Iniciar sessão</button>`:''}${resolved.available?`<button data-today-open-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}">Abrir capacidade</button>`:`<button disabled aria-disabled="true">Capacidade indisponível</button>`}<button class="remove" data-today-remove="${escapeHtml(key)}">Remover</button></div></article>`;
+      return `<article class="today-row capability-attempt${normalized.completedAt?' done':''}${unavailable||archived||stale?' unavailable':''}" data-today-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}" tabindex="-1"><button class="today-check" data-today-toggle="${escapeHtml(key)}" aria-label="${normalized.completedAt?'Reabrir':'Concluir'} referência da capacidade">${normalized.completedAt?icon('check'):''}</button><div class="today-row-main"><strong>${escapeHtml(resolved.attemptText)}</strong><span>${escapeHtml(status)}${resolved.outcome?` · ${escapeHtml(resolved.outcome.capability)}`:''}</span></div><div class="today-actions">${canStart?`<button class="primary" data-today-start-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}">Configurar sessão</button>`:''}${resolved.available?`<button data-today-open-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}">Abrir capacidade</button>`:`<button disabled aria-disabled="true">Capacidade indisponível</button>`}<button class="remove" data-today-remove="${escapeHtml(key)}">Remover</button></div></article>`;
     }
     const item = todayItem(ref);
     const custom = ref.type === 'custom';
@@ -152,7 +244,7 @@ function renderToday() {
     const canStart = item && ['reading', 'study'].includes(ref.domain) && !ref.completedAt;
     const key = todayRefKey(ref);
     return `<article class="today-row ${ref.completedAt ? 'done' : ''} ${custom ? 'custom' : ''}"><button class="today-check" data-today-toggle="${escapeHtml(key)}" aria-label="${ref.completedAt ? 'Reabrir' : 'Concluir'} ação">${ref.completedAt ? icon('check') : ''}</button><div class="today-row-main"><strong>${escapeHtml(action)}</strong><span>${escapeHtml(detail)}</span></div><div class="today-actions">${canStart ? `<button class="primary" data-start-session="${ref.domain}:${ref.itemId}">Iniciar sessão</button>` : ''}${item ? `<button data-today-open="${ref.domain}:${ref.itemId}">Abrir</button>` : ''}<button class="remove" data-today-remove="${escapeHtml(key)}">Remover</button></div></article>`;
-  }).join('') : '<div class="today-empty"><strong>Nenhuma ação planejada.</strong><br>Crie uma ação livre ou escolha uma sugestão da fila.</div>';
+  }).join('') : `<div class="today-empty">${primary.kind === 'planning' ? '<strong>Nenhuma ação planejada.</strong><br>Crie uma ação livre ou escolha uma sugestão da fila.' : 'A ação prioritária está destacada acima.'}</div>`;
 
   const selected = new Set(plan.items.filter(ref => ref.type !== 'custom').map(ref => `${ref.domain}:${ref.itemId}`));
   const candidates = todayAllCandidates().filter(entry => !selected.has(`${entry.domain}:${entry.item.id}`)).slice(0, 6);
@@ -172,10 +264,11 @@ function todayOpenCapability(outcomeId){
   const outcome=(state.data.learningOutcomes||[]).find(item=>item.id===outcomeId);if(!outcome)return;
   learningOutcomeRuntime.mode=outcome.status==='archived'?'archived':'active';switchView('capabilities');outcomeRender();requestAnimationFrame(()=>document.querySelector(`[data-outcome-card="${CSS.escape(outcomeId)}"]`)?.focus?.());
 }
-function todayStartCapability(outcomeId){
+function todayStartCapability(outcomeId,{immediate=false,trigger=null,expanded=false}={}){
   const outcome=(state.data.learningOutcomes||[]).find(item=>item.id===outcomeId),ref=capabilityContextModel.createCapabilityRef(outcome);
   if(!ref){showToast('A capacidade ou tentativa atual não está disponível');return}
-  openOutcomeSessionStart(outcome.id,{learningContext:ref,resources:learningOutcomeModel.resolveRefs(outcome,{study:state.data.study||[],reading:state.data.reading||[]})});
+  const payload={domain:'learningOutcome',itemId:outcome.id,options:{learningContext:ref,resources:learningOutcomeModel.resolveRefs(outcome,{study:state.data.study||[],reading:state.data.reading||[]})},trigger};
+  return CompassoFeatures.execute(immediate?'session.startDefault':'session.openConfiguration',{...payload,expanded});
 }
 
 function openTodayDialog() {
@@ -203,7 +296,16 @@ function todaySave(message) {
 
 todayInstallStyles();
 todayInstallUi();
+CompassoFeatures.selector('today.primaryState',todayPrimaryState);
+CompassoFeatures.command('today.executePrimary',todayExecutePrimary);
+CompassoFeatures.command('today.openPrimary',todayOpenPrimary);
 CompassoFeatures.register('today',{order:10,afterRender:renderToday});
+CompassoFeatures.on('render:after',()=>{
+  if (!todayRestorePrimaryFocusAfterRender) return;
+  todayRestorePrimaryFocusAfterRender = false;
+  if (state.view !== 'today') return;
+  todayFocusPrimary(todayPrimaryState());
+});
 
 document.getElementById('todayForm').addEventListener('submit', event => { event.preventDefault(); saveTodayCustomAction(); });
 document.addEventListener('click', event => {
@@ -230,7 +332,9 @@ document.addEventListener('click', event => {
     else{plan.items = plan.items.filter(ref => todayRefKey(ref) !== remove.dataset.todayRemove);todaySave('Ação removida do dia');}
   }
   const openCapability=event.target.closest('[data-today-open-capability]');if(openCapability)todayOpenCapability(openCapability.dataset.todayOpenCapability);
-  const startCapability=event.target.closest('[data-today-start-capability]');if(startCapability)todayStartCapability(startCapability.dataset.todayStartCapability);
+  const startCapability=event.target.closest('[data-today-start-capability]');if(startCapability)todayStartCapability(startCapability.dataset.todayStartCapability,{trigger:startCapability});
+  const primaryStart=event.target.closest('[data-today-primary-start]');if(primaryStart)todayStartCapability(primaryStart.dataset.todayPrimaryStart,{immediate:true,trigger:primaryStart});
+  const primaryConfigure=event.target.closest('[data-today-primary-configure]');if(primaryConfigure)todayStartCapability(primaryConfigure.dataset.todayPrimaryConfigure,{trigger:primaryConfigure,expanded:true});
   const open = event.target.closest('[data-today-open]');
   if (open) {
     const [domain, itemId] = open.dataset.todayOpen.split(':');
@@ -238,15 +342,10 @@ document.addEventListener('click', event => {
     setTimeout(() => document.querySelector(`[data-edit="${domain}:${itemId}"]`)?.closest('.item-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
   }
   const resume = event.target.closest('[data-today-resume]');
-  if (resume?.dataset.todayResume === 'deep') {
-    const active = typeof deepActive === 'function' ? deepActive() : null;
-    if (active) deepOpen(active.domain, active.actionId);
-  } else if (resume) {
-    document.getElementById('sessionBanner')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    document.getElementById('sessionPauseBtn')?.focus();
-  }
+  if (resume?.dataset.todayResume === 'deep') CompassoFeatures.execute('deep-work.resume',{trigger:resume});
+  else if (resume) CompassoFeatures.execute('session.resume',{trigger:resume});
   const decision = event.target.closest('[data-today-decision]');
-  if (decision?.dataset.todayDecision === 'weekly') switchView('weekly');
+  if (decision?.dataset.todayDecision === 'weekly') CompassoFeatures.execute('weekly.openDecision',{trigger:decision});
   if (decision?.dataset.todayDecision === 'journal' || decision?.dataset.todayDecision === 'close-day') {
     switchView('journal');
     if (decision.dataset.todayDecision === 'close-day') requestAnimationFrame(() => document.querySelector('[data-journal-close-day]')?.focus());

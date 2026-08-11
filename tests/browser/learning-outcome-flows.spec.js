@@ -141,6 +141,9 @@ test('backup JSON preserva forma completa e backup legado abre sem migração de
   expect(path).toBeTruthy();
 
   await page.locator('#importInput').setInputFiles(path);
+  await expect.poll(() => page.evaluate(() => state.data.learningOutcomes[0]?.status)).toBe('archived');
+  await page.locator('#settingsBtn').click();
+  await expect(page.locator('#settingsMenu')).not.toHaveClass(/open/);
   await page.locator('[data-outcome-mode="archived"]').click();
   await expect(page.locator('.learning-outcome-card')).toContainText('Diagnosticar uma consulta lenta');
   const restored = await page.evaluate(() => state.data.learningOutcomes[0]);
@@ -209,6 +212,12 @@ test('executa tentativa sem recurso, registra evidência pela sessão e retorna 
   await page.locator('#sessionReflection').fill('Consegui explicar o fechamento léxico.');
   await page.locator('#sessionEvidenceSummary').fill('Exemplo executado e explicado');
   await page.locator('#sessionFinishForm').evaluate(form => form.requestSubmit());
+  const completion=page.locator('#executionCompletionPanel');
+  await expect(completion).toBeVisible();
+  await expect(completion).toBeFocused();
+  await expect(completion.locator('[data-completion-today]')).toBeVisible();
+  await expect(completion.locator('[data-completion-capability]')).toBeVisible();
+  await completion.locator('[data-completion-capability]').click();
   await expect(page.locator('#capabilitiesView')).toBeVisible();
   await expect(card).toBeFocused();
   await expect(card).toContainText('Última execução');
@@ -232,6 +241,8 @@ test('Deep Work reutiliza a mesma proveniência de tentativa e retorna à capaci
   await openCapabilities(page);
   const card=await createOutcome(page,{capability:'Diagnosticar um plano',nextAttempt:'Analisar um plano desconhecido'});
   await card.locator('[data-outcome-execute]').click();
+  await page.locator('#sessionOptionalConfig summary').click();
+  await expect(page.locator('#sessionOptionalConfig')).toHaveAttribute('open','');
   await page.locator('#sessionMode').selectOption('deep');
   await page.locator('#sessionStartForm').evaluate(form=>form.requestSubmit());
   await expect(page.locator('#deepDialog')).toBeVisible();
@@ -242,7 +253,12 @@ test('Deep Work reutiliza a mesma proveniência de tentativa e retorna à capaci
   await page.locator('#deepComplete').click();
   await page.locator('#deepCompletionNote').fill('Plano analisado e explicado');
   await page.locator('#deepConfirmFinish').click();
+  const completion=page.locator('#executionCompletionPanel');
+  await expect(completion).toBeVisible();
+  await expect(completion).toBeFocused();
+  await completion.locator('[data-completion-capability]').click();
   await expect(page.locator('#capabilitiesView')).toBeVisible();
+  await expect(card).toBeFocused();
   await expect(card).toContainText('Plano analisado e explicado');
   expect(await page.evaluate(()=>state.data.executionSessions.find(item=>item.mode==='deep')?.learningContext)).toEqual(context);
 });
@@ -252,6 +268,8 @@ test('recurso escolhido mantém sua métrica sem transformar atividade em progre
   const card=await createOutcome(page,{capability:'Aplicar um operador',nextAttempt:'Resolver um exercício',resources:[{type:'study',id:'example-study'}]});
   const outcomeBefore=await page.evaluate(()=>structuredClone(state.data.learningOutcomes[0]));
   await card.locator('[data-outcome-execute]').click();
+  await page.locator('#sessionOptionalConfig summary').click();
+  await expect(page.locator('#sessionOptionalConfig')).toHaveAttribute('open','');
   await page.locator('#sessionOutcomeResource').selectOption('study:example-study');
   await page.locator('#sessionStartForm').evaluate(form=>form.requestSubmit());
   await page.locator('#sessionCompanionFinish').click();

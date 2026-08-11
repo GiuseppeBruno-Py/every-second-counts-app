@@ -7,7 +7,7 @@ const weeklySessionKindModel = globalThis.CompassoSessionKindModel;
 state.data.weeklyReviews = Array.isArray(state.data.weeklyReviews) ? state.data.weeklyReviews : [];
 labels.weekly = { title: 'Revisão semanal', kicker: 'Evidências e direção' };
 
-const weeklyReviewRuntime = { offset: 0 };
+const weeklyReviewRuntime = { offset: 0, renderedRange:null };
 
 function weeklyStartOfWeek(reference = new Date()) {
   const date = new Date(reference);
@@ -163,13 +163,8 @@ function installWeeklyReviewUi() {
             <div><div class="eyebrow">Revisão semanal</div><h2 id="weeklyRangeTitle"></h2><p id="weeklyRangeSubtitle"></p><span class="weekly-status" id="weeklyStatus"></span></div>
             <div class="weekly-navigation"><button type="button" data-week-nav="-1">← Semana anterior</button><button type="button" class="current" data-week-current>Semana atual</button><button type="button" id="weeklyNextBtn" data-week-nav="1">Próxima semana →</button></div>
           </section>
-          <div class="weekly-stats" id="weeklyStats"></div>
-          <div class="weekly-columns">
-            <section class="weekly-panel"><div class="weekly-panel-head"><div><div class="eyebrow">Evidências</div><h3>O que a semana produziu</h3><p>Resultados verificáveis registrados ao encerrar sessões.</p></div><span class="weekly-panel-badge" id="weeklyEvidenceBadge"></span></div><div class="weekly-evidence-list" id="weeklyEvidenceList"></div></section>
-            <section class="weekly-panel"><div class="weekly-panel-head"><div><div class="eyebrow">Execução</div><h3>Itens trabalhados</h3><p>Tempo, sessões e avanço por frente.</p></div></div><div class="weekly-item-list" id="weeklyItemList"></div></section>
-          </div>
-          <section class="weekly-panel capability-week-panel"><div class="weekly-panel-head"><div><div class="eyebrow">Capacidades da semana</div><h3>Evidências, sinais e decisão</h3><p>Atividade informa a reflexão; ela não mede domínio nem conclui uma capacidade.</p></div></div><div id="weeklyCapabilities" class="weekly-capability-list"></div></section>
-          <section class="weekly-panel"><div class="weekly-panel-head"><div><div class="eyebrow">Fechamento</div><h3>Interprete antes de planejar</h3><p>Transforme os dados da semana em decisões para a próxima.</p></div></div>
+          <section class="weekly-panel capability-week-panel" id="weeklyDecisionRegion" tabindex="-1" aria-labelledby="weeklyDecisionHeading"><div class="weekly-panel-head"><div><div class="eyebrow">Decisão principal</div><h3 id="weeklyDecisionHeading">Reflita e escolha a próxima tentativa</h3><p>Evidence e sinais informam sua decisão; nada muda automaticamente.</p></div></div><p class="weekly-decision-error" id="weeklyDecisionError" role="alert" tabindex="-1" hidden></p><div id="weeklyCapabilities" class="weekly-capability-list"></div></section>
+          <section class="weekly-panel weekly-closure"><div class="weekly-panel-head"><div><div class="eyebrow">Fechamento</div><h3>Interprete antes de planejar</h3><p>Transforme a decisão de aprendizagem em direção para a próxima semana.</p></div></div>
             <form class="weekly-review-form" id="weeklyReviewForm">
               <div class="weekly-form-grid">
                 <div class="field"><label for="weeklyWins">Principal avanço</label><textarea id="weeklyWins" maxlength="600" placeholder="O que avançou de forma concreta?"></textarea></div>
@@ -179,9 +174,15 @@ function installWeeklyReviewUi() {
               </div>
               <div><div class="eyebrow" style="margin-bottom:9px">Três prioridades da próxima semana</div><div class="weekly-priorities"><select id="weeklyPriority1" aria-label="Prioridade 1"></select><select id="weeklyPriority2" aria-label="Prioridade 2"></select><select id="weeklyPriority3" aria-label="Prioridade 3"></select></div></div>
               <div class="field"><label for="weeklyQuality">Qualidade da semana</label><select id="weeklyQuality"><option value="">Selecione</option><option value="1">1 · Semana reativa</option><option value="2">2 · Pouco avanço real</option><option value="3">3 · Avanço razoável</option><option value="4">4 · Boa execução</option><option value="5">5 · Semana excelente</option></select></div>
-              <div class="weekly-review-meta" id="weeklyReviewMeta" hidden></div>
+              <div class="weekly-review-meta" id="weeklyReviewMeta" tabindex="-1" hidden></div>
               <div class="weekly-review-actions"><p>Ao salvar, as prioridades escolhidas também atualizam o bloco <strong>Foco da semana</strong> da visão geral.</p><button class="primary-btn" type="submit">${icon('check')}<span id="weeklySaveLabel">Concluir revisão</span></button></div>
             </form>
+          </section>
+          <section class="weekly-secondary" aria-labelledby="weeklySecondaryHeading"><div class="weekly-panel-head"><div><div class="eyebrow">Apoio à decisão</div><h3 id="weeklySecondaryHeading">Detalhes da semana</h3><p>Expanda somente o que ajudar sua revisão.</p></div></div>
+            <details class="weekly-support" id="weeklyStatsDetails"><summary>Resumo de atividade <span id="weeklyStatsSummary"></span></summary><div class="weekly-support-body"><div class="weekly-stats" id="weeklyStats"></div></div></details>
+            <details class="weekly-support" id="weeklyEvidenceDetails"><summary>Evidence da semana <span id="weeklyEvidenceSummary"></span></summary><div class="weekly-support-body"><section class="weekly-panel"><div class="weekly-panel-head"><div><div class="eyebrow">Evidências</div><h3>O que a semana produziu</h3><p>Resultados verificáveis registrados ao encerrar sessões.</p></div><span class="weekly-panel-badge" id="weeklyEvidenceBadge"></span></div><div class="weekly-evidence-list" id="weeklyEvidenceList"></div></section></div></details>
+            <details class="weekly-support" id="weeklyItemsDetails"><summary>Itens e atividade sem capacidade <span id="weeklyItemsSummary"></span></summary><div class="weekly-support-body"><section class="weekly-panel"><div class="weekly-panel-head"><div><div class="eyebrow">Execução</div><h3>Itens trabalhados</h3><p>Tempo, sessões e avanço por frente, incluindo atividade sem capacidade.</p></div></div><div class="weekly-item-list" id="weeklyItemList"></div></section></div></details>
+            <details class="weekly-support" id="weeklyJournalDetails"><summary>Journal e atenção <span id="weeklyJournalCount">0 entradas</span></summary><div class="weekly-support-body" id="weeklyJournalSlot"></div></details>
           </section>
         </div>
       </section>
@@ -249,12 +250,23 @@ function weeklyCapabilityGroups(range,review){
 }
 function renderWeeklyCapabilities(range,review){
   const list=document.getElementById('weeklyCapabilities'),groups=weeklyCapabilityGroups(range,review),existing=new Map(capabilityContextModel.normalizeReflections(review?.capabilityReflections).map(item=>[item.capabilityRef.outcomeId,item]));
-  if(!groups.length){list.innerHTML='<div class="weekly-empty">Nenhuma execução com contexto de capacidade neste período. A atividade sem capacidade continua nos painéis acima.</div>';return}
+  if(!groups.length){list.innerHTML='<div class="weekly-empty">Nenhuma decisão de capacidade neste período. Faça o fechamento geral abaixo; a atividade sem capacidade continua nos detalhes.</div>';return}
   list.innerHTML=groups.map(group=>{
     const resolved=capabilityContextModel.resolveCapabilityRef(group.capabilityRef,state.data.learningOutcomes||[]),reflection=existing.get(group.capabilityRef.outcomeId),editable=resolved.active&&resolved.current;
     const evidence=group.evidence.map(item=>escapeHtml(item.summary)).join(' · '),signals=group.signals.map(item=>`${outcomeSignalLabel(item.kind)}: ${escapeHtml(item.text)}`).join(' · ');
-    return `<article class="weekly-capability-card${editable?'':' unavailable'}" data-weekly-capability="${escapeHtml(group.capabilityRef.outcomeId)}" data-attempt-id="${escapeHtml(group.capabilityRef.attemptId)}" data-attempt-text="${escapeHtml(group.capabilityRef.attemptText)}"><header><div><strong>${escapeHtml(resolved.outcome?.capability||'Capacidade indisponível')}</strong><span>Tentativa: ${escapeHtml(resolved.attemptText)}</span></div><span>${group.executions.length} tentativas finalizadas</span></header>${evidence?`<p><b>Evidence:</b> ${evidence}</p>`:''}${signals?`<p><b>Sinais:</b> ${signals}</p>`:''}${editable?`<div class="weekly-capability-fields"><label>Reflexão<textarea data-weekly-reflection maxlength="1000">${escapeHtml(reflection?.reflection||'')}</textarea></label><label>Decisão<select data-weekly-decision><option value="">Escolha</option><option value="keep" ${reflection?.decision==='keep'?'selected':''}>Manter tentativa</option><option value="revise" ${reflection?.decision==='revise'?'selected':''}>Revisar tentativa</option></select></label><label>Próxima tentativa após a decisão<input data-weekly-attempt maxlength="1000" value="${escapeHtml(reflection?.decidedAttemptText||resolved.attemptText)}"></label></div>`:`<p>${reflection?`${reflection.decision==='revise'?'Tentativa revisada':'Tentativa mantida'}: ${escapeHtml(reflection.decidedAttemptText)}`:'Contexto histórico; novas decisões exigem uma capacidade ativa com a tentativa atual.'}</p>`}</article>`;
+    const revise=reflection?.decision==='revise';
+    return `<article class="weekly-capability-card${editable?'':' unavailable'}" data-weekly-capability="${escapeHtml(group.capabilityRef.outcomeId)}" data-attempt-id="${escapeHtml(group.capabilityRef.attemptId)}" data-attempt-text="${escapeHtml(group.capabilityRef.attemptText)}"><header><div><strong>${escapeHtml(resolved.outcome?.capability||'Capacidade indisponível')}</strong><span>Tentativa atual: ${escapeHtml(resolved.attemptText)}</span></div><span>${group.executions.length} tentativas finalizadas</span></header>${evidence?`<p><b>Evidence:</b> ${evidence}</p>`:''}${signals?`<p><b>Sinais:</b> ${signals}</p>`:''}${editable?`<div class="weekly-capability-fields"><label>Reflexão<textarea data-weekly-reflection maxlength="1000">${escapeHtml(reflection?.reflection||'')}</textarea></label><label>Decisão explícita<select data-weekly-decision aria-describedby="weeklyDecisionError"><option value="">Escolha manter ou revisar</option><option value="keep" ${reflection?.decision==='keep'?'selected':''}>Manter tentativa atual</option><option value="revise" ${revise?'selected':''}>Revisar tentativa</option></select></label><label data-weekly-attempt-wrap ${revise?'':'hidden'}>Nova tentativa<input data-weekly-attempt maxlength="1000" value="${escapeHtml(revise?reflection.decidedAttemptText:resolved.attemptText)}" aria-describedby="weeklyDecisionError"></label></div>`:`<p>${reflection?`${reflection.decision==='revise'?'Tentativa revisada':'Tentativa mantida'}: ${escapeHtml(reflection.decidedAttemptText)}`:'Contexto histórico; novas decisões exigem uma capacidade ativa com a tentativa atual.'}</p>`}</article>`;
   }).join('');
+}
+
+function weeklySetDecisionError(message='',target=null){const error=document.getElementById('weeklyDecisionError');if(error){error.textContent=message;error.hidden=!message}document.querySelectorAll('#weeklyDecisionRegion [aria-invalid="true"]').forEach(field=>field.removeAttribute('aria-invalid'));if(target){target.setAttribute('aria-invalid','true');requestAnimationFrame(()=>target.focus())}}
+function weeklyUpdateDecisionCard(card,{focusAttempt=false}={}){const decision=card?.querySelector('[data-weekly-decision]'),wrap=card?.querySelector('[data-weekly-attempt-wrap]'),attempt=card?.querySelector('[data-weekly-attempt]');if(!decision||!wrap)return;const revise=decision.value==='revise';wrap.hidden=!revise;if(!revise&&attempt)attempt.value=card.dataset.attemptText||attempt.value;if(revise&&focusAttempt)requestAnimationFrame(()=>attempt?.focus())}
+
+function renderWeeklyDisclosureSummaries(range,sessions,evidence,itemSummaries){
+  document.getElementById('weeklyStatsSummary').textContent=`${sessions.length} sessões`;
+  document.getElementById('weeklyEvidenceSummary').textContent=`${evidence.length} ${evidence.length===1?'registro':'registros'}`;
+  document.getElementById('weeklyItemsSummary').textContent=`${itemSummaries.length} ${itemSummaries.length===1?'item':'itens'}`;
+  if(weeklyReviewRuntime.renderedRange!==range.key){document.querySelectorAll('#weeklyView .weekly-support').forEach(detail=>detail.open=false);weeklyReviewRuntime.renderedRange=range.key}
 }
 
 function renderWeeklyPriorityOptions(review) {
@@ -306,6 +318,8 @@ function renderWeeklyReview() {
   renderWeeklyItems(itemSummaries);
   renderWeeklyCapabilities(range,review);
   renderWeeklyForm(review);
+  renderWeeklyDisclosureSummaries(range,sessions,evidence,itemSummaries);
+  weeklySetDecisionError('');
 
   const currentReview = weeklyReviewFor(weeklyRange(0));
   const badge = document.getElementById('weeklyBadge');
@@ -315,6 +329,12 @@ function renderWeeklyReview() {
 async function saveWeeklyReview() {
   const range = weeklyRange();
   const draft={fields:Object.fromEntries(['weeklyWins','weeklyLessons','weeklyBlockers','weeklyDecision','weeklyQuality','weeklyPriority1','weeklyPriority2','weeklyPriority3'].map(id=>[id,document.getElementById(id).value])),capabilities:[...document.querySelectorAll('[data-weekly-capability]')].map(card=>({id:card.dataset.weeklyCapability,reflection:card.querySelector('[data-weekly-reflection]')?.value||'',decision:card.querySelector('[data-weekly-decision]')?.value||'',attempt:card.querySelector('[data-weekly-attempt]')?.value||''}))};
+  weeklySetDecisionError('');
+  for(const card of document.querySelectorAll('[data-weekly-capability]')){
+    const decision=card.querySelector('[data-weekly-decision]');if(!decision)continue;
+    if(!decision.value){weeklySetDecisionError('Escolha manter ou revisar para cada capacidade antes de salvar.',decision);return false}
+    const attempt=card.querySelector('[data-weekly-attempt]');if(decision.value==='revise'&&!attempt?.value.trim()){weeklySetDecisionError('Descreva a nova tentativa antes de salvar a revisão.',attempt);return false}
+  }
   const values = ['weeklyPriority1', 'weeklyPriority2', 'weeklyPriority3'].map(id => document.getElementById(id).value).filter(Boolean);
   const uniqueValues = [...new Set(values)];
   const priorities = uniqueValues.map(value => {
@@ -331,7 +351,7 @@ async function saveWeeklyReview() {
     const outcomeId=card.dataset.weeklyCapability,outcome=outcomes.find(item=>item.id===outcomeId),capabilityRef=capabilityContextModel.createCapabilityRef(outcome);
     if(!capabilityRef)continue;
     const reflection=card.querySelector('[data-weekly-reflection]').value.trim(),decidedAttemptText=card.querySelector('[data-weekly-attempt]').value.trim();
-    if(decision==='revise'&&!decidedAttemptText){showToast('Informe a tentativa revisada');card.querySelector('[data-weekly-attempt]').focus();return}
+    if(decision==='revise'&&!decidedAttemptText){weeklySetDecisionError('Descreva a nova tentativa antes de salvar a revisão.',card.querySelector('[data-weekly-attempt]'));return false}
     const current=reflectionById.get(outcomeId);
     if(current&&current.decision===decision&&current.reflection===reflection&&current.decidedAttemptText===(decision==='keep'?capabilityRef.attemptText:decidedAttemptText))continue;
     if(decision==='revise')outcomes=outcomes.map(item=>item.id===outcomeId?learningOutcomeModel.updateOutcome(item,{nextAttempt:decidedAttemptText},{now}):item);
@@ -356,14 +376,17 @@ async function saveWeeklyReview() {
   const previous=state.data,candidate=typeof structuredClone==='function'?structuredClone(state.data):JSON.parse(JSON.stringify(state.data));candidate.learningOutcomes=outcomes;
   const existingIndex=candidate.weeklyReviews.findIndex(review=>review.weekStart===range.key);if(existingIndex>=0)candidate.weeklyReviews[existingIndex]=payload;else candidate.weeklyReviews.unshift(payload);
   const focusTitles=priorities.map(priority=>candidate[priority.domain]?.find(item=>item.id===priority.itemId)?.title).filter(Boolean);if(focusTitles.length)candidate.focus=focusTitles;
-  state.data=candidate;if(await saveData(existingIndex>=0?'Revisão semanal atualizada':'Revisão semanal concluída'))return;
+  state.data=candidate;if(await saveData(existingIndex>=0?'Revisão semanal atualizada':'Revisão semanal concluída')){requestAnimationFrame(()=>{const target=document.getElementById('weeklyReviewMeta')||document.getElementById('weeklyDecisionRegion');target?.focus?.()});return true}
   state.data=previous;try{await window.CompassoStorage.save(STORAGE_KEY,previous)}catch{}renderAll();showToast('Não foi possível salvar a revisão. Suas capacidades não foram alteradas.');
-  Object.entries(draft.fields).forEach(([id,value])=>{const field=document.getElementById(id);if(field)field.value=value});draft.capabilities.forEach(item=>{const card=document.querySelector(`[data-weekly-capability="${CSS.escape(item.id)}"]`);if(!card)return;const reflection=card.querySelector('[data-weekly-reflection]'),decision=card.querySelector('[data-weekly-decision]'),attempt=card.querySelector('[data-weekly-attempt]');if(reflection)reflection.value=item.reflection;if(decision)decision.value=item.decision;if(attempt)attempt.value=item.attempt});const meta=document.getElementById('weeklyReviewMeta');meta.hidden=false;meta.textContent='Não foi possível salvar. Revise e tente novamente.';
+  Object.entries(draft.fields).forEach(([id,value])=>{const field=document.getElementById(id);if(field)field.value=value});draft.capabilities.forEach(item=>{const card=document.querySelector(`[data-weekly-capability="${CSS.escape(item.id)}"]`);if(!card)return;const reflection=card.querySelector('[data-weekly-reflection]'),decision=card.querySelector('[data-weekly-decision]'),attempt=card.querySelector('[data-weekly-attempt]');if(reflection)reflection.value=item.reflection;if(decision)decision.value=item.decision;if(attempt)attempt.value=item.attempt;weeklyUpdateDecisionCard(card)});const meta=document.getElementById('weeklyReviewMeta');meta.hidden=false;meta.textContent='Não foi possível salvar. Revise e tente novamente.';requestAnimationFrame(()=>meta.focus());return false;
 }
+
+function weeklyOpenDecision(){weeklyReviewRuntime.offset=0;switchView('weekly');renderWeeklyReview();requestAnimationFrame(()=>{const unresolved=[...document.querySelectorAll('#weeklyDecisionRegion [data-weekly-decision]')].find(select=>!select.value);const target=unresolved||document.getElementById('weeklyWins')||document.getElementById('weeklyDecisionRegion')||document.getElementById('weeklyRangeTitle');target?.scrollIntoView?.({block:'nearest'});target?.focus?.()});return true}
 
 installWeeklyReviewStyles();
 installWeeklyReviewUi();
 
+CompassoFeatures.command('weekly.openDecision',weeklyOpenDecision);
 CompassoFeatures.register('weekly-review',{order:60,afterRender:renderWeeklyReview});
 
 document.getElementById('weeklyReviewForm').addEventListener('submit', event => {
@@ -385,3 +408,4 @@ document.addEventListener('click', event => {
     renderWeeklyReview();
   }
 });
+document.addEventListener('change',event=>{const decision=event.target.closest?.('[data-weekly-decision]');if(!decision)return;weeklySetDecisionError('');weeklyUpdateDecisionCard(decision.closest('[data-weekly-capability]'),{focusAttempt:decision.value==='revise'})});

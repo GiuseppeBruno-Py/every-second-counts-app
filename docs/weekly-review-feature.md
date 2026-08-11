@@ -6,6 +6,14 @@ Transformar sessões e evidências registradas durante a semana em interpretaç�
 
 A revisão não depende apenas da percepção do usuário. Ela consolida automaticamente o que foi executado e produzido no período.
 
+## Composição orientada à decisão
+
+A ordem da tela é fixa: contexto compacto da semana, reflexão por capacidade com decisão explícita, fechamento geral e detalhes de apoio. Para cada capacidade ativa cuja tentativa ainda é atual, o usuário escolhe **Manter tentativa atual** ou **Revisar tentativa** antes de salvar. Manter preserva a tentativa; revisar revela e exige uma nova tentativa. Somente um save bem-sucedido atualiza a capacidade e `capabilityReflections` no mesmo candidato.
+
+Ausência de escolha ou nova tentativa vazia bloqueia o save, anuncia o problema e focaliza o primeiro campo inválido. Falha de persistência restaura o último estado válido, repõe o rascunho e focaliza a mensagem de nova tentativa. Contextos históricos, arquivados ou ausentes permanecem somente leitura e não bloqueiam a revisão.
+
+Resumo de atividade, Evidence, itens/atividade sem capacidade e Journal/atenção usam `<details>` nativos, fechados por padrão e com rótulo mais contagem/estado. Todo conteúdo e todas as ações existentes continuam alcançáveis. O estado aberto é efêmero e volta a fechado quando a semana muda.
+
 ## Período
 
 - A semana começa na segunda-feira e termina no domingo.
@@ -56,6 +64,8 @@ A revisão permite registrar:
 ## Integração com Hoje
 
 Ao salvar uma revisão, as prioridades selecionadas atualizam o bloco **Foco da semana** da central Hoje.
+
+Uma pendência de revisão em Hoje chama `weekly.openDecision`: abre a semana atual e focaliza a primeira decisão de capacidade ainda não resolvida; se não existir, focaliza o primeiro campo do fechamento geral e, por último, o título da revisão. Nenhuma rota ou posição de foco é persistida.
 
 ## Persistência
 

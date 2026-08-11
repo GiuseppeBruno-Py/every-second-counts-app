@@ -24,6 +24,14 @@ Transformar tempo investido em registro verificável. Ao encerrar uma sessão de
 - Excluir uma sessão também exclui suas evidências vinculadas.
 - Evidências entram no backup JSON e permanecem disponíveis offline.
 
+## Continuação após a sessão
+
+Depois que Session/Deep Work e Evidence são persistidos, `execution:recorded` abre um painel efêmero e não modal. O foco vai para o título somente após o sucesso. O painel oferece **Voltar para Hoje**, **Registrar sinal** apenas quando existe capacidade ativa e **Abrir capacidade** quando a referência continua disponível. Ele não sobrevive ao refresh e não representa um novo registro de jornada.
+
+**Registrar sinal** reutiliza o diálogo e a persistência existentes de `learningSignals`. Uma síntese útil de Evidence pode aparecer como sugestão editável, com proveniência visível; sem texto útil, o formulário abre vazio. Cancelar não cria registro nem tombstone. Somente **Salvar sinal** cria o sinal com origem `learner` ou `confirmed-suggestion`. Falha de sinal mantém Session/Evidence já salvas, conserva o texto para nova tentativa e não anuncia sucesso.
+
+Evidence continua sem `learningContext`: o contexto é resolvido exclusivamente pelo `sessionId` canônico. Sessões/Evidence legadas sem vínculo continuam válidas, sem ação de sinal de capacidade e sem associação inferida. Nenhuma continuação conclui Hoje, altera a capacidade ou muda a próxima tentativa.
+
 ## Modelo de dados
 
 ```javascript

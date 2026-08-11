@@ -25,6 +25,20 @@ Registrar execução real no Compasso, preservando duração, ponto inicial, pon
 9. O progresso do item é atualizado automaticamente.
 10. A sessão fica disponível no histórico do item.
 
+## Início contínuo e configuração opcional
+
+Uma tentativa atual de capacidade planejada em Hoje pode iniciar imediatamente uma sessão rápida normal pelo comando `session.startDefault`. O mesmo formulário e os mesmos padrões existentes são usados; nenhum modelo paralelo de configuração é criado. O contexto da capacidade e da tentativa é revalidado e preservado em `learningContext`.
+
+**Ajustar sessão** usa `session.openConfiguration` e o mesmo formulário. O resumo e o botão de início ficam visíveis, enquanto recurso de apoio, capacidade opcional para Estudos/Leituras, modo, variante, ritual, objetivo, energia e intenção do Journal ficam dentro do disclosure nativo **Ajustar sessão (opcional)**. Cancelar ou usar Escape retorna o foco ao acionador. O início imediato sempre escolhe o modo rápido padrão; Deep Work continua sendo uma escolha explícita.
+
+`session.resume` retoma ou focaliza a superfície compacta de sessão já existente. O controle global **Executar** e Hoje usam esse contrato sem criar uma segunda experiência de execução.
+
+## Limites transacionais
+
+A criação aguarda a persistência de um candidato que reúne a Session, a Execution Session canônica, o contexto/recurso escolhido e as integrações existentes de Journal, ritual, energia e Flow. A configuração só fecha e a sessão só é anunciada após sucesso. Falha restaura o estado anterior, conserva os campos e move o foco para o erro.
+
+O encerramento normal também aguarda um único candidato com Session concluída, Execution Session e Evidence canônica. Deep Work aplica o mesmo limite à sua fonte `deep:<id>`. Somente depois do save bem-sucedido é emitido `execution:recorded`; em falha, a sessão permanece recuperável em `finishing`, a Evidence digitada permanece no formulário e nenhuma continuação de sucesso aparece.
+
 ## Métricas
 
 | Tipo | Início e encerramento |
@@ -99,6 +113,5 @@ As sessões são salvas em `state.data.sessions`, persistidas pela camada `Compa
 ## Fora do escopo desta versão
 
 - lançamento retroativo/manual de sessões;
-- evidência estruturada vinculada à sessão;
 - relatórios e gráficos agregados;
 - sincronização automática entre dispositivos.

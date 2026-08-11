@@ -4,6 +4,8 @@ async function open(page,path='/',mode='essential'){
   await page.addInitScript(value=>localStorage.setItem('compasso.ux.mode.v1',value),mode);
   await page.goto(path,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>globalThis.CompassoFeatures?.installed&&globalThis.CompassoInformationArchitecture);
+  await expect(page.locator('.app-shell')).toBeVisible();
+  await expect(page.locator('.app-shell')).not.toHaveAttribute('inert','');
 }
 test('navegação primária tem cinco áreas declarativas e estado anunciado',async({page})=>{
   await open(page);const nav=page.locator('.ia-primary-nav');
@@ -53,6 +55,20 @@ test('preferência inválida e rota antiga indisponível voltam para área váli
   await expect(page.locator('#todayView')).toBeVisible();
   await expect(page.locator('[data-ia-area="today"]')).toHaveAttribute('aria-current','page');
   await expect.poll(()=>page.evaluate(()=>localStorage.getItem('compasso.ux.mode.v1'))).toBe('essential');
+});
+test('Executar tem nome acessível e usa fallback determinístico sem iniciar ação comum',async({page})=>{
+  await open(page,'/','advanced');const execute=page.locator('#iaExecuteBtn');await expect(execute).toHaveAttribute('aria-label','Executar');await execute.focus();await page.keyboard.press('Enter');await expect(page.locator('#todayView')).toBeVisible();await expect(page.locator('#todayPrimaryAction [data-today-primary-action]')).toBeFocused();
+  await page.evaluate(()=>renderAll());await expect(page.locator('#todayPrimaryAction [data-today-primary-action]')).toBeFocused();
+  await page.locator('#todayPrimaryAction [data-today-custom]').click();await page.locator('#todayActionTitle').fill('Organizar os materiais da semana');await page.locator('#todayForm').evaluate(form=>form.requestSubmit());await page.locator('[data-ia-area="more"]').click();await execute.click();await expect(page.locator('#todayPrimaryAction [data-today-primary-action]')).toBeFocused();await expect(page.locator('#todayPrimaryAction')).toContainText('Organizar os materiais');expect(await page.evaluate(()=>state.data.sessions.length)).toBe(0);
+});
+test('Executar respeita a ordem armazenada entre tentativas planejadas',async({page})=>{
+  await open(page,'/?view=capabilities','advanced');
+  for(const [capability,attempt] of [['Primeira capacidade','Primeira tentativa planejada'],['Segunda capacidade','Segunda tentativa planejada']]){await page.locator('[data-outcome-new]').first().click();await page.locator('[name="capability"]').fill(capability);await page.locator('[name="nextAttempt"]').fill(attempt);await page.locator('#learningOutcomeForm').evaluate(form=>form.requestSubmit());await page.locator('[data-outcome-card]').filter({hasText:capability}).locator('[data-outcome-today]').click();await page.evaluate(()=>CompassoInformationArchitecture.open('capabilities'))}
+  await page.evaluate(()=>CompassoInformationArchitecture.open('today'));await expect(page.locator('#todayPrimaryAction')).toContainText('Primeira tentativa planejada');const stored=await page.evaluate(()=>state.data.dailyPlans[0].items.map(item=>item.capabilityRef.attemptText));expect(stored).toEqual(['Primeira tentativa planejada','Segunda tentativa planejada']);await page.locator('#iaExecuteBtn').click();await expect.poll(()=>page.evaluate(()=>state.data.sessions.length)).toBe(1);expect(await page.evaluate(()=>state.data.sessions[0].learningContext.attemptText)).toBe('Primeira tentativa planejada');
+});
+test('Executar inicia a primeira tentativa atual e depois retoma a sessão pausada',async({page})=>{
+  await open(page,'/?view=capabilities','advanced');await page.locator('[data-outcome-new]').first().click();await page.locator('[name="capability"]').fill('Explicar uma arquitetura');await page.locator('[name="nextAttempt"]').fill('Desenhar o fluxo principal');await page.locator('#learningOutcomeForm').evaluate(form=>form.requestSubmit());await page.locator('[data-outcome-card] [data-outcome-today]').click();await page.locator('[data-ia-area="more"]').click();
+  await page.locator('#iaExecuteBtn').click();await expect.poll(()=>page.evaluate(()=>state.data.sessions.length)).toBe(1);expect(await page.evaluate(()=>state.data.sessions[0].learningContext.attemptText)).toBe('Desenhar o fluxo principal');await page.locator('#sessionCompanionPause').click();await expect.poll(()=>page.evaluate(()=>state.data.sessions[0].status)).toBe('paused');await page.locator('[data-ia-area="more"]').click();await page.locator('#iaExecuteBtn').click();await expect.poll(()=>page.evaluate(()=>state.data.sessions[0].status)).toBe('active');await expect(page.locator('#sessionCompanionOpen')).toBeFocused();
 });
 test('mobile mantém cinco itens e não cria overflow',async({page},testInfo)=>{
   test.skip(testInfo.project.name!=='mobile','mobile only');await open(page);

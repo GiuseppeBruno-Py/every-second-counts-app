@@ -68,13 +68,13 @@
     }
     ensureHubs();Object.keys(hubs).forEach(renderHub);
     const register=document.getElementById('captureGlobalBtn');if(register){register.setAttribute('aria-label','Registrar');const label=register.querySelector('span');if(label)label.textContent='Registrar'}
-    const quick=document.getElementById('quickAdd');if(quick&&!document.getElementById('iaExecuteBtn'))quick.insertAdjacentHTML('beforebegin',`<button type="button" class="secondary-btn ia-execute-global" id="iaExecuteBtn">${icon('spark')}<span>Executar</span></button>`);
+    const quick=document.getElementById('quickAdd');if(quick&&!document.getElementById('iaExecuteBtn'))quick.insertAdjacentHTML('beforebegin',`<button type="button" class="secondary-btn ia-execute-global" id="iaExecuteBtn" aria-label="Executar">${icon('spark')}<span>Executar</span></button>`);
     runtime.route('information.open',open);runtime.command('information.open',payload=>open(typeof payload==='string'?payload:payload?.route));
     runtime.on('view:changed',payload=>{if(!payload?.view)return;setActive(payload.view);if(state.started&&!state.opening)updateUrl(payload.view,true)});
     runtime.action('[data-ia-area]',({target})=>open(target.dataset.iaArea));
     runtime.action('[data-ia-view]',({target})=>open(target.dataset.iaView));
     runtime.action('[data-ia-command]',({target})=>command(target.dataset.iaCommand));
-    runtime.action('#iaExecuteBtn',()=>open('fronts'));
+    runtime.action('#iaExecuteBtn',({target})=>runtime.execute('today.executePrimary',{trigger:target}));
     runtime.action('[data-ux-mode]',()=>queueMicrotask(applyMode),{order:1100});
     root.addEventListener('popstate',()=>{state.suppressHistory=true;open(new URLSearchParams(location.search).get('view')||'today',{history:false});state.suppressHistory=false});
     const requested=new URLSearchParams(location.search).get('view');
