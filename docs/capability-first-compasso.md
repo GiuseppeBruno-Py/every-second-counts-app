@@ -61,6 +61,19 @@ All three trimmed strings are required. The live attempt text is shown only when
 - **Results:** separates `Atividade de apoio` from `Evidências e decisões` for capabilities.
 - **Consistency:** intersects existing period/domain filters with `Todas`, `Sem capacidade`, or an explicit capability. Outcome-only history says `Sem métrica de recurso`.
 
+## Continuity-first composition
+
+The UX Simplification delivery composes the shipped owners into one perceptible path: `Hoje → Session → Evidence / learningSignal → Weekly Review → explicit next-attempt decision`. It adds no journey record and does not move ownership.
+
+- Today derives one primary state and uses stored plan order: resume, current planned capability attempt, another planned action, then planning fallback.
+- A capability attempt starts the existing quick Session immediately; existing optional settings remain in the same form behind native progressive disclosure.
+- Session and Deep Work emit the completion handoff only after canonical Session/Evidence persistence succeeds.
+- The completion panel is ephemeral. A signal remains optional and becomes durable only through the shipped explicit save contract.
+- Weekly Review puts capability reflection and keep/revise decisions before closure and collapsed supporting summaries. Only an explicit successful revise changes the next attempt.
+- Focus transitions, native keyboard behavior, coarse-pointer targets, reduced motion, 360–390 px layouts and 200% zoom are part of the same UI contract.
+
+Results, Consistency, book synthesis, Notes, Relations and Contextual AI routes remain separate and unchanged in this delivery.
+
 ## Persistence and failure behavior
 
 State remains `compasso.state.v3`; no migration job, IndexedDB upgrade, object store, storage key, or destructive rewrite exists. Missing `learningSignals` normalizes to `[]`. Valid unknown fields survive normalization, merge, save, JSON backup, and restore. Malformed new records are isolated without clearing another domain.
@@ -79,4 +92,4 @@ Notes, folders, Markdown/vault metadata, wikilinks, source links, Relations/grap
 
 ## PWA and rollback
 
-`app-manifest.js` owns generation `compasso-pages-v73`, includes `capability-context-model.js`, and keeps the Service Worker implementation unchanged. Before publication, rollback is the complete 20-path release unit. After any client saves v73 data, rollback must be a forward generation that preserves unknown `learningSignals` and nested reflection/Today fields. Never clear user storage, backups, vaults, or unrelated caches.
+`app-manifest.js` owns generation `compasso-pages-v74`, includes `capability-context-model.js`, and keeps the Service Worker implementation unchanged. Before publication, rollback is the complete 20-path release unit. Rollback after v74 exposure must be a forward generation that preserves unknown `learningSignals` and nested reflection/Today fields. Never clear user storage, backups, vaults, or unrelated caches.

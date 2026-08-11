@@ -14,6 +14,7 @@ const evidenceTypeLabels = {
   question: 'Pergunta aberta',
   deliverable: 'Entrega concreta'
 };
+const evidenceCompletionRuntime = { sessionId:null, evidenceId:null, signalSaved:false };
 
 function evidenceId() {
   return `e${Date.now()}${Math.random().toString(36).slice(2,7)}`;
@@ -63,6 +64,43 @@ function installEvidenceFields() {
   `);
 }
 
+function installEvidenceCompletion() {
+  if(document.getElementById('executionCompletionPanel'))return;
+  document.querySelector('.content')?.insertAdjacentHTML('beforeend',`
+    <section class="execution-completion" id="executionCompletionPanel" tabindex="-1" aria-labelledby="executionCompletionTitle" hidden>
+      <div class="execution-completion-head"><div><div class="eyebrow">Sessão registrada</div><h2 id="executionCompletionTitle">Evidence salva</h2></div><button type="button" class="icon-btn" data-completion-dismiss aria-label="Fechar continuação">${icon('x')}</button></div>
+      <p id="executionCompletionSummary"></p><p class="execution-completion-status" id="executionCompletionStatus" role="status"></p>
+      <div class="execution-completion-actions" id="executionCompletionActions"></div>
+    </section>`);
+}
+
+function evidenceCompletionContext() {
+  if(typeof executionSyncAll==='function')executionSyncAll();
+  const execution=(state.data.executionSessions||[]).find(item=>item.id===evidenceCompletionRuntime.sessionId)||null;
+  const evidence=(state.data.evidence||[]).find(item=>item.id===evidenceCompletionRuntime.evidenceId)||null;
+  const capabilityRef=execution?capabilityContextModel.executionContext(execution):null;
+  const resolved=capabilityContextModel.resolveCapabilityRef(capabilityRef,state.data.learningOutcomes||[]);
+  return{execution,evidence,capabilityRef,resolved};
+}
+
+function renderEvidenceCompletion(payload={}) {
+  evidenceCompletionRuntime.sessionId=payload.sessionId||evidenceCompletionRuntime.sessionId;
+  evidenceCompletionRuntime.evidenceId=payload.evidenceId||null;
+  evidenceCompletionRuntime.signalSaved=false;
+  const panel=document.getElementById('executionCompletionPanel');if(!panel)return;
+  const {execution,evidence,resolved}=evidenceCompletionContext();
+  document.getElementById('executionCompletionTitle').textContent=evidence?'Evidence salva':'Sessão registrada';
+  document.getElementById('executionCompletionSummary').textContent=evidence?.summary||execution?.result||execution?.reflection||'O encerramento foi salvo. Escolha como continuar.';
+  document.getElementById('executionCompletionStatus').textContent='A ação de Hoje e a próxima tentativa permanecem como estavam.';
+  document.getElementById('executionCompletionActions').innerHTML=`<button type="button" class="primary-btn" data-completion-today>Voltar para Hoje</button>${resolved.active?'<button type="button" class="secondary-btn" data-completion-signal>Registrar sinal</button>':''}${resolved.available?'<button type="button" class="quiet-btn" data-completion-capability>Abrir capacidade</button>':''}`;
+  panel.hidden=false;
+  requestAnimationFrame(()=>{panel.scrollIntoView?.({block:'nearest'});panel.focus()});
+}
+
+function dismissEvidenceCompletion() {
+  const panel=document.getElementById('executionCompletionPanel');if(panel)panel.hidden=true;
+}
+
 const openSessionFinishWithoutEvidence = openSessionFinish;
 openSessionFinish = function() {
   openSessionFinishWithoutEvidence();
@@ -72,16 +110,16 @@ openSessionFinish = function() {
   document.getElementById('sessionEvidenceDetails').value = '';
 };
 
-const finishSessionWithoutEvidence = finishSession;
-finishSession = function() {
+const finishSessionWithoutEvidence = sessionRuntime.commitFinish||finishSession;
+finishSession = async function() {
   const session = sessionActive();
-  if (!session) return;
+  if (!session) return false;
   const summaryInput = document.getElementById('sessionEvidenceSummary');
   const summary = summaryInput.value.trim();
   if (summary.length < 3) {
     summaryInput.focus();
     showToast('Registre uma evidência curta antes de concluir');
-    return;
+    return false;
   }
 
   const evidenceCreatedAt = new Date().toISOString();
@@ -99,14 +137,11 @@ finishSession = function() {
     editedAt: null
   };
 
-  const previousStatus = session.status;
-  finishSessionWithoutEvidence();
-  if (previousStatus !== 'completed' && session.status === 'completed') {
-    state.data.evidence.unshift(evidence);
-    saveData('Sessão concluída com evidência');
-    CompassoFeatures.emit('execution:recorded',{sessionId:session.id});
-  }
+  const result=await finishSessionWithoutEvidence({evidence});
+  if(result)CompassoFeatures.emit('execution:recorded',result);
+  return result;
 };
+sessionRuntime.finish=finishSession;
 
 function renderEvidenceForSession(session) {
   const items = evidenceForSession(session.id);
@@ -160,7 +195,27 @@ deleteSession = function(id) {
 
 installEvidenceStyles();
 installEvidenceFields();
+installEvidenceCompletion();
+CompassoFeatures.on('execution:recorded',payload=>renderEvidenceCompletion(payload));
+CompassoFeatures.on('view:changed',()=>{const panel=document.getElementById('executionCompletionPanel');if(panel&&!panel.hidden)dismissEvidenceCompletion()});
+CompassoFeatures.on('learning-signal:saved',payload=>{
+  if(!payload||payload.sourceRef?.id!==evidenceCompletionRuntime.evidenceId&&payload.sourceRef?.id!==evidenceCompletionRuntime.sessionId)return;
+  evidenceCompletionRuntime.signalSaved=true;
+  const status=document.getElementById('executionCompletionStatus');if(status)status.textContent='Sinal salvo após sua confirmação. A próxima tentativa não foi alterada.';
+  requestAnimationFrame(()=>document.querySelector('[data-completion-today]')?.focus?.());
+});
 CompassoFeatures.action('[data-evidence-capability]',({target})=>{
   const outcome=(state.data.learningOutcomes||[]).find(item=>item.id===target.dataset.evidenceCapability);if(!outcome)return;
   learningOutcomeRuntime.mode=outcome.status==='archived'?'archived':'active';switchView('capabilities');outcomeRender();requestAnimationFrame(()=>document.querySelector(`[data-outcome-card="${CSS.escape(outcome.id)}"]`)?.focus?.());
+});
+CompassoFeatures.action('[data-completion-dismiss]',()=>dismissEvidenceCompletion());
+CompassoFeatures.action('[data-completion-today]',()=>{dismissEvidenceCompletion();CompassoFeatures.execute('today.openPrimary')});
+CompassoFeatures.action('[data-completion-capability]',()=>{
+  const {resolved}=evidenceCompletionContext();if(!resolved.available)return;
+  dismissEvidenceCompletion();learningOutcomeRuntime.mode=resolved.outcome.status==='archived'?'archived':'active';switchView('capabilities');outcomeRender();requestAnimationFrame(()=>document.querySelector(`[data-outcome-card="${CSS.escape(resolved.outcome.id)}"]`)?.focus?.());
+});
+CompassoFeatures.action('[data-completion-signal]',({target})=>{
+  const {execution,evidence,resolved}=evidenceCompletionContext();if(!execution||!resolved.active)return renderEvidenceCompletion({sessionId:evidenceCompletionRuntime.sessionId,evidenceId:evidenceCompletionRuntime.evidenceId});
+  const suggestion=(evidence?.summary||'').trim(),sourceRef=evidence?{type:'evidence',id:evidence.id}:{type:'execution',id:execution.id};
+  CompassoFeatures.execute('learningSignal.open',{outcomeId:resolved.outcome.id,sourceRef,kind:['question','insight'].includes(evidence?.type)?evidence.type:'feedback',text:suggestion,origin:suggestion?'confirmed-suggestion':'learner',provenance:suggestion?'Sugestão baseada na Evidence que acabou de ser salva. Revise antes de confirmar.':'Escreva apenas se este registro ajudar sua próxima decisão.',trigger:target});
 });

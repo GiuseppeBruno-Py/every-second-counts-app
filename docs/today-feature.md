@@ -18,6 +18,21 @@ Unificar direção e execução em uma única central diária, conectada ao Jour
 
 Rotas antigas para `overview` são redirecionadas para `today`. A Visão geral legada não aparece como destino concorrente na navegação.
 
+## Continuidade e ação principal
+
+Hoje deriva uma única ação principal, sem persistir ranking ou estado de jornada. A precedência é:
+
+1. execução normal ou Deep Work ativa/pausada, com **Retomar sessão**;
+2. primeira referência incompleta para uma tentativa atual de capacidade ativa, na ordem armazenada do plano;
+3. primeira outra ação incompleta, também na ordem armazenada;
+4. **Nova ação**, quando não existe ação executável.
+
+A tentativa principal oferece **Iniciar agora** com os padrões existentes, **Ajustar sessão** para revelar a configuração opcional e acesso à capacidade. Ela é projetada uma vez no bloco principal e omitida da lista inferior. Referências concluídas, históricas, arquivadas ou ausentes continuam legíveis, nunca se tornam executáveis e não provocam inferência ou recriação.
+
+O comando `today.executePrimary` aplica a mesma precedência ao controle global **Executar**. Em ações comuns e no plano vazio, ele abre ou mantém Hoje e move o foco para a ação/planejamento sem iniciar nada. `today.openPrimary` faz a continuação segura de volta para Hoje. A pendência semanal usa `weekly.openDecision`, que abre a revisão diretamente no primeiro contexto de decisão disponível.
+
+Concluir, reabrir ou remover uma referência de capacidade altera somente `dailyPlans`; não altera a capacidade, sua tentativa atual ou seu ciclo de vida.
+
 ## Persistência
 
 Os planos são salvos em `state.data.dailyPlans`:

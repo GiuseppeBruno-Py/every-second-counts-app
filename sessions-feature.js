@@ -10,11 +10,17 @@ state.data.sessions = Array.isArray(state.data.sessions) ? state.data.sessions :
 const sessionRuntime = {
   tick: null,
   selectedItem: null,
-  historyItem: null
+  historyItem: null,
+  returnFocus: null,
+  creating: false,
+  finishing: false,
+  finish: null
 };
 
 function sessionNow() { return Date.now(); }
 function sessionId() { return `s${Date.now()}${Math.random().toString(36).slice(2,7)}`; }
+function sessionClone(value) { return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value)); }
+function sessionSetError(id,message='') { const target=document.getElementById(id);if(!target)return;target.textContent=message;target.hidden=!message; }
 function sessionActive() { return state.data.sessions.find(session => sessionTimerModel.isCurrent(session)) || null; }
 function sessionItem(session) {
   if (!session) return null;
@@ -74,7 +80,7 @@ function installSessionStyles() {
 function installSessionUi() {
   if (document.getElementById('sessionBanner')) return;
   document.body.insertAdjacentHTML('beforeend', `
-    <section class="session-banner" id="sessionBanner" hidden aria-live="polite">
+    <section class="session-banner" id="sessionBanner" hidden aria-live="polite" tabindex="-1">
       <div class="session-banner-top"><span class="session-pulse"></span><div class="session-banner-main"><div class="session-banner-label" id="sessionBannerLabel">Sessão em andamento</div><strong class="session-banner-title" id="sessionBannerTitle"></strong></div></div>
       <div class="session-timer" id="sessionTimer">00:00:00</div>
       <div class="session-banner-actions"><button type="button" id="sessionPauseBtn">Pausar</button><button type="button" class="primary" id="sessionFinishBtn">Encerrar sessão</button></div>
@@ -82,14 +88,14 @@ function installSessionUi() {
     <dialog class="session-dialog" id="sessionStartDialog">
       <form method="dialog" id="sessionStartForm">
         <div class="session-dialog-head"><div><div class="eyebrow">Nova sessão</div><h2 id="sessionStartTitle">Iniciar sessão</h2></div><button class="close-btn" type="button" data-session-close="sessionStartDialog">${icon('x')}</button></div>
-        <div class="session-dialog-body"><div class="session-summary" id="sessionStartSummary"></div><div class="field" id="sessionOutcomeResourceField" hidden><label for="sessionOutcomeResource">Apoio nesta sessão</label><select id="sessionOutcomeResource"></select><small>Opcional. A capacidade continua sendo o objetivo.</small></div><div class="field" id="sessionCapabilityField" hidden><label for="sessionCapability">Capacidade e tentativa (opcional)</label><select id="sessionCapability"><option value="">Sem capacidade</option></select><small id="sessionCapabilityStatus">A escolha registra contexto na sessão; não altera vínculos nem progresso.</small></div><div class="field"><label for="sessionMode">Modo de execução</label><select id="sessionMode"><option value="quick">Sessão rápida</option><option value="deep">Deep Work</option></select><small id="sessionModeHelp">Cronômetro simples com registro de progresso.</small></div><div class="field"><label for="sessionIntent">Objetivo desta sessão</label><textarea id="sessionIntent" maxlength="220" placeholder="Ex.: ler o capítulo 4 e identificar o argumento central."></textarea></div></div>
-        <div class="session-dialog-foot"><button type="button" class="quiet-btn" data-session-close="sessionStartDialog">Cancelar</button><button type="submit" class="primary-btn">Iniciar</button></div>
+        <div class="session-dialog-body"><div class="session-summary" id="sessionStartSummary"></div><details class="session-options" id="sessionOptionalConfig"><summary>Ajustar sessão (opcional)</summary><div class="session-options-body" id="sessionOptionalConfigBody"><div class="field" id="sessionOutcomeResourceField" hidden><label for="sessionOutcomeResource">Apoio nesta sessão</label><select id="sessionOutcomeResource"></select><small>Opcional. A capacidade continua sendo o objetivo.</small></div><div class="field" id="sessionCapabilityField" hidden><label for="sessionCapability">Capacidade e tentativa (opcional)</label><select id="sessionCapability"><option value="">Sem capacidade</option></select><small id="sessionCapabilityStatus">A escolha registra contexto na sessão; não altera vínculos nem progresso.</small></div><div class="field"><label for="sessionMode">Modo de execução</label><select id="sessionMode"><option value="quick">Sessão rápida</option><option value="deep">Deep Work</option></select><small id="sessionModeHelp">Cronômetro simples com registro de progresso.</small></div><div class="field"><label for="sessionIntent">Objetivo desta sessão</label><textarea id="sessionIntent" maxlength="220" placeholder="Ex.: ler o capítulo 4 e identificar o argumento central."></textarea></div></div></details><p class="session-error" id="sessionStartError" role="alert" tabindex="-1" hidden></p></div>
+        <div class="session-dialog-foot"><button type="button" class="quiet-btn" data-session-close="sessionStartDialog">Cancelar</button><button type="submit" class="primary-btn" id="sessionStartSubmit">Iniciar sessão</button></div>
       </form>
     </dialog>
     <dialog class="session-dialog" id="sessionFinishDialog">
       <form method="dialog" id="sessionFinishForm">
         <div class="session-dialog-head"><div><div class="eyebrow">Encerrar sessão</div><h2 id="sessionFinishTitle">Registrar progresso</h2></div><button class="close-btn" type="button" data-session-close="sessionFinishDialog">${icon('x')}</button></div>
-        <div class="session-dialog-body"><div class="session-summary" id="sessionFinishSummary"></div><div class="field" id="sessionEndValueField"><label id="sessionEndValueLabel" for="sessionEndValue">Valor final</label><input id="sessionEndValue" type="number" min="0" inputmode="decimal" required></div><div class="field"><label for="sessionReflection">Observação da sessão</label><textarea id="sessionReflection" maxlength="300" placeholder="O que avançou, onde parou ou o que precisa retomar?"></textarea></div></div>
+        <div class="session-dialog-body"><div class="session-summary" id="sessionFinishSummary"></div><div class="field" id="sessionEndValueField"><label id="sessionEndValueLabel" for="sessionEndValue">Valor final</label><input id="sessionEndValue" type="number" min="0" inputmode="decimal" required></div><div class="field"><label for="sessionReflection">Observação da sessão</label><textarea id="sessionReflection" maxlength="300" placeholder="O que avançou, onde parou ou o que precisa retomar?"></textarea></div><p class="session-error" id="sessionFinishError" role="alert" tabindex="-1" hidden></p></div>
         <div class="session-dialog-foot"><button type="button" class="quiet-btn" data-session-close="sessionFinishDialog">Cancelar</button><button type="submit" class="primary-btn">${icon('check')}Salvar sessão</button></div>
       </form>
     </dialog>
@@ -136,15 +142,35 @@ function enhanceSessionCards(domain) {
 
 CompassoFeatures.register('sessions',{order:20,afterGrid:enhanceSessionCards,afterRender:renderSessionBanner});
 
-function openSessionStartCore(domain, itemId, options = {}) {
+function sessionStartDraft() {
+  const form=document.getElementById('sessionStartForm');if(!form)return{};
+  return Object.fromEntries([...form.querySelectorAll('input,textarea,select')].filter(control=>control.id).map(control=>[control.id,control.type==='checkbox'?control.checked:control.value]));
+}
+function sessionRestoreStartDraft(draft={}) {
+  for(const [id,value] of Object.entries(draft)){const control=document.getElementById(id);if(!control)continue;if(control.type==='checkbox')control.checked=Boolean(value);else control.value=value;}
+  document.getElementById('sessionMode')?.dispatchEvent(new Event('change'));
+}
+function sessionPrepareRitual(item,domain) {
+  const select=document.getElementById('ritualQuickSelect');if(!select)return;
+  const templates=(state.data.ritualTemplates||[]).filter(candidate=>!candidate.archived);
+  const suggestion=globalThis.CompassoRitualModel?.suggest?.(templates,{...item,domain});
+  const selected=item?.ritualId||suggestion?.ritual?.id||'';
+  select.innerHTML=`<option value="">Sem ritual</option>${templates.map(candidate=>`<option value="${escapeHtml(candidate.id)}">${escapeHtml(candidate.name)}</option>`).join('')}`;
+  select.value=templates.some(candidate=>candidate.id===selected)?selected:'';
+}
+
+function openSessionStartCore(domain, itemId, options = {}, presentation = {}) {
   const active = executionActive();
-  if (active) { showToast('Encerre a sessão atual antes de iniciar outra'); return; }
+  if(typeof energyResetChoices==='function')energyResetChoices('before');
+  if (active) { showToast('Encerre a sessão atual antes de iniciar outra'); return false; }
   const context = learningOutcomeModel.normalizeExecutionContext(options.learningContext);
   const item = domain === 'learningOutcome'
     ? state.data.learningOutcomes?.find(candidate => candidate.id === itemId)
     : state.data[domain]?.find(candidate => candidate.id === itemId);
-  if (!item) return;
+  if (!item) return false;
   sessionRuntime.selectedItem = { domain, itemId, learningContext:context };
+  sessionRuntime.returnFocus = presentation.trigger || document.activeElement;
+  sessionSetError('sessionStartError','');
   const neutral = domain === 'learningOutcome';
   const metric = neutral ? null : sessionMetric(item, domain);
   document.getElementById('sessionStartTitle').textContent = item.title || item.capability;
@@ -171,14 +197,33 @@ function openSessionStartCore(domain, itemId, options = {}) {
   mode.value = 'quick';
   const explain = () => { document.getElementById('sessionModeHelp').textContent = mode.value === 'deep' ? 'Tela focada, preparação, distrações e resultado.' : mode.value === 'minimum' ? 'Executa o menor passo útil sem concluir toda a ação por padrão.' : mode.value === 'contingency' ? 'Aplica uma contingência preservando o plano original.' : 'Cronômetro simples com registro de progresso.'; };
   mode.onchange = explain; explain();
-  document.getElementById('sessionStartDialog').showModal();
+  const journalIntent=document.getElementById('journalSessionIntent');if(journalIntent)journalIntent.value='';
+  const variantSelect=document.getElementById('sessionVariant');if(variantSelect&&neutral){variantSelect.innerHTML='<option value="ideal">Versão ideal</option>';variantSelect.value='ideal';document.getElementById('sessionVariantHelp').textContent='Execução da tentativa atual.'}
+  sessionPrepareRitual(item,domain);
+  const disclosure=document.getElementById('sessionOptionalConfig');if(disclosure)disclosure.open=Boolean(presentation.expanded);
+  const dialog=document.getElementById('sessionStartDialog');
+  if(presentation.show!==false&&!dialog.open){dialog.showModal();requestAnimationFrame(()=>presentation.expanded?disclosure?.querySelector('select,textarea,input,button')?.focus?.():document.getElementById('sessionStartSubmit')?.focus?.())}
+  return true;
 }
 function openSessionStart(domain,itemId) { return openSessionStartCore(domain,itemId); }
 function openOutcomeSessionStart(itemId,options) { return openSessionStartCore('learningOutcome',itemId,options); }
 
-function createSession() {
+function sessionStartDefault(payload={}) {
+  if(!openSessionStartCore(payload.domain,payload.itemId,payload.options||{},{show:false,trigger:payload.trigger}))return false;
+  document.getElementById('sessionMode').value='quick';
+  document.getElementById('sessionStartForm').requestSubmit();
+  return true;
+}
+function sessionOpenConfiguration(payload={}) {
+  return openSessionStartCore(payload.domain,payload.itemId,payload.options||{},{show:true,expanded:Boolean(payload.expanded),trigger:payload.trigger});
+}
+
+async function createSession() {
+  if(sessionRuntime.creating)return false;
   const selected = sessionRuntime.selectedItem;
-  if (!selected || !executionCanStart()) return;
+  if (!selected || !executionCanStart()) return false;
+  const draft=sessionStartDraft();
+  sessionSetError('sessionStartError','');
   let target = {...selected};
   const selectedResource = selected.domain === 'learningOutcome' ? document.getElementById('sessionOutcomeResource')?.value : '';
   if (selectedResource) {
@@ -189,24 +234,30 @@ function createSession() {
     const outcomeId=document.getElementById('sessionCapability')?.value;
     if(outcomeId){
       const outcome=(state.data.learningOutcomes||[]).find(candidate=>candidate.id===outcomeId),context=capabilityContextModel.createCapabilityRef(outcome);
-      if(!context){const status=document.getElementById('sessionCapabilityStatus');status.textContent='A capacidade mudou ou não está mais ativa. Escolha Sem capacidade para continuar.';document.getElementById('sessionCapability').focus();return}
+      if(!context){const status=document.getElementById('sessionCapabilityStatus');status.textContent='A capacidade mudou ou não está mais ativa. Escolha Sem capacidade para continuar.';document.getElementById('sessionCapability').focus();return false}
       target.learningContext=context;
     }else target.learningContext=null;
   }
   const item = target.domain === 'learningOutcome'
     ? state.data.learningOutcomes?.find(candidate => candidate.id === target.itemId)
     : state.data[target.domain]?.find(candidate => candidate.id === target.itemId);
-  if (!item) return;
+  if (!item) return false;
   const mode = document.getElementById('sessionMode')?.value || 'quick';
   if (mode === 'deep') {
     document.getElementById('sessionStartDialog').close();
     if (target.learningContext && typeof deepOpenOutcome === 'function') deepOpenOutcome(target.domain,target.itemId,{learningContext:target.learningContext});
     else if (typeof deepOpen === 'function') deepOpen(target.domain,target.itemId);
-    return;
+    return true;
   }
   const metric = sessionUsesResourceMetric(target) ? sessionMetric(item, target.domain) : null;
-  const contingency = mode === 'contingency' ? (item.contingencies || []).find(option => option?.enabled !== false) : null;
-  const ritual = state.data.ritualTemplates?.find(candidate => candidate.id === document.getElementById('ritualQuickSelect')?.value);
+  const selectedVariant=document.getElementById('sessionVariant')?.value||'ideal';
+  const effectiveMode=mode==='quick'&&selectedVariant==='minimum'?'minimum':mode==='quick'&&selectedVariant.startsWith('contingency:')?'contingency':mode;
+  const selectedContingencyId=selectedVariant.startsWith('contingency:')?selectedVariant.split(':')[1]:null;
+  const contingency = effectiveMode === 'contingency' ? (item.contingencies || []).find(option => option?.enabled !== false&&(!selectedContingencyId||option.id===selectedContingencyId)) : null;
+  const uxRitualId=typeof uxRuntime==='object'&&uxRuntime?.selected?.domain===target.domain&&uxRuntime?.selected?.itemId===target.itemId&&uxRuntime?.ritualId?uxRuntime.ritualId:'';
+  const ritual = state.data.ritualTemplates?.find(candidate => candidate.id === (uxRitualId||document.getElementById('ritualQuickSelect')?.value));
+  const journalEntryId=document.getElementById('journalSessionIntent')?.value||null;
+  const journalEntry=(state.data.journalEntries||[]).find(candidate=>candidate.id===journalEntryId);
   const session = {
     id: sessionId(),
     schemaVersion: SESSIONS_FEATURE_VERSION,
@@ -215,8 +266,9 @@ function createSession() {
     learningContext: target.learningContext,
     readingFormat: item.readingFormat || null,
     studyUnit: item.studyUnit || null,
-    intent: document.getElementById('sessionIntent').value.trim(),
-    executionVariant: { kind: mode === 'minimum' ? 'minimum' : mode === 'contingency' ? 'contingency' : 'ideal', contingencyId: contingency?.id || null },
+    intent: document.getElementById('sessionIntent').value.trim() || journalEntry?.content || '',
+    ...(journalEntry?{journalEntryId:journalEntry.id}:{}),
+    executionVariant: { kind: effectiveMode === 'minimum' ? 'minimum' : effectiveMode === 'contingency' ? 'contingency' : 'ideal', contingencyId: contingency?.id || null },
     contingencySnapshot: contingency ? JSON.parse(JSON.stringify(contingency)) : null,
     ritualSnapshot: ritual && globalThis.CompassoRitualModel ? globalThis.CompassoRitualModel.snapshot(ritual) : null,
     reflection: '',
@@ -229,10 +281,24 @@ function createSession() {
     durationMs: null,
     status: 'active'
   };
-  state.data.sessions.unshift(session);
+  const previous=state.data,candidate=sessionClone(state.data);
+  candidate.sessions=Array.isArray(candidate.sessions)?candidate.sessions:[];
+  candidate.sessions.unshift(session);
+  state.data=candidate;
   executionSyncRegular(session);
-  document.getElementById('sessionStartDialog').close();
-  saveData('Sessão iniciada');
+  if(typeof energyCreateForSession==='function')energyCreateForSession(session);
+  sessionRuntime.creating=true;
+  const submit=document.getElementById('sessionStartSubmit');if(submit)submit.disabled=true;
+  const persisted=await saveData('Sessão iniciada');
+  sessionRuntime.creating=false;
+  if(submit)submit.disabled=false;
+  if(persisted){const dialog=document.getElementById('sessionStartDialog');if(dialog.open)dialog.close();requestAnimationFrame(()=>{const activeSurface=document.getElementById('sessionCompanionOpen')||document.getElementById('sessionBanner');activeSurface?.scrollIntoView?.({block:'nearest'});activeSurface?.focus?.()});return true}
+  state.data=previous;try{await window.CompassoStorage.save(STORAGE_KEY,previous)}catch{}
+  renderAll();sessionRestoreStartDraft(draft);
+  const dialog=document.getElementById('sessionStartDialog');if(!dialog.open)dialog.showModal();
+  sessionSetError('sessionStartError','Não foi possível iniciar a sessão. Revise as opções e tente novamente.');
+  requestAnimationFrame(()=>document.getElementById('sessionStartError')?.focus());
+  return false;
 }
 
 function toggleSessionPause() {
@@ -253,6 +319,7 @@ function toggleSessionPause() {
 }
 
 function openSessionFinish() {
+  if(typeof energyResetChoices==='function'){energyResetChoices('after');energyResetChoices('difficulty')}
   let session = sessionActive();
   if (!session) return;
   const item = sessionItem(session);
@@ -293,14 +360,20 @@ function cancelSessionFinish() {
   saveData(session.status === 'paused' ? 'Encerramento cancelado; sessão continua pausada' : 'Encerramento cancelado; sessão retomada');
 }
 
-function finishSession() {
-  const session = sessionActive();
-  if (!session || session.status !== 'finishing') return;
-  const item = sessionItem(session);
-  if (!item) return;
-  const metric = sessionUsesResourceMetric(session) ? sessionMetric(item, session.domain) : null;
+async function finishSession({evidence=null}={}) {
+  if(sessionRuntime.finishing)return false;
+  const current = sessionActive();
+  if (!current || current.status !== 'finishing') return false;
+  const item = sessionItem(current);
+  if (!item) return false;
+  const metric = sessionUsesResourceMetric(current) ? sessionMetric(item, current.domain) : null;
   const endValue = metric ? (metric.config.isPercent ? clamp(document.getElementById('sessionEndValue').value) : positiveNumber(document.getElementById('sessionEndValue').value)) : null;
-  if (metric && endValue < positiveNumber(session.startValue)) { showToast('O valor final não pode ser menor que o inicial'); return; }
+  if (metric && endValue < positiveNumber(current.startValue)) { showToast('O valor final não pode ser menor que o inicial');document.getElementById('sessionEndValue')?.focus();return false; }
+  const draft={endValue:document.getElementById('sessionEndValue').value,reflection:document.getElementById('sessionReflection').value,evidenceType:document.getElementById('sessionEvidenceType')?.value||'',evidenceSummary:document.getElementById('sessionEvidenceSummary')?.value||'',evidenceDetails:document.getElementById('sessionEvidenceDetails')?.value||''};
+  const previous=state.data,candidate=sessionClone(state.data),session=candidate.sessions.find(item=>item.id===current.id);
+  if(!session)return false;
+  const candidateItem=session.domain==='learningOutcome'?candidate.learningOutcomes?.find(item=>item.id===session.itemId):candidate[session.domain]?.find(item=>item.id===session.itemId);
+  if(!candidateItem)return false;
   const frozen = sessionTimerModel.finish(session);
   if (session.statusBeforeFinishing === 'paused' && session.pauseStartedAt) {
     session.pausedMs = positiveNumber(session.pausedMs) + Math.max(0, new Date(frozen.endedAt).getTime() - new Date(session.pauseStartedAt).getTime());
@@ -315,16 +388,30 @@ function finishSession() {
   session.frozenDurationMs = null;
   session.updatedAt = new Date().toISOString();
   session.reflection = document.getElementById('sessionReflection').value.trim();
-  executionSyncRegular(session);
   if (metric) {
-    item[metric.config.currentKey] = endValue;
-    if (metric.config.isPercent) item[metric.config.totalKey] = 100;
-    const total = positiveNumber(item[metric.config.totalKey]);
-    if (total > 0) item.progress = clamp(Math.round((Math.min(endValue,total) / total) * 100));
-    if (item.progress >= 100) item.status = 'done';
+    candidateItem[metric.config.currentKey] = endValue;
+    if (metric.config.isPercent) candidateItem[metric.config.totalKey] = 100;
+    const total = positiveNumber(candidateItem[metric.config.totalKey]);
+    if (total > 0) candidateItem.progress = clamp(Math.round((Math.min(endValue,total) / total) * 100));
+    if (candidateItem.progress >= 100) candidateItem.status = 'done';
   }
-  document.getElementById('sessionFinishDialog').close();
-  saveData(metric ? 'Sessão concluída e progresso atualizado' : 'Sessão concluída sem alterar progresso de recurso');
+  if(evidence){candidate.evidence=Array.isArray(candidate.evidence)?candidate.evidence:[];candidate.evidence.unshift(evidence)}
+  state.data=candidate;executionSyncRegular(session);
+  if(typeof energyFinishForSession==='function')energyFinishForSession(session);
+  if(typeof flowEvent==='function')flowEvent('completed',session.itemId,{source:'session'});
+  sessionRuntime.finishing=true;sessionSetError('sessionFinishError','');
+  const persisted=await saveData(evidence?'Sessão concluída com evidência':metric?'Sessão concluída e progresso atualizado':'Sessão concluída sem alterar progresso de recurso');
+  sessionRuntime.finishing=false;
+  if(persisted){document.getElementById('sessionFinishDialog').close();return{sessionId:session.id,evidenceId:evidence?.id||null,status:'completed',source:'normal'}}
+  state.data=previous;try{await window.CompassoStorage.save(STORAGE_KEY,previous)}catch{}
+  renderAll();document.getElementById('sessionEndValue').value=draft.endValue;document.getElementById('sessionReflection').value=draft.reflection;
+  if(document.getElementById('sessionEvidenceType'))document.getElementById('sessionEvidenceType').value=draft.evidenceType;
+  if(document.getElementById('sessionEvidenceSummary'))document.getElementById('sessionEvidenceSummary').value=draft.evidenceSummary;
+  if(document.getElementById('sessionEvidenceDetails'))document.getElementById('sessionEvidenceDetails').value=draft.evidenceDetails;
+  const dialog=document.getElementById('sessionFinishDialog');if(!dialog.open)dialog.showModal();
+  sessionSetError('sessionFinishError','Não foi possível salvar o encerramento. A sessão e a Evidence continuam prontas para nova tentativa.');
+  requestAnimationFrame(()=>document.getElementById('sessionFinishError')?.focus());
+  return false;
 }
 
 function openSessionHistory(domain, itemId) {
@@ -360,11 +447,25 @@ function deleteSession(id) {
   renderSessionHistory();
 }
 
+function resumeSession() {
+  const session=sessionActive();if(!session)return false;
+  if(session.status==='finishing')openSessionFinish();
+  else if(session.status==='paused')toggleSessionPause();
+  requestAnimationFrame(()=>{const activeSurface=document.getElementById('sessionCompanionOpen')||document.getElementById('sessionPauseBtn')||document.getElementById('sessionBanner');activeSurface?.scrollIntoView?.({block:'nearest'});activeSurface?.focus?.()});
+  return true;
+}
+
 installSessionStyles();
 installSessionUi();
+CompassoFeatures.command('session.startDefault',sessionStartDefault);
+CompassoFeatures.command('session.openConfiguration',sessionOpenConfiguration);
+CompassoFeatures.command('session.resume',resumeSession);
+const sessionCreateFromForm=createSession;
+sessionRuntime.commitFinish=finishSession;
 
-document.getElementById('sessionStartForm').addEventListener('submit', event => { event.preventDefault(); createSession(); });
-document.getElementById('sessionFinishForm').addEventListener('submit', event => { event.preventDefault(); finishSession(); });
+document.getElementById('sessionStartForm').addEventListener('submit', event => { event.preventDefault();void sessionCreateFromForm(); });
+sessionRuntime.finish=finishSession;
+document.getElementById('sessionFinishForm').addEventListener('submit', event => { event.preventDefault();void sessionRuntime.finish(); });
 document.getElementById('sessionPauseBtn').addEventListener('click', toggleSessionPause);
 document.getElementById('sessionFinishBtn').addEventListener('click', openSessionFinish);
 document.addEventListener('click', event => {

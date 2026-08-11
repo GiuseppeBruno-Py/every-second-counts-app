@@ -229,3 +229,57 @@ test("timer móvel nasce acima da navegação e pode ser arrastado com seguranç
   );
   expect(diagnosticErrors).toEqual([]);
 });
+
+test("configuração opcional e detalhes semanais preservam teclado e foco", async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => CompassoInformationArchitecture.open("capabilities"));
+  await page.locator("[data-outcome-new]").first().click();
+  await page.locator('[name="capability"]').fill("Explicar uma escolha");
+  await page.locator('[name="nextAttempt"]').fill("Comparar duas opções");
+  await page.locator("#learningOutcomeForm").evaluate((form) => form.requestSubmit());
+  await page.locator("[data-outcome-card] [data-outcome-today]").click();
+  const configure = page.locator("[data-today-primary-configure]");
+  await configure.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#sessionStartDialog")).toBeVisible();
+  await expect(page.locator("#sessionOptionalConfig")).toHaveAttribute("open", "");
+  await expect(page.locator("#sessionOutcomeResource")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(configure).toBeFocused();
+
+  await page.evaluate(() => CompassoInformationArchitecture.open("weekly"));
+  const details = page.locator("#weeklyStatsDetails");
+  const summary = details.locator("summary");
+  await expect(summary.locator("span")).not.toHaveText("");
+  await summary.focus();
+  await page.keyboard.press("Enter");
+  await expect(details).toHaveAttribute("open", "");
+  await page.keyboard.press("Space");
+  await expect(details).not.toHaveAttribute("open", "");
+});
+
+test("jornada continua sem overflow em 360–390 px, zoom e ponteiro grosso", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "contrato de interação móvel");
+  await open(page);
+  await page.evaluate(() => CompassoInformationArchitecture.open("capabilities"));
+  await page.locator("[data-outcome-new]").first().click();
+  await page.locator('[name="capability"]').fill("Uma capacidade com um nome longo para testar a hierarquia móvel");
+  await page.locator('[name="nextAttempt"]').fill("Executar uma tentativa longa sem perder a ação principal");
+  await page.locator("#learningOutcomeForm").evaluate((form) => form.requestSubmit());
+  await page.locator("[data-outcome-card] [data-outcome-today]").click();
+  for (const width of [360, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    const result = await page.evaluate(() => {
+      const controls = [...document.querySelectorAll("#todayPrimaryAction button, #iaExecuteBtn")].filter((item) => item.offsetParent !== null).map((item) => {
+        const box = item.getBoundingClientRect();
+        return { name: item.getAttribute("aria-label") || item.textContent.trim(), width: box.width, height: box.height };
+      });
+      return { viewport: document.documentElement.clientWidth, page: document.documentElement.scrollWidth, controls };
+    });
+    expect(result.page).toBeLessThanOrEqual(result.viewport + 1);
+    expect(result.controls.filter((item) => item.width < 43.5 || item.height < 43.5)).toEqual([]);
+  }
+  await page.evaluate(() => { document.documentElement.style.zoom = "2"; });
+  const zoomed = await page.evaluate(() => ({ viewport: document.documentElement.clientWidth, page: document.documentElement.scrollWidth }));
+  expect(zoomed.page).toBeLessThanOrEqual(zoomed.viewport + 1);
+});
