@@ -6,8 +6,7 @@
     {id:'today',label:'Hoje',icon:'calendar',level:'essential',order:10,route:'today'},
     {id:'fronts',label:'Frentes',icon:'briefcase',level:'essential',order:20,route:'fronts'},
     {id:'journal',label:'Journal',icon:'note',level:'essential',order:30,route:'journal'},
-    {id:'review',label:'Revisão',icon:'spark',level:'essential',order:40,route:'review'},
-    {id:'more',label:'Mais',icon:'more',level:'essential',order:50,route:'more'}
+    {id:'review',label:'Revisão',icon:'spark',level:'essential',order:40,route:'review'}
   ]);
   const views=Object.freeze([
     {id:'capabilities',area:'fronts',label:'Capacidades',description:'Defina o que quer conseguir fazer e sua próxima tentativa.',icon:'compass',level:'essential',order:10,route:'capabilities'},
@@ -19,15 +18,15 @@
     {id:'analytics',area:'review',label:'Consistência',description:'Ritmo, sessões e histórico de execução.',icon:'spark',level:'essential',order:30,route:'analytics'},
     {id:'recall',area:'review',label:'Active Recall',description:'Recupere antes de consultar.',icon:'brain',level:'knowledge',order:40,route:'recall'},
     {id:'weakness',area:'review',label:'Caderno de erros',description:'Transforme dificuldades em próximas ações.',icon:'target',level:'knowledge',order:50,route:'weakness'},
-    {id:'notes',area:'more',label:'Notas e Atlas',description:'Conhecimento destilado e conectado.',icon:'note',level:'knowledge',order:10,route:'notes'},
-    {id:'dictionary',area:'more',label:'Relações e grafo',description:'Explore conexões entre ideias.',icon:'link',level:'advanced',order:20,route:'dictionary'},
-    {id:'context',area:'more',label:'IA contextual',description:'Consulte seus próprios dados com fontes.',icon:'brain',level:'advanced',order:30,route:'context'}
+    {id:'notes',area:null,label:'Notas e Atlas',description:'Conhecimento destilado e conectado.',icon:'note',level:'knowledge',order:10,route:'notes'},
+    {id:'dictionary',area:null,label:'Relações e grafo',description:'Explore conexões entre ideias.',icon:'link',level:'advanced',order:20,route:'dictionary'},
+    {id:'context',area:null,label:'IA contextual',description:'Consulte seus próprios dados com fontes.',icon:'brain',level:'advanced',order:30,route:'context'}
   ]);
   const aliases=Object.freeze({core:'essential',simple:'essential',learning:'knowledge',expert:'advanced'});
   function mode(value){const normalized=aliases[value]||value;return modes.includes(normalized)?normalized:'essential'}
   function area(id){return areas.find(item=>item.id===id)||null}
   function view(id){return views.find(item=>item.id===id)||null}
-  function areaFor(route){if(route==='overview')return'today';return area(route)?.id||view(route)?.area||'today'}
+  function areaFor(route){if(route==='overview')return'today';const direct=area(route);if(direct)return direct.id;const item=view(route);return item?item.area:'today'}
   function visible(level,current){return rank[level]<=rank[mode(current)]}
   function viewsFor(areaId,current,{includeHidden=false}={}){return views.filter(item=>item.area===areaId&&(includeHidden||visible(item.level,current))).sort((a,b)=>a.order-b.order)}
   function resolve(route,{fallback='today'}={}){if(route==='overview')return'today';return area(route)?.route||view(route)?.route||fallback}
