@@ -31,14 +31,19 @@ Cada módulo informa início e fim ao `CompassoBootstrapDiagnostic`. Exceções 
 
 ## Arquitetura de informação
 
-`information-architecture-model.js` é a fonte única das cinco áreas primárias: Hoje, Frentes, Journal, Revisão e Mais. Cada área e subvisão declara `id`, `label`, `icon`, `level`, `order` e `route`; nenhuma decisão de visibilidade depende do texto exibido.
+`information-architecture-model.js` é a fonte única das quatro áreas primárias: Hoje, Frentes, Journal e Revisão. Cada área e subvisão declara `id`, `label`, `icon`, `level`, `order` e `route`; nenhuma decisão de visibilidade depende do texto exibido.
 
 - Frentes contém Visão geral, Leituras, Estudos e Metas.
 - Revisão contém Revisão semanal, Resultados, Consistência, Active Recall e Caderno de erros.
-- Mais contém Atlas, grafo/relações, IA contextual, integrações, importação, exportação e configurações.
+- Notas/Atlas, grafo/relações e IA contextual preservam suas rotas diretas e dados, mas não pertencem a uma área primária nem são projetados em um hub.
+- Configurações, Google Drive, importação/exportação JSON e vault continuam nos controles globais e nas superfícies que já os possuem.
 - Registrar e Executar são ações globais da barra superior, não destinos.
 
-Deep links continuam usando `?view=<rota>`. Rotas antigas válidas abrem a subvisão e anunciam sua área-pai; rotas ou preferências inválidas voltam para Hoje. Novas features devem registrar sua rota no modelo central em vez de inserir um botão na sidebar.
+Deep links continuam usando `?view=<rota>`. Rotas de subvisões com área abrem e anunciam sua área-pai. As rotas protegidas destacadas (`notes`, `dictionary` e `context`) abrem sem anunciar uma área primária incorreta. A rota aposentada `more`, rotas inválidas e preferências inválidas voltam para Hoje. Novas features devem registrar sua rota no modelo central em vez de inserir um botão na sidebar.
+
+## Encerramento resiliente de sessões
+
+Session e Deep Work pertencem aos seus próprios registros de execução. Se uma leitura, estudo, capacidade ou outra origem deixar de estar disponível enquanto a execução está ativa, o encerramento continua possível com os dados já persistidos na sessão. A ausência da origem desativa somente a atualização de progresso desse item: não recria registros, não infere vínculos e não impede a Evidence canônica por `sessionId`. Falhas de persistência preservam o estado anterior e o rascunho para nova tentativa.
 
 ## Geração e composição do PWA
 

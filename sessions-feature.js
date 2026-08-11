@@ -22,13 +22,18 @@ function sessionId() { return `s${Date.now()}${Math.random().toString(36).slice(
 function sessionClone(value) { return typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value)); }
 function sessionSetError(id,message='') { const target=document.getElementById(id);if(!target)return;target.textContent=message;target.hidden=!message; }
 function sessionActive() { return state.data.sessions.find(session => sessionTimerModel.isCurrent(session)) || null; }
+function sessionSourceItem(session,data=state.data) {
+  if (!session) return null;
+  if (session.domain === 'learningOutcome') return data.learningOutcomes?.find(item => item.id === session.learningContext?.outcomeId || item.id === session.itemId) || null;
+  return data[session.domain]?.find(item => item.id === session.itemId) || null;
+}
 function sessionItem(session) {
   if (!session) return null;
   if (session.domain === 'learningOutcome') {
-    const outcome = state.data.learningOutcomes?.find(item => item.id === session.learningContext?.outcomeId || item.id === session.itemId);
+    const outcome = sessionSourceItem(session);
     return outcome ? {...outcome,title:outcome.capability} : session.learningContext ? {id:session.itemId,title:session.learningContext.attemptText} : null;
   }
-  return state.data[session.domain]?.find(item => item.id === session.itemId) || null;
+  return sessionSourceItem(session);
 }
 function sessionUsesResourceMetric(session) { return ['study','reading'].includes(session?.domain); }
 function sessionElapsedMs(session, at = sessionNow()) {
@@ -323,7 +328,7 @@ function openSessionFinish() {
   let session = sessionActive();
   if (!session) return;
   const item = sessionItem(session);
-  if (!item) { showToast('O item desta sessão não existe mais'); return; }
+  const source = sessionSourceItem(session);
   if (session.status !== 'finishing') {
     Object.assign(session, sessionTimerModel.begin(session, sessionNow()));
     executionSyncRegular(session);
@@ -331,11 +336,11 @@ function openSessionFinish() {
     sessionRuntime.tick = null;
     saveData();
   }
-  const metric = sessionUsesResourceMetric(session) ? sessionMetric(item, session.domain) : null;
+  const metric = source && sessionUsesResourceMetric(session) ? sessionMetric(source, session.domain) : null;
   let suggested = metric?.value ?? null;
-  if (session.domain === 'study') suggested = Math.round((metric.value + sessionElapsedMs(session) / 3600000) * 10) / 10;
-  document.getElementById('sessionFinishTitle').textContent = item.title;
-  document.getElementById('sessionFinishSummary').textContent = metric ? `${formatDuration(sessionElapsedMs(session))} de atividade · início em ${formatNumber(session.startValue)} ${metric.config.unit}.` : `${formatDuration(sessionElapsedMs(session))} de atividade na tentativa registrada.`;
+  if (metric && session.domain === 'study') suggested = Math.round((metric.value + sessionElapsedMs(session) / 3600000) * 10) / 10;
+  document.getElementById('sessionFinishTitle').textContent = item?.title || session.intent || 'Sessão sem origem disponível';
+  document.getElementById('sessionFinishSummary').textContent = metric ? `${formatDuration(sessionElapsedMs(session))} de atividade · início em ${formatNumber(session.startValue)} ${metric.config.unit}.` : source ? `${formatDuration(sessionElapsedMs(session))} de atividade na tentativa registrada.` : `${formatDuration(sessionElapsedMs(session))} de atividade. A origem não está mais disponível; a sessão e a Evidence serão salvas sem alterar o item.`;
   const metricField = document.getElementById('sessionEndValueField');
   metricField.hidden = !metric;
   document.getElementById('sessionEndValueLabel').textContent = metric?.config.currentLabel || 'Valor final';
@@ -364,16 +369,14 @@ async function finishSession({evidence=null}={}) {
   if(sessionRuntime.finishing)return false;
   const current = sessionActive();
   if (!current || current.status !== 'finishing') return false;
-  const item = sessionItem(current);
-  if (!item) return false;
-  const metric = sessionUsesResourceMetric(current) ? sessionMetric(item, current.domain) : null;
+  const source = sessionSourceItem(current);
+  const metric = source && sessionUsesResourceMetric(current) ? sessionMetric(source, current.domain) : null;
   const endValue = metric ? (metric.config.isPercent ? clamp(document.getElementById('sessionEndValue').value) : positiveNumber(document.getElementById('sessionEndValue').value)) : null;
   if (metric && endValue < positiveNumber(current.startValue)) { showToast('O valor final não pode ser menor que o inicial');document.getElementById('sessionEndValue')?.focus();return false; }
   const draft={endValue:document.getElementById('sessionEndValue').value,reflection:document.getElementById('sessionReflection').value,evidenceType:document.getElementById('sessionEvidenceType')?.value||'',evidenceSummary:document.getElementById('sessionEvidenceSummary')?.value||'',evidenceDetails:document.getElementById('sessionEvidenceDetails')?.value||''};
   const previous=state.data,candidate=sessionClone(state.data),session=candidate.sessions.find(item=>item.id===current.id);
   if(!session)return false;
-  const candidateItem=session.domain==='learningOutcome'?candidate.learningOutcomes?.find(item=>item.id===session.itemId):candidate[session.domain]?.find(item=>item.id===session.itemId);
-  if(!candidateItem)return false;
+  const candidateItem=sessionSourceItem(session,candidate);
   const frozen = sessionTimerModel.finish(session);
   if (session.statusBeforeFinishing === 'paused' && session.pauseStartedAt) {
     session.pausedMs = positiveNumber(session.pausedMs) + Math.max(0, new Date(frozen.endedAt).getTime() - new Date(session.pauseStartedAt).getTime());
