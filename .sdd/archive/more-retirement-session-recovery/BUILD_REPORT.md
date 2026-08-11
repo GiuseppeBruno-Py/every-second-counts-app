@@ -9,8 +9,8 @@
 - Branch: `codex/retire-more-navigation`
 - Baseline HEAD: `f15c4573cfd0f9b2ce7ae4ceadd075cab598bc61`
 - Define: `.sdd/features/more-retirement-session-recovery/DEFINE.md`
-- Design: `.sdd/features/more-retirement-session-recovery/DESIGN.md` revision 1.0
-- Closed Build manifest: 13 paths
+- Design: `.sdd/features/more-retirement-session-recovery/DESIGN.md` revision 1.1
+- Closed Build manifest: 14 paths
 
 ## Summary
 
@@ -58,9 +58,10 @@ Correction:
 | `tests/browser/critical-flows.spec.js` | Missing-source regular/Deep Work regressions | AT-06–AT-11 |
 | `tests/app-manifest.test.js` | v75, state v3, protected app-shell modules/assets | AT-04, AT-05, AT-12 |
 | `docs/application-foundation.md` | Current IA and resilient completion contract | AT-01–AT-08, AT-12 |
+| `tests/browser/design-system-flows.spec.js-snapshots/design-system-1280-chromium-linux.png` | Exact runner baseline for the approved four-item navigation and contextual Atlas | AT-01, AT-02, AT-11 |
 | `.sdd/reports/more-retirement-session-recovery/BUILD_REPORT.md` | This evidence | All |
 
-No file was deleted. No path outside the closed 13-path Build manifest changed.
+No file was deleted. No path outside the closed 14-path Build manifest changed.
 
 ## Validation evidence
 
@@ -127,13 +128,13 @@ None in product behavior or manifest. Test evidence for Drive/vault module prese
 ## Residual risks
 
 - No physical installed-PWA human smoke was performed by Codex.
-- Remote Linux CI has not yet validated this branch; the requested PR will provide that gate.
+- Initial PR Linux CI exposed the superseded 1280 px navigation baseline. The stable runner image was captured twice with the same SHA-256, visually inspected, and used to refresh only that approved snapshot; final checkpoint CI remains the merge gate.
 - Protected advanced routes are intentionally less discoverable after removing `Mais`; relocation was an explicit non-goal.
 - `npm ci` reported two high-severity dependency audit findings in the existing test dependency tree; no dependency was changed and automated forced remediation is outside scope.
 
 ## Final checklist
 
-- [x] Closed 13-path Build manifest respected
+- [x] Closed 14-path Build manifest respected
 - [x] No deletion, schema, migration, route removal, or persistence concept
 - [x] Product behavior implements 12/12 acceptance scenarios
 - [x] `compasso.state.v3`
@@ -148,6 +149,7 @@ None in product behavior or manifest. Test evidence for Drive/vault module prese
 | Revision | Date | Author | Change |
 | --- | --- | --- | --- |
 | 1.0 | 2026-08-11 | Codex | Completed Build with root-cause correction, closed-manifest evidence, and canonical validation. |
+| 1.1 | 2026-08-11 | Codex | Recorded contextual Atlas correction and refreshed the exact stale Linux visual baseline revealed by PR CI. |
 
 ## Recommended next skill
 

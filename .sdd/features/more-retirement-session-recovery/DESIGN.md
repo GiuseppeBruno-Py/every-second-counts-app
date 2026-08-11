@@ -5,7 +5,7 @@
 - Feature: `more-retirement-session-recovery`
 - Phase: Design
 - Status: `Complete (Built)`
-- Revision: 1.0
+- Revision: 1.1
 - Date: 2026-08-11
 - Authoritative acceptance contract: `.sdd/features/more-retirement-session-recovery/DEFINE.md`
 - Baseline: `origin/main` at `f15c4573cfd0f9b2ce7ae4ceadd075cab598bc61`
@@ -153,8 +153,9 @@ Not applicable. Route fallback is runtime-only and record completion uses existi
 | 11 | `tests/app-manifest.test.js` | Modify | Assert v75 and unchanged manifest contracts | Manifest | AT-12 |
 | 12 | `docs/application-foundation.md` | Modify | Document four-area IA, detached protected routes, and completion recovery | Shipped behavior | AT-01–AT-08, AT-12 |
 | 13 | `.sdd/reports/more-retirement-session-recovery/BUILD_REPORT.md` | Create | Record implementation, diff, tests, AC evidence, and risks | Build completion | All |
+| 14 | `tests/browser/design-system-flows.spec.js-snapshots/design-system-1280-chromium-linux.png` | Modify if remote CI proves stale | Refresh the exact Linux visual baseline for the approved navigation composition | Remote Chromium evidence | AT-01, AT-02, AT-11 |
 
-No files may be deleted. Build may modify only these 13 paths. Ship archival artifacts are lifecycle output, not Build authorization.
+No files may be deleted. Build may modify only these 14 paths. Ship archival artifacts are lifecycle output, not Build authorization.
 
 ## Dependency-ordered implementation plan
 
@@ -225,7 +226,7 @@ None blocking Build.
 - DEFINE clarity: 15/15
 - Current source/tests/docs/CI inspected: Yes
 - Architecture and error flows closed: Yes
-- Exact Build manifest closed at 13 paths: Yes
+- Exact Build manifest closed at 14 paths: Yes
 - 12/12 acceptance traceability: Yes
 - Migration/compatibility/rollback addressed: Yes
 
@@ -236,6 +237,7 @@ None blocking Build.
 | Revision | Date | Author | Change |
 | --- | --- | --- | --- |
 | 1.0 | 2026-08-11 | Codex | Initial repository-grounded Design for `Mais` retirement and unavailable-source Session recovery. |
+| 1.1 | 2026-08-11 | Codex | Authorized the existing Linux 1280 px baseline after PR evidence proved it encoded the superseded navigation composition. |
 
 ## Recommended next skill
 

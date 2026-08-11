@@ -8,7 +8,7 @@
 - Date: 2026-08-11
 - Branch at verification: `codex/retire-more-navigation`
 - Baseline HEAD: `f15c4573cfd0f9b2ce7ae4ceadd075cab598bc61`
-- Build manifest: 13 exact paths
+- Build manifest: 14 exact paths
 - Acceptance: 12/12 PASS
 - PWA generation: `compasso-pages-v75`
 - State contract: `compasso.state.v3`
@@ -25,6 +25,7 @@ The closure does not delete or redesign Notes, Relations/graph, Contextual AI, D
 - No `moreView`, `Mais` hero, Notes/Relations/Context cards, system panel, or hub vault container is composed.
 - Legacy `?view=more` resolves to Hoje and replaces the stale route.
 - Notes, dictionary/graph, and contextual routes remain valid direct surfaces without a false primary-current announcement.
+- Atlas/vault navigation is hidden outside the protected Notes route and remains available within its existing desktop context.
 - Settings and JSON controls remain global; Drive/vault/protected modules remain in the app shell.
 - A regular Session can open and save completion/Evidence when its source is missing; resource progress is simply not projected.
 - Active/finishing Deep Work can reopen and complete from persisted execution data when its source is missing.
@@ -33,7 +34,7 @@ The closure does not delete or redesign Notes, Relations/graph, Contextual AI, D
 
 ## Independent Ship verification
 
-- Actual pre-archive Build diff matched the closed 13-path manifest exactly: no missing or extra paths.
+- The post-CI correction diff matches the revised closed 14-path Build manifest: no missing or extra product/test paths.
 - No staged changes existed.
 - No file deletion existed.
 - `service-worker.js` had no diff.
@@ -92,7 +93,7 @@ Automation validated controlled/offline lifecycle behavior, but Codex did not an
 
 ### Remote Linux CI — non-blocking for SDD Ship; blocking merge gate
 
-Local canonical validation is complete. The new PR requested by the user must run the repository's Ubuntu/Chromium Browser Tests workflow before merge. No remote result is claimed in this artifact.
+Local canonical validation is complete. Initial PR CI exposed a stale Linux visual baseline and the unintended global Atlas resurfacing; both were corrected from stable runner evidence. Final checkpoint CI remains required before merge and no future result is claimed in this artifact.
 
 ### Protected-route discoverability — accepted product trade-off
 
@@ -104,6 +105,7 @@ The protected direct routes remain valid but are intentionally not relocated in 
 2. Removing an IA parent should remove it from the declarative model as well as the DOM; otherwise stale routes and accessibility state can expose an empty destination.
 3. Source-dependent expressions must all be guarded after a missing-source path is introduced; the Study suggestion calculation demonstrated how one leftover metric access can fail between state freeze and dialog presentation.
 4. Fast browser fixtures intentionally omit heavy protected modules. Route behavior belongs in the journey fixture, while module/cache preservation belongs in the full manifest/composition contract.
+5. Removing a relocation target must also define the original element's contextual visibility; otherwise a retired hub can accidentally resurface secondary navigation globally.
 
 ## Archived artifacts
 
