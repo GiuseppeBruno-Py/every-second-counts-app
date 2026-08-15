@@ -1,5 +1,9 @@
 # Evidências de sessão
 
+## Projeção histórica de uso
+
+Quando a execução canônica contém `learningContext.futureUse`, a Evidence pode apresentar **Uso na execução: {rótulo}** como projeção histórica. A leitura segue exclusivamente `Evidence.sessionId → executionSession.learningContext`; ela não consulta o valor atual da capacidade e não adiciona `futureUse` ou `learningContext` ao registro de Evidence. Contexto canônico ausente, inválido ou legado apenas omite essa linha.
+
 ## Objetivo
 
 Transformar tempo investido em registro verificável. Ao encerrar uma sessão de leitura ou estudo, o usuário registra uma evidência curta do que foi compreendido, produzido, praticado, decidido ou questionado.

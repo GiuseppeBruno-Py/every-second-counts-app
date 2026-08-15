@@ -175,6 +175,7 @@ test('controlled complete cache reopens offline with composition and local state
   await page.locator('[data-ia-view="capabilities"]').click();
   await page.locator('[data-outcome-new]').first().click();
   await page.locator('[name="capability"]').fill('Explicar o ciclo offline');
+  await page.locator('[name="futureUse"]').selectOption('integrate');
   await page.locator('[name="nextAttempt"]').fill('Reabrir a capacidade sem rede');
   await page.locator('#learningOutcomeForm [type="submit"]').click();
   await expect(page.locator('#learningOutcomeDialog')).toBeHidden();
@@ -206,6 +207,9 @@ test('controlled complete cache reopens offline with composition and local state
   expect(await page.evaluate(() => localStorage.getItem('compasso.test.offline'))).toBe('preserved');
   await expect(page.locator('[data-outcome-card]')).toContainText('Explicar o ciclo offline');
   await expect(page.locator('[data-outcome-card]')).toContainText('Evidência preservada offline');
+  await expect(page.locator('[data-outcome-card]')).toContainText('Uso pretendido: Conectar e combinar ideias');
+  expect(await page.evaluate(() => state.data.learningOutcomes[0].nextAttempt.futureUse)).toBe('integrate');
+  expect(await page.evaluate(() => state.data.executionSessions.some(item => item.learningContext?.futureUse === 'integrate'))).toBe(true);
   expect(await page.evaluate(() => state.data.executionSessions.some(item => item.learningContext?.attemptText === 'Reabrir a capacidade sem rede'))).toBe(true);
   expect(await page.evaluate(() => state.data.dailyPlans.some(plan => plan.items?.some(item => item.type === 'capability-attempt')))).toBe(true);
   expect(await page.evaluate(() => state.data.learningSignals.some(item => item.text.includes('disponível offline')))).toBe(true);

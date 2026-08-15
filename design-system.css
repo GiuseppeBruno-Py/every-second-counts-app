@@ -306,6 +306,14 @@ dialog[data-ds-component] form {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.session-companion-copy .session-companion-future-use {
+  margin-top: 3px;
+  color: #d2cec4;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 8px;
+  font-weight: 650;
+}
 .session-companion-copy small {
   color: #aaa79f;
   font-size: 8px;
@@ -747,6 +755,14 @@ dialog[data-ds-component] form {
   font-size: .78rem;
   line-height: 1.55;
 }
+.learning-outcome-attempt .future-use-context {
+  display: block;
+  margin-top: .4rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  font-size: .68rem;
+  line-height: 1.45;
+}
 .learning-outcome-execution {
   margin-top: 1rem;
   padding: .85rem 1rem;
@@ -861,8 +877,18 @@ dialog[data-ds-component] form {
   resize: vertical;
   line-height: 1.5;
 }
+.learning-outcome-form > select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: .7rem;
+  border: 1px solid var(--line);
+  border-radius: .7rem;
+  background: #fff;
+  color: var(--ink);
+}
 .learning-outcome-form textarea:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(97, 86, 201, .14); outline: 0; }
-.learning-outcome-form textarea[aria-invalid="true"] { border-color: var(--red); }
+.learning-outcome-form > select:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(97, 86, 201, .14); outline: 0; }
+.learning-outcome-form textarea[aria-invalid="true"],.learning-outcome-form > select[aria-invalid="true"] { border-color: var(--red); }
 .learning-outcome-optional,
 .learning-outcome-resources summary span { color: var(--muted); font-size: .62rem; font-weight: 500; }
 .learning-outcome-hint,
@@ -896,6 +922,7 @@ dialog[data-ds-component] form {
 .capability-context-block strong,.capability-context-block span { display: block; font-size: .68rem; line-height: 1.45; }
 .capability-context-block span,.capability-context-block p { color: var(--muted); }
 .capability-context-block p { margin: .3rem 0; font-size: .65rem; line-height: 1.5; }
+.future-use-context { color: var(--muted); overflow-wrap: anywhere; font-size: .68rem; line-height: 1.5; }
 .capability-context-block button,.evidence-capability button { min-height: 2.25rem; margin-top: .4rem; border: 1px solid var(--line); border-radius: .55rem; background: #fff; color: var(--violet); font-size: .62rem; font-weight: 800; cursor: pointer; }
 .learning-signal-row button { justify-self: start; }
 .capability-resource-option { display: flex; align-items: flex-start; gap: .65rem; min-height: 2.75rem; padding: .65rem; border: 1px solid var(--line); border-radius: .65rem; }
@@ -919,13 +946,27 @@ dialog[data-ds-component] form {
 .weekly-capability-fields label { font-size: .66rem; font-weight: 800; }
 .weekly-capability-fields textarea { width: 100%; min-height: 4.5rem; margin-top: .35rem; border: 1px solid var(--line); border-radius: .65rem; padding: .65rem; resize: vertical; }
 .weekly-capability-fields select,.weekly-capability-fields input { margin-top: .35rem; }
+.weekly-attempt-revision { display: grid; gap: .65rem; min-width: 0; }
+.weekly-current-future-use,.weekly-future-use-history { overflow-wrap: anywhere; }
+.deep-future-use {
+  margin: 0;
+  padding: .65rem .8rem;
+  border: 1px solid #5a5951;
+  border-radius: .7rem;
+  background: #30302b;
+  color: #f4f2eb;
+  text-align: center;
+  overflow-wrap: anywhere;
+  font-size: .72rem;
+  line-height: 1.5;
+}
 .capability-result-card { display: grid; grid-template-columns: minmax(0,1fr) repeat(3,minmax(0,1fr)); gap: .75rem; }
 .capability-result-card > div { padding-left: .75rem; border-left: 1px solid var(--line); }
 .outcomes-support { display: grid; gap: .75rem; }
 .analytics-capability { padding: .5rem; border-radius: .55rem; background: var(--violet-soft); color: var(--violet)!important; }
 
 @media (pointer:coarse) {
-  .capability-context-block button,.evidence-capability button,.capability-resource-option,.learning-signal-dialog select,.weekly-capability-fields select,.weekly-capability-fields input,.analytics-controls select { min-height: 44px; }
+  .capability-context-block button,.evidence-capability button,.capability-resource-option,.learning-outcome-form > select,.learning-signal-dialog select,.weekly-capability-fields select,.weekly-capability-fields input,.analytics-controls select { min-height: 44px; }
 }
 @media (max-width: 900px) {
   .weekly-capability-fields,.capability-result-card { grid-template-columns: 1fr; }
@@ -997,6 +1038,7 @@ dialog[data-ds-component] form {
   overflow-wrap: anywhere;
 }
 .today-primary-copy p { margin: .45rem 0 0; color: var(--muted); font-size: .72rem; line-height: 1.55; }
+.today-primary-copy .today-future-use,.today-row-main .today-future-use { color: var(--violet); font-weight: 700; overflow-wrap: anywhere; }
 .today-primary-actions,
 .execution-completion-actions {
   display: flex;

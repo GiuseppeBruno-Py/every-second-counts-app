@@ -235,6 +235,9 @@ test("configuração opcional e detalhes semanais preservam teclado e foco", asy
   await page.evaluate(() => CompassoInformationArchitecture.open("capabilities"));
   await page.locator("[data-outcome-new]").first().click();
   await page.locator('[name="capability"]').fill("Explicar uma escolha");
+  await expect(page.locator('[name="futureUse"]')).toHaveAccessibleName(/Como você precisará usar isso/);
+  await page.locator('[name="futureUse"]').selectOption('decide');
+  await expect(page.locator('#learningOutcomeFutureUseHint')).toContainText('escolher e sustentar');
   await page.locator('[name="nextAttempt"]').fill("Comparar duas opções");
   await page.locator("#learningOutcomeForm").evaluate((form) => form.requestSubmit());
   await page.locator("[data-outcome-card] [data-outcome-today]").click();
@@ -264,6 +267,7 @@ test("jornada continua sem overflow em 360–390 px, zoom e ponteiro grosso", as
   await page.evaluate(() => CompassoInformationArchitecture.open("capabilities"));
   await page.locator("[data-outcome-new]").first().click();
   await page.locator('[name="capability"]').fill("Uma capacidade com um nome longo para testar a hierarquia móvel");
+  await page.locator('[name="futureUse"]').selectOption('simulate');
   await page.locator('[name="nextAttempt"]').fill("Executar uma tentativa longa sem perder a ação principal");
   await page.locator("#learningOutcomeForm").evaluate((form) => form.requestSubmit());
   await page.locator("[data-outcome-card] [data-outcome-today]").click();

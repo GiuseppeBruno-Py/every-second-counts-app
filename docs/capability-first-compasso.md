@@ -6,6 +6,12 @@ Capability-first Compasso carries an optional capability and its current next at
 
 The feature is local-first, works from the existing complete PWA cache, and has no dependency on the `context` route, Contextual AI modules, platform detection, external AI, a backend, or remote processing.
 
+## Retrieval R1: uso futuro opcional
+
+A tentativa atual pode registrar opcionalmente `nextAttempt.futureUse` com um dos valores estáveis `remember`, `explain`, `solve`, `build`, `decide`, `simulate` ou `integrate`. A ausência é representada pela propriedade omitida, nunca por um valor padrão persistido. O valor orienta o contexto da tentativa; ele não é progresso, domínio, rota, modo de execução, nível de domínio ou recomendação automática.
+
+Ao iniciar uma execução consciente da capacidade, `createExecutionContext()` copia o valor para o `learningContext` da Session/Deep Work e para a execução canônica. Esse snapshot histórico não acompanha edições posteriores da capacidade, do texto, do uso futuro ou dos recursos. Today, learning signals e reflexões continuam usando referências leves e não recebem um segundo proprietário durável.
+
 ## Ownership
 
 | Fact | Owner |

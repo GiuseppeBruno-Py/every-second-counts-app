@@ -29,9 +29,10 @@ function evidenceCapabilityProjection(evidence) {
   const capabilityRef=capabilityContextModel.evidenceContext(evidence,execution?[execution]:[]);
   if(!capabilityRef)return'';
   const resolved=capabilityContextModel.resolveCapabilityRef(capabilityRef,state.data.learningOutcomes||[]);
+  const futureUse=learningOutcomeModel.futureUsePresentation(capabilityRef.futureUse),futureUseLine=futureUse?`<small class="future-use-context">Uso na execução: ${escapeHtml(futureUse.label)}</small>`:'';
   return resolved.available
-    ? `<div class="evidence-capability"><span>Capacidade · ${escapeHtml(resolved.outcome.capability)}</span><strong>Tentativa: ${escapeHtml(resolved.attemptText)}</strong><button type="button" data-evidence-capability="${escapeHtml(capabilityRef.outcomeId)}">Abrir capacidade</button></div>`
-    : `<div class="evidence-capability unavailable"><span>Capacidade indisponível</span><strong>Tentativa registrada: ${escapeHtml(resolved.attemptText)}</strong></div>`;
+    ? `<div class="evidence-capability"><span>Capacidade · ${escapeHtml(resolved.outcome.capability)}</span><strong>Tentativa: ${escapeHtml(resolved.attemptText)}</strong>${futureUseLine}<button type="button" data-evidence-capability="${escapeHtml(capabilityRef.outcomeId)}">Abrir capacidade</button></div>`
+    : `<div class="evidence-capability unavailable"><span>Capacidade indisponível</span><strong>Tentativa registrada: ${escapeHtml(resolved.attemptText)}</strong>${futureUseLine}</div>`;
 }
 
 function installEvidenceStyles() {
@@ -69,7 +70,7 @@ function installEvidenceCompletion() {
   document.querySelector('.content')?.insertAdjacentHTML('beforeend',`
     <section class="execution-completion" id="executionCompletionPanel" tabindex="-1" aria-labelledby="executionCompletionTitle" hidden>
       <div class="execution-completion-head"><div><div class="eyebrow">Sessão registrada</div><h2 id="executionCompletionTitle">Evidence salva</h2></div><button type="button" class="icon-btn" data-completion-dismiss aria-label="Fechar continuação">${icon('x')}</button></div>
-      <p id="executionCompletionSummary"></p><p class="execution-completion-status" id="executionCompletionStatus" role="status"></p>
+      <p id="executionCompletionSummary"></p><p class="future-use-context" id="executionCompletionFutureUse" hidden></p><p class="execution-completion-status" id="executionCompletionStatus" role="status"></p>
       <div class="execution-completion-actions" id="executionCompletionActions"></div>
     </section>`);
 }
@@ -88,9 +89,10 @@ function renderEvidenceCompletion(payload={}) {
   evidenceCompletionRuntime.evidenceId=payload.evidenceId||null;
   evidenceCompletionRuntime.signalSaved=false;
   const panel=document.getElementById('executionCompletionPanel');if(!panel)return;
-  const {execution,evidence,resolved}=evidenceCompletionContext();
+  const {execution,evidence,capabilityRef,resolved}=evidenceCompletionContext();
   document.getElementById('executionCompletionTitle').textContent=evidence?'Evidence salva':'Sessão registrada';
   document.getElementById('executionCompletionSummary').textContent=evidence?.summary||execution?.result||execution?.reflection||'O encerramento foi salvo. Escolha como continuar.';
+  const futureUse=learningOutcomeModel.futureUsePresentation(capabilityRef?.futureUse),futureUseTarget=document.getElementById('executionCompletionFutureUse');futureUseTarget.textContent=futureUse?`Uso na execução: ${futureUse.label}`:'';futureUseTarget.hidden=!futureUse;
   document.getElementById('executionCompletionStatus').textContent='A ação de Hoje e a próxima tentativa permanecem como estavam.';
   document.getElementById('executionCompletionActions').innerHTML=`<button type="button" class="primary-btn" data-completion-today>Voltar para Hoje</button>${resolved.active?'<button type="button" class="secondary-btn" data-completion-signal>Registrar sinal</button>':''}${resolved.available?'<button type="button" class="quiet-btn" data-completion-capability>Abrir capacidade</button>':''}`;
   panel.hidden=false;

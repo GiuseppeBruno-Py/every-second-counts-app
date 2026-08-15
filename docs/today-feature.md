@@ -1,5 +1,11 @@
 # Hoje e próximas ações
 
+## Uso pretendido da tentativa
+
+Quando a tentativa atual de uma capacidade possui `futureUse`, Hoje mostra **Uso pretendido: {rótulo}** como contexto secundário. O valor é resolvido da capacidade atual e não é persistido no item do plano diário. Referências legadas, históricas, arquivadas ou indisponíveis não recebem classificação inferida.
+
+A presença do contexto não altera a precedência: execução ativa/pausada, tentativa atual válida, outra ação incompleta e planejamento/fallback. O controle global **Executar** não escolhe Active Recall, Deep Work, recursos ou qualquer rota a partir de `futureUse`; ele conserva o comportamento e o foco determinísticos existentes.
+
 ## Objetivo
 
 Unificar direção e execução em uma única central diária, conectada ao Journal, ao foco semanal, às sessões e às frentes do Compasso.

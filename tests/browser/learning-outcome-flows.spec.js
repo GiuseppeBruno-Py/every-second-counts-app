@@ -14,6 +14,7 @@ async function createOutcome(page, values = {}) {
   await expect(dialog).toBeVisible();
   await dialog.locator('[name="capability"]').fill(values.capability || 'Explicar uma closure com um exemplo próprio');
   if (values.proofCriterion) await dialog.locator('[name="proofCriterion"]').fill(values.proofCriterion);
+  if (values.futureUse !== undefined) await dialog.locator('[name="futureUse"]').selectOption(values.futureUse);
   await dialog.locator('[name="nextAttempt"]').fill(values.nextAttempt || 'Escrever e executar um exemplo mínimo');
   if (values.resources?.length) {
     await dialog.locator('.learning-outcome-resources summary').click();
@@ -50,6 +51,29 @@ test('cria a forma mínima, valida obrigatórios e persiste após reload', async
   await page.reload({ waitUntil:'domcontentloaded' });
   await page.waitForFunction(() => globalThis.CompassoFeatures?.installed);
   await expect(page.locator('.learning-outcome-card')).toContainText('Explicar uma closure');
+});
+
+test('futureUse opcional cria, orienta, edita e limpa sem mudar a identidade', async ({ page }) => {
+  await openCapabilities(page);
+  const card=await createOutcome(page,{capability:'Resolver consultas desconhecidas',futureUse:'solve',nextAttempt:'Resolver uma consulta sem exemplo'});
+  await expect(card).toContainText('Uso pretendido: Resolver problemas');
+  let stored=await page.evaluate(()=>state.data.learningOutcomes[0]);
+  expect(stored.nextAttempt.futureUse).toBe('solve');
+  const attemptId=stored.nextAttempt.id;
+  await card.locator('[data-outcome-edit]').click();
+  const select=page.locator('#learningOutcomeFutureUse');
+  await expect(select).toHaveAccessibleName(/Como você precisará usar isso/);
+  await select.selectOption('simulate');
+  await expect(page.locator('#learningOutcomeFutureUseHint')).toContainText('condições próximas');
+  await page.locator('#learningOutcomeForm [type="submit"]').click();
+  await expect(card).toContainText('Praticar em condições reais ou de prova');
+  stored=await page.evaluate(()=>state.data.learningOutcomes[0]);
+  expect(stored.nextAttempt.id).toBe(attemptId);expect(stored.nextAttempt.futureUse).toBe('simulate');
+  await card.locator('[data-outcome-edit]').click();
+  await select.selectOption('');
+  await page.locator('#learningOutcomeForm [type="submit"]').click();
+  await expect(card).not.toContainText('Uso pretendido:');
+  expect(await page.evaluate(()=>'futureUse' in state.data.learningOutcomes[0].nextAttempt)).toBe(false);
 });
 
 test('edita conteúdo, tentativa e recursos sem converter atividade em avanço', async ({ page }) => {
@@ -127,6 +151,7 @@ test('backup JSON preserva forma completa e backup legado abre sem migração de
   await createOutcome(page, {
     capability:'Diagnosticar uma consulta lenta',
     proofCriterion:'Explicar o plano e propor um índice',
+    futureUse:'decide',
     nextAttempt:'Analisar uma consulta de exemplo',
     resources:[{type:'reading',id:'example-reading'}]
   });
@@ -150,6 +175,7 @@ test('backup JSON preserva forma completa e backup legado abre sem migração de
   expect(restored.proofCriterion).toBe('Explicar o plano e propor um índice');
   expect(restored.resourceRefs).toEqual([{type:'reading',id:'example-reading'}]);
   expect(restored.status).toBe('archived');
+  expect(restored.nextAttempt.futureUse).toBe('decide');
 
   const legacy = JSON.stringify({ reading:[{id:'legacy-reading',title:'Legado',progress:25,status:'active'}], study:[], goal:[], focus:[], folders:[], notes:[], captures:[], untouched:{keep:true} });
   await page.locator('#importInput').setInputFiles({ name:'legacy.json', mimeType:'application/json', buffer:Buffer.from(legacy) });
@@ -195,7 +221,7 @@ test('layout não transborda em 360, 768 e 1024 px e o modal mantém navegação
 
 test('executa tentativa sem recurso, registra evidência pela sessão e retorna sem fabricar progresso', async ({ page }) => {
   await openCapabilities(page);
-  const card=await createOutcome(page,{capability:'Explicar uma closure',nextAttempt:'Implementar uma closure sem consulta'});
+  const card=await createOutcome(page,{capability:'Explicar uma closure',futureUse:'explain',nextAttempt:'Implementar uma closure sem consulta'});
   const before=await page.evaluate(() => structuredClone({study:state.data.study,reading:state.data.reading,outcome:state.data.learningOutcomes[0]}));
   await card.locator('[data-outcome-execute]').click();
   await expect(page.locator('#sessionStartDialog')).toBeVisible();
@@ -203,9 +229,10 @@ test('executa tentativa sem recurso, registra evidência pela sessão e retorna 
   await expect(page.locator('#sessionIntent')).toHaveValue('Implementar uma closure sem consulta');
   await page.locator('#sessionStartForm').evaluate(form => form.requestSubmit());
   await expect(page.locator('#sessionCompanion')).toBeVisible();
+  await expect(page.locator('#sessionCompanionFutureUse')).toHaveText('Uso pretendido: Explicar com suas palavras');
   const started=await page.evaluate(() => state.data.sessions[0]);
   expect(started.domain).toBe('learningOutcome');
-  expect(started.learningContext).toEqual({outcomeId:before.outcome.id,attemptId:before.outcome.nextAttempt.id,attemptText:'Implementar uma closure sem consulta'});
+  expect(started.learningContext).toEqual({outcomeId:before.outcome.id,attemptId:before.outcome.nextAttempt.id,attemptText:'Implementar uma closure sem consulta',futureUse:'explain'});
   await page.locator('#sessionCompanionFinish').click();
   await expect(page.locator('#sessionFinishDialog')).toBeVisible();
   await expect(page.locator('#sessionEndValueField')).toBeHidden();
@@ -215,6 +242,7 @@ test('executa tentativa sem recurso, registra evidência pela sessão e retorna 
   const completion=page.locator('#executionCompletionPanel');
   await expect(completion).toBeVisible();
   await expect(completion).toBeFocused();
+  await expect(page.locator('#executionCompletionFutureUse')).toHaveText('Uso na execução: Explicar com suas palavras');
   await expect(completion.locator('[data-completion-today]')).toBeVisible();
   await expect(completion.locator('[data-completion-capability]')).toBeVisible();
   await completion.locator('[data-completion-capability]').click();
@@ -231,6 +259,7 @@ test('executa tentativa sem recurso, registra evidência pela sessão e retorna 
   expect(after.evidence.sessionId).toBe(after.session.id);
   expect(after.evidence.domain).toBe('learningOutcome');
   expect(after.evidence).not.toHaveProperty('learningContext');
+  expect(after.evidence).not.toHaveProperty('futureUse');
   expect(JSON.stringify(after.outcome)).not.toMatch(/progress|mastery|confidence|completed|score|streak/i);
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForFunction(() => globalThis.CompassoFeatures?.installed);
@@ -239,16 +268,18 @@ test('executa tentativa sem recurso, registra evidência pela sessão e retorna 
 
 test('Deep Work reutiliza a mesma proveniência de tentativa e retorna à capacidade',async({page})=>{
   await openCapabilities(page);
-  const card=await createOutcome(page,{capability:'Diagnosticar um plano',nextAttempt:'Analisar um plano desconhecido'});
+  const card=await createOutcome(page,{capability:'Diagnosticar um plano',futureUse:'simulate',nextAttempt:'Analisar um plano desconhecido'});
   await card.locator('[data-outcome-execute]').click();
   await page.locator('#sessionOptionalConfig summary').click();
   await expect(page.locator('#sessionOptionalConfig')).toHaveAttribute('open','');
   await page.locator('#sessionMode').selectOption('deep');
   await page.locator('#sessionStartForm').evaluate(form=>form.requestSubmit());
   await expect(page.locator('#deepDialog')).toBeVisible();
+  await expect(page.locator('#deepFutureUse')).toHaveText('Uso pretendido: Praticar em condições reais ou de prova');
   await page.locator('#deepStart').click();
   const context=await page.evaluate(()=>state.data.deepWorkSessions[0].learningContext);
   expect(context.attemptText).toBe('Analisar um plano desconhecido');
+  expect(context.futureUse).toBe('simulate');
   expect(await page.evaluate(()=>state.data.deepWorkSessions[0].domain)).toBe('learningOutcome');
   await page.locator('#deepComplete').click();
   await page.locator('#deepCompletionNote').fill('Plano analisado e explicado');

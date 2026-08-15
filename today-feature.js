@@ -82,7 +82,7 @@ function todayPrimaryState(plan = todayPlan()) {
 }
 
 function todayCapabilitySessionOptions(outcome) {
-  const learningContext = capabilityContextModel.createCapabilityRef(outcome);
+  const learningContext = learningOutcomeModel.createExecutionContext(outcome);
   if (!learningContext) return null;
   return { learningContext, resources:learningOutcomeModel.resolveRefs(outcome,{study:state.data.study||[],reading:state.data.reading||[]}) };
 }
@@ -179,7 +179,8 @@ function renderTodayPrimary(primary) {
   }
   if (primary.kind === 'capability') {
     content.dataset.todayCapability = primary.resolved.outcome.id;
-    content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima tentativa</div><h3 id="todayPrimaryHeading">${escapeHtml(primary.resolved.attemptText)}</h3><p>${escapeHtml(primary.resolved.outcome.capability)} · atual no seu plano</p></div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-primary-start="${escapeHtml(primary.resolved.outcome.id)}">Iniciar agora</button><button class="secondary-btn" type="button" data-today-primary-configure="${escapeHtml(primary.resolved.outcome.id)}">Ajustar sessão</button><button class="quiet-btn" type="button" data-today-open-capability="${escapeHtml(primary.resolved.outcome.id)}">Abrir capacidade</button><button class="quiet-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button><button class="quiet-btn remove" type="button" data-today-remove="${escapeHtml(primary.refKey)}">Remover do plano</button></div>`;
+    const futureUse=learningOutcomeModel.futureUsePresentation(primary.resolved.outcome.nextAttempt?.futureUse);
+    content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima tentativa</div><h3 id="todayPrimaryHeading">${escapeHtml(primary.resolved.attemptText)}</h3><p>${escapeHtml(primary.resolved.outcome.capability)} · atual no seu plano</p>${futureUse?`<p class="today-future-use">Uso pretendido: ${escapeHtml(futureUse.label)}</p>`:''}</div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-primary-start="${escapeHtml(primary.resolved.outcome.id)}">Iniciar agora</button><button class="secondary-btn" type="button" data-today-primary-configure="${escapeHtml(primary.resolved.outcome.id)}">Ajustar sessão</button><button class="quiet-btn" type="button" data-today-open-capability="${escapeHtml(primary.resolved.outcome.id)}">Abrir capacidade</button><button class="quiet-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button><button class="quiet-btn remove" type="button" data-today-remove="${escapeHtml(primary.refKey)}">Remover do plano</button></div>`;
     return;
   }
   delete content.dataset.todayCapability;
@@ -235,7 +236,8 @@ function renderToday() {
       const key = todayRefKey(normalized), unavailable=!resolved.available, archived=resolved.available&&!resolved.active, stale=resolved.available&&!resolved.current;
       const status=normalized.completedAt?'Concluída no plano':unavailable?'Capacidade indisponível':archived?'Capacidade arquivada':stale?'Tentativa histórica':'Próxima tentativa atual';
       const canStart=resolved.active&&resolved.current&&!normalized.completedAt;
-      return `<article class="today-row capability-attempt${normalized.completedAt?' done':''}${unavailable||archived||stale?' unavailable':''}" data-today-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}" tabindex="-1"><button class="today-check" data-today-toggle="${escapeHtml(key)}" aria-label="${normalized.completedAt?'Reabrir':'Concluir'} referência da capacidade">${normalized.completedAt?icon('check'):''}</button><div class="today-row-main"><strong>${escapeHtml(resolved.attemptText)}</strong><span>${escapeHtml(status)}${resolved.outcome?` · ${escapeHtml(resolved.outcome.capability)}`:''}</span></div><div class="today-actions">${canStart?`<button class="primary" data-today-start-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}">Configurar sessão</button>`:''}${resolved.available?`<button data-today-open-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}">Abrir capacidade</button>`:`<button disabled aria-disabled="true">Capacidade indisponível</button>`}<button class="remove" data-today-remove="${escapeHtml(key)}">Remover</button></div></article>`;
+      const futureUse=resolved.current?learningOutcomeModel.futureUsePresentation(resolved.outcome?.nextAttempt?.futureUse):null;
+      return `<article class="today-row capability-attempt${normalized.completedAt?' done':''}${unavailable||archived||stale?' unavailable':''}" data-today-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}" tabindex="-1"><button class="today-check" data-today-toggle="${escapeHtml(key)}" aria-label="${normalized.completedAt?'Reabrir':'Concluir'} referência da capacidade">${normalized.completedAt?icon('check'):''}</button><div class="today-row-main"><strong>${escapeHtml(resolved.attemptText)}</strong><span>${escapeHtml(status)}${resolved.outcome?` · ${escapeHtml(resolved.outcome.capability)}`:''}</span>${futureUse?`<span class="today-future-use">Uso pretendido: ${escapeHtml(futureUse.label)}</span>`:''}</div><div class="today-actions">${canStart?`<button class="primary" data-today-start-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}">Configurar sessão</button>`:''}${resolved.available?`<button data-today-open-capability="${escapeHtml(normalized.capabilityRef.outcomeId)}">Abrir capacidade</button>`:`<button disabled aria-disabled="true">Capacidade indisponível</button>`}<button class="remove" data-today-remove="${escapeHtml(key)}">Remover</button></div></article>`;
     }
     const item = todayItem(ref);
     const custom = ref.type === 'custom';
@@ -265,7 +267,7 @@ function todayOpenCapability(outcomeId){
   learningOutcomeRuntime.mode=outcome.status==='archived'?'archived':'active';switchView('capabilities');outcomeRender();requestAnimationFrame(()=>document.querySelector(`[data-outcome-card="${CSS.escape(outcomeId)}"]`)?.focus?.());
 }
 function todayStartCapability(outcomeId,{immediate=false,trigger=null,expanded=false}={}){
-  const outcome=(state.data.learningOutcomes||[]).find(item=>item.id===outcomeId),ref=capabilityContextModel.createCapabilityRef(outcome);
+  const outcome=(state.data.learningOutcomes||[]).find(item=>item.id===outcomeId),ref=learningOutcomeModel.createExecutionContext(outcome);
   if(!ref){showToast('A capacidade ou tentativa atual não está disponível');return}
   const payload={domain:'learningOutcome',itemId:outcome.id,options:{learningContext:ref,resources:learningOutcomeModel.resolveRefs(outcome,{study:state.data.study||[],reading:state.data.reading||[]})},trigger};
   return CompassoFeatures.execute(immediate?'session.startDefault':'session.openConfiguration',{...payload,expanded});

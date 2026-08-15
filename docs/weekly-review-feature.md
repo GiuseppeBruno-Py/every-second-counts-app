@@ -1,5 +1,11 @@
 # Revisão semanal guiada por evidências
 
+## Uso histórico e decisão atual
+
+Quando existe contexto de uso futuro, a revisão separa **Uso nas execuções**, derivado dos snapshots canônicos históricos da semana, de **Uso da tentativa atual**, derivado da capacidade atual antes da decisão. Evidence expandida também mostra o valor histórico por `sessionId`. Assim, uma execução antiga nunca é rotulada com uma escolha atual diferente.
+
+**Manter tentativa atual** preserva texto, `futureUse`, identidade e timestamps. **Revisar tentativa** permite editar o texto e escolher ou limpar o uso futuro no mesmo save atômico. `capabilityReflections` continua sem proprietário de `futureUse`, e falha de validação/persistência mantém o estado anterior e o rascunho disponível para nova tentativa.
+
 ## Objetivo
 
 Transformar sessões e evidências registradas durante a semana em interpretação, decisão e foco para a semana seguinte.

@@ -1,5 +1,11 @@
 # Sessões de leitura e estudo
 
+## Snapshot de uso pretendido
+
+Quando a tentativa possui `futureUse`, o início reutiliza `learningOutcomeModel.createExecutionContext()` para gravar o mesmo snapshot em `Session.learningContext` ou `DeepWorkSession.learningContext`; os adaptadores existentes o projetam para `executionSession.learningContext`. O resumo de início, o companheiro compacto e a tela de Deep Work mostram o rótulo somente leitura. Não existe uma segunda pergunta de classificação nem mudança nos padrões de início imediato.
+
+Pausa, interrupção, encerramento, reload e recuperação preservam o snapshot armazenado. Excluir ou editar a capacidade depois do início não reescreve a execução. Sessões legadas sem o campo continuam válidas e não exibem conteúdo “não especificado”.
+
 ## Domínio unificado
 
 Todos os modos começam pela ação **Executar**. O usuário escolhe sessão rápida, Deep Work, versão mínima ou Plano B no mesmo fluxo. Apenas uma execução pode permanecer ativa por vez, inclusive quando ela foi iniciada em outro modo.
