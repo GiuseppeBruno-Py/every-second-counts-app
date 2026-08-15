@@ -1,5 +1,9 @@
 # Active Recall a partir de evidências e notas
 
+## Limite com Retrieval R1
+
+Active Recall permanece uma ferramenta especializada e não é proprietário de `futureUse`. O uso futuro opcional de uma tentativa não cria cards, não abre esta rota automaticamente, não classifica `reviewItems` ou histórico antigo, não altera intervalos/agendamento e não modifica a derivação de assuntos fracos. `remember` é contexto da tentativa, não um comando automático para Recall.
+
 ## Objetivo
 
 Transformar registros passivos do Compasso em perguntas que exigem recuperação ativa. A funcionalidade evita tratar releitura como evidência de aprendizagem.

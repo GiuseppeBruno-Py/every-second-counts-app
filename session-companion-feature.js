@@ -58,7 +58,7 @@
     if (document.getElementById("sessionCompanion")) return;
     document.body.insertAdjacentHTML(
       "beforeend",
-      `<aside id="sessionCompanion" class="session-companion" hidden aria-live="polite"><button type="button" class="session-companion-main" id="sessionCompanionOpen" title="Toque para abrir; arraste para mover" aria-description="No celular, arraste para reposicionar sem cobrir a navegação"><span class="session-companion-dot"></span><span class="session-companion-copy"><small id="sessionCompanionLabel">Sessão em andamento</small><strong id="sessionCompanionTitle"></strong></span><time id="sessionCompanionTime">00:00</time></button><div class="session-companion-actions"><button type="button" id="sessionCompanionPause" aria-label="Pausar sessão" title="Pausar ou retomar">Ⅱ</button><button type="button" id="sessionCompanionFinish" aria-label="Concluir sessão" title="Concluir sessão">✓</button><button type="button" id="sessionCompanionFloat" aria-label="Abrir janela flutuante" title="Manter sobre outras janelas">▣</button></div></aside>`,
+      `<aside id="sessionCompanion" class="session-companion" hidden aria-live="polite"><button type="button" class="session-companion-main" id="sessionCompanionOpen" title="Toque para abrir; arraste para mover" aria-description="No celular, arraste para reposicionar sem cobrir a navegação"><span class="session-companion-dot"></span><span class="session-companion-copy"><small id="sessionCompanionLabel">Sessão em andamento</small><strong id="sessionCompanionTitle"></strong><small class="session-companion-future-use" id="sessionCompanionFutureUse" hidden></small></span><time id="sessionCompanionTime">00:00</time></button><div class="session-companion-actions"><button type="button" id="sessionCompanionPause" aria-label="Pausar sessão" title="Pausar ou retomar">Ⅱ</button><button type="button" id="sessionCompanionFinish" aria-label="Concluir sessão" title="Concluir sessão">✓</button><button type="button" id="sessionCompanionFloat" aria-label="Abrir janela flutuante" title="Manter sobre outras janelas">▣</button></div></aside>`,
     );
     sessionCompanionOpen.addEventListener("click", (event) => {
       if (runtime.suppressOpen) {
@@ -296,6 +296,9 @@
     companion.classList.toggle("deep", current.kind === "deep");
     sessionCompanionLabel.textContent = current.label;
     sessionCompanionTitle.textContent = current.title;
+    const futureUse=globalThis.CompassoLearningOutcomeModel?.futureUsePresentation?.(current.learningContext?.futureUse);
+    sessionCompanionFutureUse.textContent=futureUse?`Uso pretendido: ${futureUse.label}`:'';
+    sessionCompanionFutureUse.hidden=!futureUse;
     sessionCompanionTime.textContent = clock(current.elapsedMs);
     sessionCompanionPause.textContent =
       current.status === "finishing" ? "■" : current.status === "paused" ? "▶" : "Ⅱ";

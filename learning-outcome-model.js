@@ -8,6 +8,16 @@
   const EPOCH='1970-01-01T00:00:00.000Z';
   const STATUSES=Object.freeze(['active','archived']);
   const RESOURCE_TYPES=Object.freeze(['study','reading']);
+  const FUTURE_USE_PRESENTATIONS=Object.freeze({
+    remember:Object.freeze({value:'remember',label:'Lembrar com precisão',guidance:'Recordar fatos, termos, passos ou relações com precisão.'}),
+    explain:Object.freeze({value:'explain',label:'Explicar com suas palavras',guidance:'Reconstruir e comunicar a ideia sem depender do texto original.'}),
+    solve:Object.freeze({value:'solve',label:'Resolver problemas',guidance:'Aplicar a ideia em questões ou casos diferentes dos exemplos.'}),
+    build:Object.freeze({value:'build',label:'Construir ou produzir',guidance:'Criar uma entrega, modelo, texto, código ou artefato usando a ideia.'}),
+    decide:Object.freeze({value:'decide',label:'Decidir e justificar',guidance:'Usar a ideia para escolher e sustentar uma decisão.'}),
+    simulate:Object.freeze({value:'simulate',label:'Praticar em condições reais ou de prova',guidance:'Executar sob condições próximas às de uso, avaliação ou pressão real.'}),
+    integrate:Object.freeze({value:'integrate',label:'Conectar e combinar ideias',guidance:'Relacionar esta capacidade a outras ideias para formar uma explicação ou solução maior.'})
+  });
+  const FUTURE_USES=Object.freeze(Object.keys(FUTURE_USE_PRESENTATIONS));
 
   const cleanText=value=>typeof value==='string'?value.trim():'';
   const clone=value=>value==null?value:JSON.parse(JSON.stringify(value));
@@ -18,6 +28,13 @@
 
   function error(code,message){const value=new TypeError(message);value.code=code;return value}
   function required(value,code,message){const normalized=cleanText(value);if(!normalized)throw error(code,message);return normalized}
+  function normalizeFutureUse(value){const normalized=cleanText(value);return FUTURE_USES.includes(normalized)?normalized:null}
+  function futureUsePresentation(value){return FUTURE_USE_PRESENTATIONS[normalizeFutureUse(value)]||null}
+  function explicitFutureUse(value){
+    const normalized=cleanText(value);if(!normalized)return null;
+    if(!FUTURE_USES.includes(normalized))throw error('future-use-invalid','Escolha uma forma válida de usar esta capacidade.');
+    return normalized;
+  }
 
   function normalizeProof(value){const normalized=cleanText(value);return normalized||null}
 
@@ -39,9 +56,11 @@
     const text=cleanText(candidate.text);if(!text)return null;
     const attemptCreated=validIso(candidate.createdAt)||validIso(candidate.updatedAt)||createdAt;
     const attemptUpdated=validIso(candidate.updatedAt)||attemptCreated||updatedAt;
+    const futureUse=normalizeFutureUse(candidate.futureUse);
     return{
       id:cleanText(candidate.id)||`${outcomeId}:next`,
       text,
+      ...(futureUse?{futureUse}:{}),
       createdAt:attemptCreated||EPOCH,
       updatedAt:attemptUpdated||attemptCreated||EPOCH
     };
@@ -50,12 +69,13 @@
   function normalizeExecutionContext(value){
     if(!value||typeof value!=='object'||Array.isArray(value))return null;
     const outcomeId=cleanText(value.outcomeId),attemptId=cleanText(value.attemptId),attemptText=cleanText(value.attemptText);
-    return outcomeId&&attemptId&&attemptText?{outcomeId,attemptId,attemptText}:null;
+    const futureUse=normalizeFutureUse(value.futureUse);
+    return outcomeId&&attemptId&&attemptText?{outcomeId,attemptId,attemptText,...(futureUse?{futureUse}:{})}:null;
   }
 
   function createExecutionContext(value){
     const outcome=normalizeOutcome(value);
-    return outcome?{outcomeId:outcome.id,attemptId:outcome.nextAttempt.id,attemptText:outcome.nextAttempt.text}:null;
+    return outcome?{outcomeId:outcome.id,attemptId:outcome.nextAttempt.id,attemptText:outcome.nextAttempt.text,...(outcome.nextAttempt.futureUse?{futureUse:outcome.nextAttempt.futureUse}:{})}:null;
   }
 
   function normalizeOutcome(value){
@@ -94,13 +114,15 @@
   function createOutcome(input={},options={}){
     const timestamp=nowIso(options),id=idFrom(options,'outcome');
     const capability=required(input.capability,'capability-required','Informe o que você quer conseguir fazer.');
-    const attemptText=required(typeof input.nextAttempt==='object'?input.nextAttempt?.text:input.nextAttempt,'attempt-required','Informe o que você vai tentar agora.');
+    const attemptInput=typeof input.nextAttempt==='object'&&input.nextAttempt!==null&&!Array.isArray(input.nextAttempt)?input.nextAttempt:null;
+    const attemptText=required(attemptInput?attemptInput.text:input.nextAttempt,'attempt-required','Informe o que você vai tentar agora.');
+    const futureUse=attemptInput&&Object.prototype.hasOwnProperty.call(attemptInput,'futureUse')?explicitFutureUse(attemptInput.futureUse):null;
     return{
       id,
       capability,
       proofCriterion:normalizeProof(input.proofCriterion),
       resourceRefs:normalizeRefs(input.resourceRefs),
-      nextAttempt:{id:idFrom(options,'attempt'),text:attemptText,createdAt:timestamp,updatedAt:timestamp},
+      nextAttempt:{id:idFrom(options,'attempt'),text:attemptText,...(futureUse?{futureUse}:{}),createdAt:timestamp,updatedAt:timestamp},
       status:'active',
       archivedAt:null,
       createdAt:timestamp,
@@ -112,14 +134,20 @@
     const current=normalizeOutcome(value);if(!current)throw error('outcome-invalid','Capacidade inválida.');
     const timestamp=nowIso(options);
     const has=(key)=>Object.prototype.hasOwnProperty.call(input,key);
-    const attemptInput=has('nextAttempt')?input.nextAttempt:current.nextAttempt.text;
-    const attemptText=required(typeof attemptInput==='object'?attemptInput?.text:attemptInput,'attempt-required','Informe o que você vai tentar agora.');
+    const hasNextAttempt=has('nextAttempt');
+    const attemptInput=hasNextAttempt?input.nextAttempt:current.nextAttempt.text;
+    const attemptObject=attemptInput&&typeof attemptInput==='object'&&!Array.isArray(attemptInput)?attemptInput:null;
+    const attemptText=required(attemptObject?attemptObject.text:attemptInput,'attempt-required','Informe o que você vai tentar agora.');
+    const futureUse=hasNextAttempt&&attemptObject&&Object.prototype.hasOwnProperty.call(attemptObject,'futureUse')
+      ? explicitFutureUse(attemptObject.futureUse)
+      : current.nextAttempt.futureUse||null;
+    const attemptChanged=hasNextAttempt&&(attemptText!==current.nextAttempt.text||futureUse!==(current.nextAttempt.futureUse||null));
     return{
       ...current,
       capability:required(has('capability')?input.capability:current.capability,'capability-required','Informe o que você quer conseguir fazer.'),
       proofCriterion:has('proofCriterion')?normalizeProof(input.proofCriterion):current.proofCriterion,
       resourceRefs:has('resourceRefs')?normalizeRefs(input.resourceRefs):current.resourceRefs.map(ref=>({...ref})),
-      nextAttempt:{...current.nextAttempt,text:attemptText,updatedAt:has('nextAttempt')&&attemptText!==current.nextAttempt.text?timestamp:current.nextAttempt.updatedAt},
+      nextAttempt:{id:current.nextAttempt.id,text:attemptText,...(futureUse?{futureUse}:{}),createdAt:current.nextAttempt.createdAt,updatedAt:attemptChanged?timestamp:current.nextAttempt.updatedAt},
       updatedAt:timestamp
     };
   }
@@ -162,7 +190,7 @@
   }
 
   return Object.freeze({
-    EPOCH,STATUSES,RESOURCE_TYPES,normalizeProof,normalizeRefs,normalizeAttempt,normalizeExecutionContext,createExecutionContext,normalizeOutcome,normalizeCollection,
+    EPOCH,STATUSES,RESOURCE_TYPES,FUTURE_USES,FUTURE_USE_PRESENTATIONS,normalizeFutureUse,futureUsePresentation,normalizeProof,normalizeRefs,normalizeAttempt,normalizeExecutionContext,createExecutionContext,normalizeOutcome,normalizeCollection,
     createOutcome,updateOutcome,archiveOutcome,reactivateOutcome,deleteOutcome,sortOutcomes,resolveRefs
   });
 });

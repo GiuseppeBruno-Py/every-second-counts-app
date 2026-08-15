@@ -178,9 +178,10 @@ function openSessionStartCore(domain, itemId, options = {}, presentation = {}) {
   sessionSetError('sessionStartError','');
   const neutral = domain === 'learningOutcome';
   const metric = neutral ? null : sessionMetric(item, domain);
+  const futureUse=learningOutcomeModel.futureUsePresentation(context?.futureUse);
   document.getElementById('sessionStartTitle').textContent = item.title || item.capability;
   document.getElementById('sessionStartSummary').textContent = neutral
-    ? `Tentativa: ${context?.attemptText || item.nextAttempt?.text}. O cronômetro continuará mesmo se o aplicativo for fechado.`
+    ? `Tentativa: ${context?.attemptText || item.nextAttempt?.text}.${futureUse?` Uso pretendido: ${futureUse.label}.`:''} O cronômetro continuará mesmo se o aplicativo for fechado.`
     : `Início registrado em ${formatNumber(metric.value)} ${metric.config.unit}. O cronômetro continuará mesmo se o aplicativo for fechado.`;
   document.getElementById('sessionIntent').value = context?.attemptText || item.note || '';
   const resourceField = document.getElementById('sessionOutcomeResourceField');
@@ -238,7 +239,7 @@ async function createSession() {
   if(['study','reading'].includes(selected.domain)){
     const outcomeId=document.getElementById('sessionCapability')?.value;
     if(outcomeId){
-      const outcome=(state.data.learningOutcomes||[]).find(candidate=>candidate.id===outcomeId),context=capabilityContextModel.createCapabilityRef(outcome);
+      const outcome=(state.data.learningOutcomes||[]).find(candidate=>candidate.id===outcomeId),context=learningOutcomeModel.createExecutionContext(outcome);
       if(!context){const status=document.getElementById('sessionCapabilityStatus');status.textContent='A capacidade mudou ou não está mais ativa. Escolha Sem capacidade para continuar.';document.getElementById('sessionCapability').focus();return false}
       target.learningContext=context;
     }else target.learningContext=null;

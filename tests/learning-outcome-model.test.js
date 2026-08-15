@@ -23,6 +23,45 @@ test('capacidade e tentativa são obrigatórias sem policiamento semântico',()=
   assert.equal(model.createOutcome({capability:'x',nextAttempt:'Assistir aula 3'},{now:T1,idFactory:ids(['o','a'])}).nextAttempt.text,'Assistir aula 3');
 });
 
+test('futureUse centraliza os sete valores, rótulos e ausência canônica',()=>{
+  assert.deepEqual(model.FUTURE_USES,['remember','explain','solve','build','decide','simulate','integrate']);
+  assert.equal(model.futureUsePresentation('remember').label,'Lembrar com precisão');
+  assert.equal(model.futureUsePresentation('simulate').label,'Praticar em condições reais ou de prova');
+  assert.equal(model.normalizeFutureUse(' unknown '),null);
+  assert.equal(model.futureUsePresentation(''),null);
+  assert.ok(Object.isFrozen(model.FUTURE_USES));
+  assert.ok(Object.isFrozen(model.FUTURE_USE_PRESENTATIONS));
+});
+
+test('cria, edita e limpa futureUse atomicamente sob a identidade da tentativa',()=>{
+  const created=model.createOutcome({capability:'Aplicar joins',nextAttempt:{text:'Resolver caso novo',futureUse:'solve'}},{now:T1,idFactory:ids(['o1','a1'])});
+  assert.equal(created.nextAttempt.futureUse,'solve');
+  const edited=model.updateOutcome(created,{nextAttempt:{text:'Construir consulta',futureUse:'build'}},{now:T2});
+  assert.equal(edited.nextAttempt.id,'a1');assert.equal(edited.nextAttempt.createdAt,T1);assert.equal(edited.nextAttempt.updatedAt,T2);
+  assert.deepEqual({text:edited.nextAttempt.text,futureUse:edited.nextAttempt.futureUse},{text:'Construir consulta',futureUse:'build'});
+  const cleared=model.updateOutcome(edited,{nextAttempt:{text:'Construir consulta',futureUse:null}},{now:'2026-08-08T12:00:00.000Z'});
+  assert.equal('futureUse' in cleared.nextAttempt,false);assert.equal(cleared.nextAttempt.updatedAt,'2026-08-08T12:00:00.000Z');
+});
+
+test('updates legados preservam futureUse e comando inválido não muta entrada',()=>{
+  const base=model.createOutcome({capability:'Explicar',nextAttempt:{text:'Ensaiar',futureUse:'explain'}},{now:T1,idFactory:ids(['o1','a1'])});
+  assert.equal(model.updateOutcome(base,{nextAttempt:'Ensaiar melhor'},{now:T2}).nextAttempt.futureUse,'explain');
+  assert.equal(model.updateOutcome(base,{nextAttempt:{text:'Ensaiar melhor'}},{now:T2}).nextAttempt.futureUse,'explain');
+  assert.equal(model.updateOutcome(base,{capability:'Explicar com exemplo'},{now:T2}).nextAttempt.futureUse,'explain');
+  const snapshot=JSON.parse(JSON.stringify(base));
+  assert.throws(()=>model.updateOutcome(base,{nextAttempt:{text:'Outro texto',futureUse:'automatic'}},{now:T2}),error=>error.code==='future-use-invalid');
+  assert.throws(()=>model.createOutcome({capability:'C',nextAttempt:{text:'T',futureUse:'automatic'}}),error=>error.code==='future-use-invalid');
+  assert.deepEqual(base,snapshot);
+});
+
+test('valor persistido desconhecido degrada apenas para ausência e normaliza idempotentemente',()=>{
+  const loaded={id:'o1',capability:'Resolver',nextAttempt:{id:'a1',text:'Caso',futureUse:'legacy-mode',createdAt:T1,updatedAt:T1},createdAt:T1,updatedAt:T1};
+  const once=model.normalizeOutcome(loaded),twice=model.normalizeOutcome(once);
+  assert.equal(once.id,'o1');assert.equal(once.nextAttempt.text,'Caso');assert.equal('futureUse' in once.nextAttempt,false);assert.deepEqual(twice,once);
+  const context=model.normalizeExecutionContext({outcomeId:'o1',attemptId:'a1',attemptText:'Caso',futureUse:'legacy-mode'});
+  assert.deepEqual(context,{outcomeId:'o1',attemptId:'a1',attemptText:'Caso'});
+});
+
 test('critério opcional normaliza para string ou null e pode ser removido',()=>{
   const base=minimal();
   const added=model.updateOutcome(base,{proofCriterion:'  Resolver sem consulta  '},{now:T2});
@@ -116,15 +155,15 @@ test('ordenação inclui arquivadas por padrão e permite filtro explícito',()=
 });
 
 test('round-trip JSON preserva capacidade completa, arquivo e referências',()=>{
-  const full=model.archiveOutcome(model.createOutcome({capability:'Diagnosticar plano',proofCriterion:'Justificar o gargalo',nextAttempt:'Analisar caso novo',resourceRefs:[{type:'study',id:'s1'},{type:'reading',id:'r1'}]},{now:T1,idFactory:ids(['o1','a1'])}),{now:T2});
+  const full=model.archiveOutcome(model.createOutcome({capability:'Diagnosticar plano',proofCriterion:'Justificar o gargalo',nextAttempt:{text:'Analisar caso novo',futureUse:'decide'},resourceRefs:[{type:'study',id:'s1'},{type:'reading',id:'r1'}]},{now:T1,idFactory:ids(['o1','a1'])}),{now:T2});
   assert.deepEqual(model.normalizeCollection(JSON.parse(JSON.stringify([full]))),[full]);
 });
 
 test('contexto de execução captura a tentativa atual e normaliza apenas a forma completa',()=>{
-  const outcome=minimal(),context=model.createExecutionContext(outcome);
-  assert.deepEqual(context,{outcomeId:'o1',attemptId:'a1',attemptText:'Analisar um plano'});
-  model.updateOutcome(outcome,{nextAttempt:'Outra tentativa'},{now:T2});
-  assert.deepEqual(context,{outcomeId:'o1',attemptId:'a1',attemptText:'Analisar um plano'});
+  const outcome=model.createOutcome({capability:'Explicar shuffle',nextAttempt:{text:'Analisar um plano',futureUse:'explain'}},{now:T1,idFactory:ids(['o1','a1'])}),context=model.createExecutionContext(outcome);
+  assert.deepEqual(context,{outcomeId:'o1',attemptId:'a1',attemptText:'Analisar um plano',futureUse:'explain'});
+  model.updateOutcome(outcome,{nextAttempt:{text:'Outra tentativa',futureUse:'build'}},{now:T2});
+  assert.deepEqual(context,{outcomeId:'o1',attemptId:'a1',attemptText:'Analisar um plano',futureUse:'explain'});
   assert.deepEqual(model.normalizeExecutionContext({...context,attemptText:'  Analisar um plano  '}),context);
   for(const value of [null,{}, {outcomeId:'o1',attemptId:'a1'}, {outcomeId:'o1',attemptId:'',attemptText:'x'}])assert.equal(model.normalizeExecutionContext(value),null);
 });

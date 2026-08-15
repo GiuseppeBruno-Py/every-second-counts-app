@@ -24,6 +24,9 @@ function outcomeClone(value) { return typeof structuredClone === 'function' ? st
 function outcomeItems() { return learningOutcomeModel.sortOutcomes(state.data.learningOutcomes || []); }
 function outcomeFind(id) { return (state.data.learningOutcomes || []).find(item => item.id === id) || null; }
 function outcomeResources() { return { study:state.data.study || [], reading:state.data.reading || [] }; }
+function outcomeFutureUse(value) { return learningOutcomeModel.futureUsePresentation(value); }
+function outcomeFutureUseText(value, prefix = 'Uso pretendido') { const presentation=outcomeFutureUse(value);return presentation?`${prefix}: ${presentation.label}`:''; }
+function outcomeFutureUseOptions() { return `<option value="">Não especificado</option>${learningOutcomeModel.FUTURE_USES.map(value=>`<option value="${value}">${escapeHtml(outcomeFutureUse(value).label)}</option>`).join('')}`; }
 function outcomeDate(value) {
   try { return new Intl.DateTimeFormat('pt-BR', { day:'2-digit', month:'short', year:'numeric' }).format(new Date(value)); }
   catch { return ''; }
@@ -42,7 +45,7 @@ function outcomeSetError(message = '') {
 function outcomeSetBusy(value) {
   learningOutcomeRuntime.busy = Boolean(value);
   const form = outcomeElement('learningOutcomeForm');
-  form?.querySelectorAll('button, input, textarea').forEach(control => { control.disabled = learningOutcomeRuntime.busy; });
+  form?.querySelectorAll('button, input, textarea, select').forEach(control => { control.disabled = learningOutcomeRuntime.busy; });
   const submit = outcomeElement('learningOutcomeSubmit');
   if (submit) submit.textContent = value ? 'Salvando…' : (learningOutcomeRuntime.editingId ? 'Salvar alterações' : 'Criar capacidade');
 }
@@ -85,6 +88,9 @@ function outcomeInstallShell() {
               <p>Estudos e leituras ajudam na prática; eles não definem seu avanço.</p>
               <div id="learningOutcomeResourceOptions"></div>
             </details>
+            <label for="learningOutcomeFutureUse">Como você precisará usar isso? <span class="learning-outcome-optional">Opcional</span></label>
+            <select id="learningOutcomeFutureUse" name="futureUse" aria-describedby="learningOutcomeFutureUseHint">${outcomeFutureUseOptions()}</select>
+            <p class="learning-outcome-hint" id="learningOutcomeFutureUseHint">Escolha somente se isso ajudar a orientar a próxima tentativa.</p>
             <label for="learningOutcomeAttempt">O que você vai tentar agora? <span aria-hidden="true">*</span></label>
             <textarea id="learningOutcomeAttempt" name="nextAttempt" maxlength="1000" required></textarea>
             <p class="learning-outcome-hint">Pode ser uma prática, exercício ou outra ação concreta.</p>
@@ -122,6 +128,10 @@ function outcomeInstallShell() {
 }
 
 function outcomeResolved(outcome) { return learningOutcomeModel.resolveRefs(outcome, outcomeResources()); }
+function outcomeUpdateFutureUseHint() {
+  const select=outcomeElement('learningOutcomeFutureUse'),hint=outcomeElement('learningOutcomeFutureUseHint'),presentation=outcomeFutureUse(select?.value);
+  if(hint)hint.textContent=presentation?.guidance||'Escolha somente se isso ajudar a orientar a próxima tentativa.';
+}
 function outcomeResourceLabel(ref) {
   const prefix = ref.type === 'study' ? 'Estudo' : 'Leitura';
   return ref.available ? `${prefix}: ${ref.title}` : `${prefix}: Recurso indisponível`;
@@ -142,6 +152,7 @@ function outcomeExecutionContext(outcome) {
   }
   return `<section class="learning-outcome-execution" aria-label="Última execução desta capacidade">
     <span>Última execução</span><strong>${escapeHtml(session.learningContext.attemptText)}</strong>
+    ${session.learningContext?.futureUse?`<p class="future-use-context">${escapeHtml(outcomeFutureUseText(session.learningContext.futureUse,'Uso na execução'))}</p>`:''}
     <p>${escapeHtml(outcomeDate(session.endedAt || session.startedAt || session.createdAt))}${minutes ? ` · ${minutes} min` : ''}${resource ? ` · ${escapeHtml(resource)}` : ''}</p>
     ${session.result ? `<p>Registro: ${escapeHtml(session.result)}</p>` : ''}
     ${evidence.length ? `<div class="learning-outcome-evidence">${evidence.map(item => `<p><b>Evidência:</b> ${escapeHtml(item.summary)}</p>`).join('')}</div>` : '<p>Nenhuma evidência vinculada.</p>'}
@@ -159,7 +170,7 @@ function outcomeContextSummary(outcome, indexes) {
   const reflection = summary.latestReflection;
   const sections = [];
   if (today) sections.push(`<div class="capability-context-block"><h4>Hoje</h4><p>${today.item.completedAt ? 'Planejada e concluída no dia' : 'Pronta no plano do dia'} · ${escapeHtml(capabilityContextModel.resolveCapabilityRef(today.item.capabilityRef,[outcome]).attemptText)}</p><button type="button" data-outcome-open-today="${escapeHtml(outcome.id)}">Abrir em Hoje</button></div>`);
-  if (executions.length) sections.push(`<div class="capability-context-block"><h4>Última execução e tentativas finalizadas</h4>${executions.map(session=>`<article><strong>${escapeHtml(session.learningContext?.attemptText || outcome.nextAttempt.text)}</strong><span>${escapeHtml(outcomeDate(session.endedAt || session.startedAt))} · ${session.status === 'interrupted' ? 'Interrompida' : 'Concluída'}</span>${session.result || session.reflection ? `<p>${escapeHtml(session.result || session.reflection)}</p>` : ''}<button type="button" data-signal-new="${escapeHtml(outcome.id)}" data-signal-source-type="execution" data-signal-source-id="${escapeHtml(session.id)}" data-signal-kind="feedback" data-signal-text="${escapeHtml(session.result || session.reflection || '')}">Registrar sinal desta tentativa</button></article>`).join('')}</div>`);
+  if (executions.length) sections.push(`<div class="capability-context-block"><h4>Última execução e tentativas finalizadas</h4>${executions.map(session=>`<article><strong>${escapeHtml(session.learningContext?.attemptText || outcome.nextAttempt.text)}</strong><span>${escapeHtml(outcomeDate(session.endedAt || session.startedAt))} · ${session.status === 'interrupted' ? 'Interrompida' : 'Concluída'}</span>${session.learningContext?.futureUse?`<p class="future-use-context">${escapeHtml(outcomeFutureUseText(session.learningContext.futureUse,'Uso na execução'))}</p>`:''}${session.result || session.reflection ? `<p>${escapeHtml(session.result || session.reflection)}</p>` : ''}<button type="button" data-signal-new="${escapeHtml(outcome.id)}" data-signal-source-type="execution" data-signal-source-id="${escapeHtml(session.id)}" data-signal-kind="feedback" data-signal-text="${escapeHtml(session.result || session.reflection || '')}">Registrar sinal desta tentativa</button></article>`).join('')}</div>`);
   if (evidence.length) sections.push(`<div class="capability-context-block"><h4>Evidence</h4>${evidence.map(item=>`<article><strong>${escapeHtml(item.summary)}</strong><span>${escapeHtml((typeof evidenceTypeLabels==='object'&&evidenceTypeLabels[item.type])||'Evidência')}</span>${['question','insight'].includes(item.type)?`<button type="button" data-signal-new="${escapeHtml(outcome.id)}" data-signal-source-type="evidence" data-signal-source-id="${escapeHtml(item.id)}" data-signal-kind="${item.type}" data-signal-text="${escapeHtml(item.summary)}">Registrar como sinal</button>`:''}</article>`).join('')}</div>`);
   if (projected.length) sections.push(`<div class="capability-context-block capability-source-signals"><h4>Sinais nas fontes</h4><p>${projected.length} ${projected.length===1?'registro permanece em sua fonte':'registros permanecem em suas fontes'}; nada é copiado automaticamente.</p></div>`);
   if (summary.signals.length) sections.push(`<div class="capability-context-block"><h4>Sinais confirmados</h4>${summary.signals.map(signal=>`<article class="learning-signal-row"><span>${escapeHtml(outcomeSignalLabel(signal.kind))}${signal.sourceRef?' · com origem':' · sem origem'}</span><strong>${escapeHtml(signal.text)}</strong><button type="button" data-signal-edit="${escapeHtml(signal.id)}">Editar</button></article>`).join('')}</div>`);
@@ -175,7 +186,7 @@ function outcomeCard(outcome, indexes) {
       <button class="secondary-btn" type="button" data-outcome-edit="${escapeHtml(outcome.id)}">Editar</button>
     </div>
     ${outcome.proofCriterion ? `<div class="learning-outcome-proof"><span>Como vou saber</span><p>${escapeHtml(outcome.proofCriterion)}</p></div>` : ''}
-    <div class="learning-outcome-attempt"><span>Próxima tentativa</span><strong>${escapeHtml(outcome.nextAttempt.text)}</strong></div>
+    <div class="learning-outcome-attempt"><span>Próxima tentativa</span><strong>${escapeHtml(outcome.nextAttempt.text)}</strong>${outcome.nextAttempt.futureUse?`<small class="future-use-context">${escapeHtml(outcomeFutureUseText(outcome.nextAttempt.futureUse))}</small>`:''}</div>
     ${outcomeContextSummary(outcome,indexes)}
     ${resources.length ? `<div class="learning-outcome-chips" aria-label="Recursos vinculados">${resources.map(ref => `<span class="learning-outcome-chip${ref.available ? '' : ' unavailable'}">${escapeHtml(outcomeResourceLabel(ref))}<button type="button" data-outcome-unlink="${escapeHtml(outcome.id)}" data-resource-type="${ref.type}" data-resource-id="${escapeHtml(ref.id)}" aria-label="Desvincular ${escapeHtml(outcomeResourceLabel(ref))}">×</button></span>`).join('')}</div>` : ''}
     <div class="learning-outcome-card-foot"><span>Atualizada em ${outcomeDate(outcome.updatedAt)}</span><div>${archived ? '' : `<button class="secondary-btn" type="button" data-outcome-today="${escapeHtml(outcome.id)}">${capabilityContextModel.capabilitySummary(outcome.id,state.data,indexes).today.some(entry=>entry.plan?.date===todayDateKey())?'Abrir em Hoje':'Adicionar a Hoje'}</button><button class="secondary-btn" type="button" data-signal-new="${escapeHtml(outcome.id)}">Registrar sinal</button><button class="primary-btn" type="button" data-outcome-execute="${escapeHtml(outcome.id)}">Executar tentativa</button>`}<button class="quiet-btn" type="button" data-outcome-status="${escapeHtml(outcome.id)}">${archived ? 'Reativar' : 'Arquivar'}</button></div></div>
@@ -216,6 +227,7 @@ function outcomeDraftSignature() {
   return JSON.stringify({
     capability:form.elements.capability.value,
     proofCriterion:form.elements.proofCriterion.value,
+    futureUse:form.elements.futureUse.value,
     nextAttempt:form.elements.nextAttempt.value,
     refs:[...form.querySelectorAll('[name="outcomeResource"]:checked')].map(input => `${input.dataset.resourceType}:${input.dataset.resourceId}`).sort()
   });
@@ -229,7 +241,9 @@ function outcomeOpen(outcome, trigger) {
   outcomeElement('learningOutcomeDialogTitle').textContent = outcome ? 'Editar capacidade' : 'Nova capacidade';
   form.elements.capability.value = outcome?.capability || '';
   form.elements.proofCriterion.value = outcome?.proofCriterion || '';
+  form.elements.futureUse.value = outcome?.nextAttempt?.futureUse || '';
   form.elements.nextAttempt.value = outcome?.nextAttempt?.text || '';
+  outcomeUpdateFutureUseHint();
   form.querySelectorAll('[aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
   outcomeElement('learningOutcomeResourceOptions').innerHTML = outcomeResourceOptions(outcome?.resourceRefs || []);
   outcomeElement('learningOutcomeDelete').hidden = !outcome;
@@ -279,7 +293,7 @@ async function outcomeSubmit(event) {
     capability:form.elements.capability.value,
     proofCriterion:form.elements.proofCriterion.value,
     resourceRefs:outcomeFormRefs(),
-    nextAttempt:form.elements.nextAttempt.value
+    nextAttempt:{text:form.elements.nextAttempt.value,futureUse:form.elements.futureUse.value||null}
   };
   try {
     const current = learningOutcomeRuntime.editingId ? outcomeFind(learningOutcomeRuntime.editingId) : null;
@@ -289,7 +303,7 @@ async function outcomeSubmit(event) {
       : [outcome, ...(state.data.learningOutcomes || [])];
     if (await outcomePersist(outcomeCandidate(outcomes), current ? 'Capacidade atualizada' : 'Capacidade criada')) outcomeClose(true);
   } catch (error) {
-    const field = error.code === 'capability-required' ? form.elements.capability : form.elements.nextAttempt;
+    const field = error.code === 'capability-required' ? form.elements.capability : error.code === 'future-use-invalid' ? form.elements.futureUse : form.elements.nextAttempt;
     field?.focus();
     field?.setAttribute('aria-invalid','true');
     outcomeSetError(error.message || 'Revise os campos obrigatórios.');
@@ -419,6 +433,7 @@ CompassoFeatures.register('learning-outcomes', {
   install() {
     outcomeInstallShell();
     outcomeElement('learningOutcomeForm')?.addEventListener('submit', outcomeSubmit);
+    outcomeElement('learningOutcomeFutureUse')?.addEventListener('change', outcomeUpdateFutureUseHint);
     outcomeElement('capabilityResourceForm')?.addEventListener('submit', outcomeSaveResourceLinks);
     outcomeElement('learningSignalForm')?.addEventListener('submit', outcomeSaveSignal);
     outcomeElement('learningOutcomeDialog')?.addEventListener('cancel', event => { event.preventDefault(); outcomeClose(); });
