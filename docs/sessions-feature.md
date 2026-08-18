@@ -6,6 +6,16 @@ Quando a tentativa possui `futureUse`, o início reutiliza `learningOutcomeModel
 
 Pausa, interrupção, encerramento, reload e recuperação preservam o snapshot armazenado. Excluir ou editar a capacidade depois do início não reescreve a execução. Sessões legadas sem o campo continuam válidas e não exibem conteúdo “não especificado”.
 
+## Pausa contextual para processar
+
+Um Ritual pode habilitar opcionalmente `encodingCheckpoint: true`. A ausência da propriedade mantém o comportamento anterior. A sugestão automática de Ritual nunca basta para habilitar a pausa: o Ritual deve estar vinculado à ação ou ser escolhido explicitamente para aquela execução.
+
+No início bem-sucedido, Session ou Deep Work captura um `ritualSnapshot` imutável. O marcador E1 só entra nesse snapshot quando houve vínculo ou escolha explícita, e a projeção canônica recebe o mesmo snapshot. Alterar, desabilitar, arquivar, excluir ou relincar o Ritual vivo depois não reescreve a execução. Snapshots legados ou malformados permanecem executáveis e apenas deixam de expor a pausa.
+
+Durante uma execução elegível, **Pausa para processar** abre um checkpoint manual e efêmero no Companion ou na tela existente de Deep Work. A sequência orienta a reconstrução sem consulta e, em seguida, permite escolher uma operação por vez: conectar, contrastar ou organizar. Fechar ou voltar à execução não pausa o cronômetro, não cria Note, Capture, Evidence, sinal, pontuação ou histórico e não persiste resposta, etapa ou escolha. Uma nova invocação sempre recomeça pela reconstrução; reload descarta apenas essa interface transitória.
+
+As instruções de preparação do Ritual ficam disponíveis como orientação opcional, sem resposta nem confirmação obrigatória. `futureUse` continua sendo contexto somente leitura da tentativa e não seleciona Ritual, operação ou elegibilidade. Evidence continua sendo registrada apenas no encerramento canônico por `sessionId`.
+
 ## Domínio unificado
 
 Todos os modos começam pela ação **Executar**. O usuário escolhe sessão rápida, Deep Work, versão mínima ou Plano B no mesmo fluxo. Apenas uma execução pode permanecer ativa por vez, inclusive quando ela foi iniciada em outro modo.

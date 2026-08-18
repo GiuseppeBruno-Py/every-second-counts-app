@@ -197,7 +197,11 @@ test('controlled complete cache reopens offline with composition and local state
   await weeklyCapability.locator('[data-weekly-reflection]').fill('Manter a tentativa após validar o shell offline');
   await weeklyCapability.locator('[data-weekly-decision]').selectOption('keep');
   await page.locator('#weeklyReviewForm').evaluate(form=>form.requestSubmit());
-  await page.evaluate(() => CompassoInformationArchitecture.open('capabilities'));
+  await page.evaluate(async () => { const index=state.data.ritualTemplates.findIndex(item=>item.actionType==='study'&&!item.archived),ritual=CompassoRitualModel.update(state.data.ritualTemplates[index],{encodingCheckpoint:true});state.data.ritualTemplates[index]=ritual;state.data.study.find(item=>item.id==='example-study').ritualId=ritual.id;await CompassoStorage.save('compasso.app.v1',state.data);CompassoInformationArchitecture.open('study');renderAll(); });
+  await page.locator('#studyGrid .ux-execute').first().click();
+  await page.locator('[data-ux-run="ideal"]').click();
+  await page.locator('#sessionStartForm').evaluate(form=>form.requestSubmit());
+  await expect(page.locator('#sessionEncodingTrigger')).toBeVisible();
   await page.evaluate(() => localStorage.setItem('compasso.test.offline', 'preserved'));
   const before = await loads(page);
   await context.setOffline(true);
@@ -205,6 +209,16 @@ test('controlled complete cache reopens offline with composition and local state
   await coherent(page);
   expect(await loads(page)).toBe(before + 1);
   expect(await page.evaluate(() => localStorage.getItem('compasso.test.offline'))).toBe('preserved');
+  await expect(page.locator('#sessionEncodingTrigger')).toBeVisible();
+  await page.locator('#sessionEncodingTrigger').click();
+  await page.locator('[data-encoding-next="session"]').click();
+  await page.locator('[data-encoding-choice="session"][value="connect"]').check();
+  await page.locator('#sessionEncodingReturn').click();
+  await page.locator('#sessionCompanionFinish').click();
+  await page.locator('#sessionEvidenceSummary').fill('Encoding e Evidence preservados offline');
+  await page.locator('#sessionFinishForm').evaluate(form=>form.requestSubmit());
+  await expect(page.locator('#executionCompletionPanel')).toBeVisible();
+  await page.evaluate(() => CompassoInformationArchitecture.open('capabilities'));
   await expect(page.locator('[data-outcome-card]')).toContainText('Explicar o ciclo offline');
   await expect(page.locator('[data-outcome-card]')).toContainText('Evidência preservada offline');
   await expect(page.locator('[data-outcome-card]')).toContainText('Uso pretendido: Conectar e combinar ideias');
@@ -214,6 +228,7 @@ test('controlled complete cache reopens offline with composition and local state
   expect(await page.evaluate(() => state.data.dailyPlans.some(plan => plan.items?.some(item => item.type === 'capability-attempt')))).toBe(true);
   expect(await page.evaluate(() => state.data.learningSignals.some(item => item.text.includes('disponível offline')))).toBe(true);
   expect(await page.evaluate(() => state.data.weeklyReviews.some(review => review.capabilityReflections?.some(item => item.decision === 'keep')))).toBe(true);
+  expect(await page.evaluate(() => state.data.evidence.some(item => item.summary === 'Encoding e Evidence preservados offline'))).toBe(true);
   await expect(page.locator('link[href="./design-system.css"]')).toHaveCount(1);
   await context.setOffline(false);
 });

@@ -1,10 +1,11 @@
 /* Compasso · Domínio canônico de execução */
 (function(root,factory){
   const outcomeModel=root.CompassoLearningOutcomeModel||(typeof module==='object'&&module.exports?require('./learning-outcome-model.js'):null);
-  const api=factory(outcomeModel);
+  const ritualModel=root.CompassoRitualModel||(typeof module==='object'&&module.exports?require('./ritual-model.js'):null);
+  const api=factory(outcomeModel,ritualModel);
   if(typeof module==='object'&&module.exports)module.exports=api;
   root.CompassoExecutionSessionModel=api;
-})(typeof globalThis!=='undefined'?globalThis:this,function(outcomeModel){
+})(typeof globalThis!=='undefined'?globalThis:this,function(outcomeModel,ritualModel){
   const MODES=new Set(['quick','deep','minimum','contingency']);
   const ACTIVE=new Set(['running','paused','finishing']);
   const FINAL=new Set(['completed','interrupted']);
@@ -27,7 +28,7 @@
       domain:text(input.domain,30),itemId:text(input.itemId||input.actionId,90),
       learningContext:outcomeModel?.normalizeExecutionContext(input.learningContext)||null,
       expectedOutcome:text(input.expectedOutcome||input.intent),completionCriterion:text(input.completionCriterion),
-      ritualSnapshot:clone(input.ritualSnapshot)||null,ritualChecklist:clone(input.ritualChecklist)||[],
+      ritualSnapshot:ritualModel?.normalizeSnapshot?.(input.ritualSnapshot)||null,ritualChecklist:clone(input.ritualChecklist)||[],
       contingencySnapshot:clone(input.contingencySnapshot)||null,
       executionVariant:clone(input.executionVariant)||{kind:mode==='minimum'?'minimum':mode==='contingency'?'contingency':'ideal',contingencyId:null},
       startedAt:iso(input.startedAt),endedAt:iso(input.endedAt),createdAt:iso(input.createdAt)||iso(input.startedAt)||now,

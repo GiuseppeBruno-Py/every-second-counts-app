@@ -261,6 +261,47 @@ test("configuração opcional e detalhes semanais preservam teclado e foco", asy
   await expect(details).not.toHaveAttribute("open", "");
 });
 
+test("checkpoint E1 preserva semântica, foco, toque, zoom e redução de movimento", async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  if (testInfo.project.name === "mobile") await page.setViewportSize({ width: 390, height: 844 });
+  await open(page);
+  await page.evaluate(async () => {
+    const index = state.data.ritualTemplates.findIndex((item) => item.actionType === "study" && !item.archived);
+    const ritual = CompassoRitualModel.update(state.data.ritualTemplates[index], { encodingCheckpoint: true });
+    state.data.ritualTemplates[index] = ritual;
+    state.data.study.find((item) => item.id === "example-study").ritualId = ritual.id;
+    await CompassoStorage.save("compasso.app.v1", state.data);
+    renderAll();
+  });
+  await page.locator("#studyGrid .ux-execute").first().click();
+  await page.locator('[data-ux-run="ideal"]').click();
+  await page.locator("#sessionStartForm").evaluate((form) => form.requestSubmit());
+  const trigger = page.locator("#sessionEncodingTrigger");
+  await expect(trigger).toHaveAccessibleName("Pausa para processar");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#sessionEncodingPanel")).toHaveAttribute("role", "region");
+  await expect(page.locator("#sessionEncodingReconstructHeading")).toBeFocused();
+  await page.locator('[data-encoding-next="session"]').click();
+  await expect(page.locator("#sessionEncodingOperationHeading")).toBeFocused();
+  await page.locator('[data-encoding-choice="session"][value="organize"]').check();
+  await expect(page.locator("#sessionEncodingInstruction")).toHaveAttribute("aria-live", "polite");
+  const reduced = await trigger.evaluate((element) => Number.parseFloat(getComputedStyle(element).transitionDuration));
+  expect(reduced).toBeLessThanOrEqual(0.00001);
+  await page.evaluate(() => { document.documentElement.style.zoom = "2"; });
+  const geometry = await page.evaluate(() => {
+    const targets = [...document.querySelectorAll("#sessionEncodingShell button")].filter((item) => item.offsetParent !== null).map((item) => { const box = item.getBoundingClientRect(); return { width: box.width, height: box.height }; });
+    return { page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth, targets };
+  });
+  expect(geometry.page).toBeLessThanOrEqual(geometry.viewport + 1);
+  if (testInfo.project.name === "mobile") expect(geometry.targets.filter((item) => item.width < 44 || item.height < 44)).toEqual([]);
+  await page.evaluate(() => { document.documentElement.style.zoom = ""; });
+  await page.locator("#sessionEncodingReturn").click();
+  await expect(trigger).toBeFocused();
+});
+
 test("jornada continua sem overflow em 360–390 px, zoom e ponteiro grosso", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "contrato de interação móvel");
   await open(page);

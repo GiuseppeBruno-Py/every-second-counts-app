@@ -1168,3 +1168,161 @@ dialog[data-ds-component] form {
   .execution-completion,
   .weekly-support { scroll-behavior: auto; transition: none !important; animation: none !important; }
 }
+
+/* Encoding E1 · contextual manual checkpoint */
+.ritual-encoding-option {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start !important;
+  gap: .65rem !important;
+  padding: .8rem;
+  border: 1px solid var(--line);
+  border-radius: .75rem;
+  background: var(--canvas);
+}
+.ritual-encoding-option input { width: auto !important; min-width: 1rem; margin-top: .15rem; }
+.ritual-encoding-option span,
+.ritual-encoding-option strong,
+.ritual-encoding-option small { display: block; min-width: 0; }
+.ritual-encoding-option small { margin-top: .25rem; color: var(--muted); font-size: .68rem; line-height: 1.5; }
+.ritual-error {
+  margin: 0;
+  padding: .75rem;
+  border-radius: .65rem;
+  background: var(--red-soft);
+  color: var(--red);
+  font-size: .7rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.ritual-error[hidden] { display: none; }
+
+.session-companion.encoding-open { width: min(440px, calc(100vw - 24px)); }
+.session-companion-encoding { grid-column: 1 / -1; min-width: 0; }
+.encoding-checkpoint {
+  min-width: 0;
+  border-top: 1px solid #45443e;
+  padding-top: .55rem;
+  overflow-wrap: anywhere;
+}
+.encoding-checkpoint[hidden],
+.encoding-panel[hidden],
+.encoding-orientation[hidden],
+.encoding-panel > [hidden] { display: none; }
+.encoding-trigger {
+  width: 100%;
+  min-height: 2.4rem;
+  border: 1px solid #5b5a53;
+  border-radius: .65rem;
+  background: #34342f;
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.encoding-trigger[aria-expanded="true"] { border-color: #a69cff; background: #403d5f; }
+.encoding-orientation { margin: .55rem 0 0; font-size: .68rem; line-height: 1.5; }
+.encoding-orientation > summary { min-height: 2.4rem; padding: .55rem; cursor: pointer; font-weight: 750; }
+.encoding-orientation ul { margin: 0; padding: .1rem 1.5rem .45rem; color: #d2cec4; }
+.encoding-panel {
+  display: grid;
+  gap: .75rem;
+  margin-top: .55rem;
+  padding: .8rem;
+  border: 1px solid #5b5a53;
+  border-radius: .75rem;
+  background: #30302b;
+  color: #f7f5ef;
+}
+.encoding-panel h3,
+.encoding-panel legend { margin: 0; font: 800 .82rem/1.35 "Manrope", sans-serif; }
+.encoding-panel p { margin: .45rem 0 0; color: #d2cec4; font-size: .7rem; line-height: 1.55; }
+.encoding-panel fieldset { display: grid; gap: .45rem; min-width: 0; margin: 0; padding: 0; border: 0; }
+.encoding-operation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: .6rem;
+  min-width: 0;
+  padding: .65rem;
+  border: 1px solid #5b5a53;
+  border-radius: .65rem;
+  cursor: pointer;
+}
+.encoding-operation:has(input:checked) { border-color: #a69cff; background: #403d5f; }
+.encoding-operation input { margin-top: .15rem; }
+.encoding-operation span,
+.encoding-operation strong,
+.encoding-operation small { display: block; min-width: 0; }
+.encoding-operation small { margin-top: .15rem; color: #d2cec4; font-size: .64rem; line-height: 1.45; }
+.encoding-instruction { min-height: 2.2em; }
+.encoding-actions { display: flex; justify-content: flex-end; gap: .5rem; flex-wrap: wrap; }
+.encoding-actions button {
+  min-height: 2.4rem;
+  border: 1px solid #5b5a53;
+  border-radius: .65rem;
+  background: #3a3934;
+  color: #fff;
+  padding: .55rem .75rem;
+  font-size: .68rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.encoding-actions .encoding-primary { border-color: #8e82ff; background: #695bd8; }
+.encoding-actions button:disabled { opacity: .55; cursor: not-allowed; }
+.encoding-checkpoint-deep {
+  width: min(42rem, 100%);
+  margin: 1rem auto 0;
+  padding: .8rem;
+  border: 1px solid #5a5951;
+  border-radius: .85rem;
+  background: #282824;
+  color: #f7f5ef;
+}
+.encoding-trigger:focus-visible,
+.encoding-orientation > summary:focus-visible,
+.encoding-operation:focus-within,
+.encoding-actions button:focus-visible,
+.encoding-panel [tabindex="-1"]:focus-visible,
+.ritual-encoding-option:focus-within,
+.ritual-error:focus-visible {
+  outline: 3px solid #a69cff;
+  outline-offset: 3px;
+}
+
+@media (pointer: coarse) {
+  .encoding-trigger,
+  .encoding-orientation > summary,
+  .encoding-operation,
+  .encoding-actions button,
+  .ritual-encoding-option { min-height: 44px; }
+  .encoding-operation input,
+  .ritual-encoding-option input { min-width: 20px; min-height: 20px; }
+}
+
+@media (max-width: 520px) {
+  .session-companion.encoding-open {
+    right: 12px !important;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+    left: 12px !important;
+    top: auto !important;
+    width: auto;
+    max-height: calc(100dvh - 100px - env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+  }
+  .session-companion.encoding-open .session-companion-main { touch-action: auto; cursor: default; }
+  .encoding-actions { display: grid; grid-template-columns: 1fr; }
+  .encoding-actions button { width: 100%; }
+  .encoding-checkpoint-deep { padding: .65rem; }
+}
+
+@media (max-width: 390px) {
+  .encoding-panel { padding: .65rem; }
+  .encoding-operation { padding: .6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .encoding-checkpoint,
+  .encoding-panel,
+  .encoding-trigger { scroll-behavior: auto; transition: none !important; animation: none !important; }
+}
