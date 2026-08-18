@@ -74,3 +74,27 @@ test('snapshot canônico mantém futureUse histórico e degrada valor opcional i
   const loaded=model.fromDeep({...deep,learningContext:{outcomeId:'o1',attemptId:'a1',attemptText:'Legado',futureUse:'unknown'}});
   assert.deepEqual(loaded.learningContext,{outcomeId:'o1',attemptId:'a1',attemptText:'Legado'});
 });
+
+test('snapshot E1 nasce idêntico nas fontes Session e Deep e permanece histórico',()=>{
+  const ritualSnapshot={ritualId:'r-e1',version:4,name:'Processar',encodingCheckpoint:true};
+  const regularSource={...regular,ritualSnapshot},deepSource={...deep,ritualSnapshot};
+  const regularCanonical=model.fromRegular(regularSource),deepCanonical=model.fromDeep(deepSource);
+  assert.deepEqual(regularCanonical.ritualSnapshot,ritualSnapshot);
+  assert.deepEqual(deepCanonical.ritualSnapshot,ritualSnapshot);
+  const migrated=model.migrate({sessions:[regularSource],deepWorkSessions:[deepSource],executionSessions:[regularCanonical,deepCanonical]});
+  assert.equal(migrated.length,2);assert.equal(migrated.every(item=>item.ritualSnapshot.encodingCheckpoint===true),true);
+  ritualSnapshot.name='Alterado';ritualSnapshot.encodingCheckpoint=false;
+  assert.equal(regularCanonical.ritualSnapshot.name,'Processar');assert.equal(regularCanonical.ritualSnapshot.encodingCheckpoint,true);
+  assert.equal(deepCanonical.ritualSnapshot.name,'Processar');assert.equal(deepCanonical.ritualSnapshot.encodingCheckpoint,true);
+  assert.equal(migrated.every(item=>item.ritualSnapshot.encodingCheckpoint===true),true);
+});
+
+test('snapshot canônico legado ou malformado mantém a execução e omite só E1',()=>{
+  for(const value of [undefined,false,null,'true',1]){
+    const ritualSnapshot={ritualId:'r-e1',version:1,name:'Legado',...(value===undefined?{}:{encodingCheckpoint:value})};
+    const canonical=model.fromRegular({...regular,ritualSnapshot});
+    assert.ok(canonical);assert.equal(canonical.ritualSnapshot.name,'Legado');assert.equal('encodingCheckpoint'in canonical.ritualSnapshot,false);
+  }
+  const inconsistent=model.fromDeep({...deep,ritualSnapshot:{encodingCheckpoint:true,name:'Sem identidade'}});
+  assert.ok(inconsistent);assert.equal('encodingCheckpoint'in inconsistent.ritualSnapshot,false);
+});

@@ -1,9 +1,10 @@
 (function(root,factory){
   const outcomeModel=root.CompassoLearningOutcomeModel||(typeof module==='object'&&module.exports?require('./learning-outcome-model.js'):null);
-  const api=factory(outcomeModel);
+  const ritualModel=root.CompassoRitualModel||(typeof module==='object'&&module.exports?require('./ritual-model.js'):null);
+  const api=factory(outcomeModel,ritualModel);
   if(typeof module==='object'&&module.exports)module.exports=api;
   root.CompassoDeepWorkModel=api;
-})(typeof globalThis!=='undefined'?globalThis:this,function(outcomeModel){
+})(typeof globalThis!=='undefined'?globalThis:this,function(outcomeModel,ritualModel){
   const ACTIVE=new Set(['running','paused','finishing']);
   const FINAL=new Set(['completed','interrupted']);
   const iso=value=>typeof value==='string'&&!Number.isNaN(Date.parse(value))?value:null;
@@ -29,7 +30,7 @@
       interruptionReasons:(Array.isArray(session.interruptionReasons)?session.interruptionReasons:[]).map(item=>({reason:text(item?.reason||item),at:iso(item?.at)||now})).filter(item=>item.reason),
       capturedDistractions:(Array.isArray(session.capturedDistractions)?session.capturedDistractions:[]).map(item=>({id:text(item?.id,90)||`d${Date.now()}`,text:text(item?.text||item),capturedAt:iso(item?.capturedAt)||now,resolved:item?.resolved===true})).filter(item=>item.text),
       preparation:{notifications:session.preparation?.notifications===true,materials:session.preparation?.materials===true,environment:session.preparation?.environment===true},
-      ritualSnapshot:session.ritualSnapshot&&typeof session.ritualSnapshot==='object'?JSON.parse(JSON.stringify(session.ritualSnapshot)):null,
+      ritualSnapshot:ritualModel?.normalizeSnapshot?.(session.ritualSnapshot)||null,
       ritualChecklist:Array.isArray(session.ritualChecklist)?JSON.parse(JSON.stringify(session.ritualChecklist)):[],
       updatedAt:iso(session.updatedAt)||now,editedAt:iso(session.editedAt)
     };

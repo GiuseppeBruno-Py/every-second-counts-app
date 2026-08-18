@@ -12,8 +12,8 @@
     ['history-evidence-model.js','CompassoHistoryEvidenceModel'],
     ['session-kind-model.js','CompassoSessionKindModel'],
     ['contingency-model.js','CompassoContingencyModel'],
-    ['deep-work-model.js','CompassoDeepWorkModel'],
     ['ritual-model.js','CompassoRitualModel'],
+    ['deep-work-model.js','CompassoDeepWorkModel'],
     ['execution-session-model.js','CompassoExecutionSessionModel'],
     ['execution-session-feature.js','/* Compasso · Adaptadores do domínio canônico de execução'],
     ['sessions-feature.js','/* Compasso · Sessões de leitura e estudo'],
@@ -95,7 +95,7 @@
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v76',
+    cacheName:'compasso-pages-v77',
     cachePrefix,
     isOwnedCacheName,
     composition,

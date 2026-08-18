@@ -5,7 +5,10 @@
 
 const SESSIONS_FEATURE_VERSION = 1;
 const sessionTimerModel = globalThis.CompassoSessionTimerModel;
-state.data.sessions = Array.isArray(state.data.sessions) ? state.data.sessions : [];
+state.data.sessions = Array.isArray(state.data.sessions) ? state.data.sessions.map(session=>{
+  if(!session||typeof session!=='object'||!Object.prototype.hasOwnProperty.call(session,'ritualSnapshot'))return session;
+  return {...session,ritualSnapshot:globalThis.CompassoRitualModel?.normalizeSnapshot?.(session.ritualSnapshot)||null};
+}).filter(Boolean) : [];
 
 const sessionRuntime = {
   tick: null,
@@ -155,13 +158,8 @@ function sessionRestoreStartDraft(draft={}) {
   for(const [id,value] of Object.entries(draft)){const control=document.getElementById(id);if(!control)continue;if(control.type==='checkbox')control.checked=Boolean(value);else control.value=value;}
   document.getElementById('sessionMode')?.dispatchEvent(new Event('change'));
 }
-function sessionPrepareRitual(item,domain) {
-  const select=document.getElementById('ritualQuickSelect');if(!select)return;
-  const templates=(state.data.ritualTemplates||[]).filter(candidate=>!candidate.archived);
-  const suggestion=globalThis.CompassoRitualModel?.suggest?.(templates,{...item,domain});
-  const selected=item?.ritualId||suggestion?.ritual?.id||'';
-  select.innerHTML=`<option value="">Sem ritual</option>${templates.map(candidate=>`<option value="${escapeHtml(candidate.id)}">${escapeHtml(candidate.name)}</option>`).join('')}`;
-  select.value=templates.some(candidate=>candidate.id===selected)?selected:'';
+function sessionPrepareRitual(item,domain,requestedChoice=null) {
+  return typeof ritualPrepareExecution==='function'?ritualPrepareExecution('session',domain,item.id,requestedChoice):null;
 }
 
 function openSessionStartCore(domain, itemId, options = {}, presentation = {}) {
@@ -205,13 +203,13 @@ function openSessionStartCore(domain, itemId, options = {}, presentation = {}) {
   mode.onchange = explain; explain();
   const journalIntent=document.getElementById('journalSessionIntent');if(journalIntent)journalIntent.value='';
   const variantSelect=document.getElementById('sessionVariant');if(variantSelect&&neutral){variantSelect.innerHTML='<option value="ideal">Versão ideal</option>';variantSelect.value='ideal';document.getElementById('sessionVariantHelp').textContent='Execução da tentativa atual.'}
-  sessionPrepareRitual(item,domain);
+  sessionPrepareRitual(item,domain,options.ritualSelection||null);
   const disclosure=document.getElementById('sessionOptionalConfig');if(disclosure)disclosure.open=Boolean(presentation.expanded);
   const dialog=document.getElementById('sessionStartDialog');
   if(presentation.show!==false&&!dialog.open){dialog.showModal();requestAnimationFrame(()=>presentation.expanded?disclosure?.querySelector('select,textarea,input,button')?.focus?.():document.getElementById('sessionStartSubmit')?.focus?.())}
   return true;
 }
-function openSessionStart(domain,itemId) { return openSessionStartCore(domain,itemId); }
+function openSessionStart(domain,itemId,options={}) { return openSessionStartCore(domain,itemId,options); }
 function openOutcomeSessionStart(itemId,options) { return openSessionStartCore('learningOutcome',itemId,options); }
 
 function sessionStartDefault(payload={}) {
@@ -250,9 +248,10 @@ async function createSession() {
   if (!item) return false;
   const mode = document.getElementById('sessionMode')?.value || 'quick';
   if (mode === 'deep') {
+    const ritualChoice=typeof ritualSelection==='function'?ritualSelection('session'):null;
     document.getElementById('sessionStartDialog').close();
-    if (target.learningContext && typeof deepOpenOutcome === 'function') deepOpenOutcome(target.domain,target.itemId,{learningContext:target.learningContext});
-    else if (typeof deepOpen === 'function') deepOpen(target.domain,target.itemId);
+    if (target.learningContext && typeof deepOpenOutcome === 'function') deepOpenOutcome(target.domain,target.itemId,{learningContext:target.learningContext,ritualSelection:ritualChoice});
+    else if (typeof deepOpen === 'function') deepOpen(target.domain,target.itemId,{ritualSelection:ritualChoice});
     return true;
   }
   const metric = sessionUsesResourceMetric(target) ? sessionMetric(item, target.domain) : null;
@@ -260,8 +259,7 @@ async function createSession() {
   const effectiveMode=mode==='quick'&&selectedVariant==='minimum'?'minimum':mode==='quick'&&selectedVariant.startsWith('contingency:')?'contingency':mode;
   const selectedContingencyId=selectedVariant.startsWith('contingency:')?selectedVariant.split(':')[1]:null;
   const contingency = effectiveMode === 'contingency' ? (item.contingencies || []).find(option => option?.enabled !== false&&(!selectedContingencyId||option.id===selectedContingencyId)) : null;
-  const uxRitualId=typeof uxRuntime==='object'&&uxRuntime?.selected?.domain===target.domain&&uxRuntime?.selected?.itemId===target.itemId&&uxRuntime?.ritualId?uxRuntime.ritualId:'';
-  const ritual = state.data.ritualTemplates?.find(candidate => candidate.id === (uxRitualId||document.getElementById('ritualQuickSelect')?.value));
+  const ritualExecution=typeof ritualExecutionSnapshot==='function'?ritualExecutionSnapshot('session'):{ritualSnapshot:null,ritualChecklist:[]};
   const journalEntryId=document.getElementById('journalSessionIntent')?.value||null;
   const journalEntry=(state.data.journalEntries||[]).find(candidate=>candidate.id===journalEntryId);
   const session = {
@@ -276,7 +274,8 @@ async function createSession() {
     ...(journalEntry?{journalEntryId:journalEntry.id}:{}),
     executionVariant: { kind: effectiveMode === 'minimum' ? 'minimum' : effectiveMode === 'contingency' ? 'contingency' : 'ideal', contingencyId: contingency?.id || null },
     contingencySnapshot: contingency ? JSON.parse(JSON.stringify(contingency)) : null,
-    ritualSnapshot: ritual && globalThis.CompassoRitualModel ? globalThis.CompassoRitualModel.snapshot(ritual) : null,
+    ritualSnapshot: ritualExecution.ritualSnapshot,
+    ritualChecklist: ritualExecution.ritualChecklist,
     reflection: '',
     startValue: metric?.value ?? null,
     endValue: null,
@@ -298,7 +297,7 @@ async function createSession() {
   const persisted=await saveData('Sessão iniciada');
   sessionRuntime.creating=false;
   if(submit)submit.disabled=false;
-  if(persisted){const dialog=document.getElementById('sessionStartDialog');if(dialog.open)dialog.close();requestAnimationFrame(()=>{const activeSurface=document.getElementById('sessionCompanionOpen')||document.getElementById('sessionBanner');activeSurface?.scrollIntoView?.({block:'nearest'});activeSurface?.focus?.()});return true}
+  if(persisted){if(typeof ritualClearExecution==='function')ritualClearExecution('session');const dialog=document.getElementById('sessionStartDialog');if(dialog.open)dialog.close();requestAnimationFrame(()=>{const activeSurface=document.getElementById('sessionCompanionOpen')||document.getElementById('sessionBanner');activeSurface?.scrollIntoView?.({block:'nearest'});activeSurface?.focus?.()});return true}
   state.data=previous;try{await window.CompassoStorage.save(STORAGE_KEY,previous)}catch{}
   renderAll();sessionRestoreStartDraft(draft);
   const dialog=document.getElementById('sessionStartDialog');if(!dialog.open)dialog.showModal();
@@ -479,7 +478,7 @@ document.addEventListener('click', event => {
   if (history) { const [domain,itemId] = history.dataset.sessionHistory.split(':'); openSessionHistory(domain,itemId); }
   const close = event.target.closest('[data-session-close]');
   if (close && close.dataset.sessionClose === 'sessionFinishDialog') cancelSessionFinish();
-  else if (close) document.getElementById(close.dataset.sessionClose)?.close();
+  else if (close) {if(close.dataset.sessionClose==='sessionStartDialog'&&typeof ritualClearExecution==='function')ritualClearExecution('session');document.getElementById(close.dataset.sessionClose)?.close();}
   const remove = event.target.closest('[data-delete-session]');
   if (remove) deleteSession(remove.dataset.deleteSession);
 });

@@ -2,7 +2,7 @@
 const uxModel = globalThis.CompassoUxModel;
 const UX_MODE_KEY = "compasso.ux.mode.v1";
 let uxMode = uxModel.mode(localStorage.getItem(UX_MODE_KEY));
-const uxRuntime = { selected: null, ritualId: null };
+const uxRuntime = { selected: null, ritualChoice: null, ritualInitialValue: "" };
 function uxInstall() {
   settingsMenu.insertAdjacentHTML(
     "beforeend",
@@ -87,34 +87,47 @@ function uxOpenExecution(domain, itemId) {
   const item = state.data[domain]?.find((x) => x.id === itemId);
   if (!item) return;
   uxRuntime.selected = { domain, itemId };
-  uxRuntime.ritualId = item.ritualId || "";
+  uxRuntime.ritualChoice = item.ritualId ? { ritualId: item.ritualId, provenance: "linked" } : { ritualId: "", provenance: "none" };
+  uxRuntime.ritualInitialValue = uxRuntime.ritualChoice.ritualId;
+  uxExecutionDialog.dataset.ritualId = uxRuntime.ritualChoice.ritualId;
+  uxExecutionDialog.dataset.ritualProvenance = uxRuntime.ritualChoice.provenance;
   uxExecutionTitle.textContent = item.title;
   const canSession = ["reading", "study"].includes(domain);
   const minimum = item.minimumVersion;
   const contingencies = (item.contingencies || []).filter((x) => x.enabled);
   const rituals = (state.data.ritualTemplates || []).filter((x) => !x.archived);
-  uxExecutionBody.innerHTML = `<label class="ux-empty"><strong>Ritual desta execução</strong><select id="uxExecutionRitual"><option value="">Sem ritual</option>${rituals.map((r) => `<option value="${r.id}" ${r.id === uxRuntime.ritualId ? "selected" : ""}>${escapeHtml(r.name)}</option>`).join("")}</select><span>Aplicado apenas a esta sessão; não altera a ação silenciosamente.</span></label>${canSession ? `<button type="button" class="ux-execution-option ux-ideal" data-ux-run="ideal"><span class="mark">▶</span><span><strong>Sessão rápida</strong><span>Cronômetro e progresso, seguindo o plano original.</span></span></button>` : ""}${minimum && canSession ? `<button type="button" class="ux-execution-option ux-minimum" data-ux-run="minimum"><span class="mark">M</span><span><strong>Versão mínima</strong><span>${escapeHtml(minimum.description || "Executar o menor passo útil")}${minimum.estimatedMinutes ? ` · ${minimum.estimatedMinutes} min` : ""}.</span></span></button>` : ""}${contingencies.map((c) => `<button type="button" class="ux-execution-option ux-planb" data-ux-run="contingency:${c.id}"><span class="mark">B</span><span><strong>Contingência aplicável</strong><span>Se ${escapeHtml(c.condition)}, então ${escapeHtml(c.response)}.</span></span></button>`).join("")}<button type="button" class="ux-execution-option ux-deep" data-ux-run="deep"><span class="mark">D</span><span><strong>Deep Work</strong><span>Tela focada, objetivo, ritual, distrações e encerramento.</span></span></button>`;
-  uxExecutionRitual.onchange = () =>
-    (uxRuntime.ritualId = uxExecutionRitual.value);
+  uxExecutionBody.innerHTML = `<label class="ux-empty"><strong>Ritual desta execução</strong><select id="uxExecutionRitual"><option value="">Sem ritual</option>${rituals.map((r) => `<option value="${r.id}" ${r.id === uxRuntime.ritualChoice.ritualId ? "selected" : ""}>${escapeHtml(r.name)}</option>`).join("")}</select><span>Aplicado apenas a esta sessão; não altera a ação silenciosamente.</span></label>${canSession ? `<button type="button" class="ux-execution-option ux-ideal" data-ux-run="ideal"><span class="mark">▶</span><span><strong>Sessão rápida</strong><span>Cronômetro e progresso, seguindo o plano original.</span></span></button>` : ""}${minimum && canSession ? `<button type="button" class="ux-execution-option ux-minimum" data-ux-run="minimum"><span class="mark">M</span><span><strong>Versão mínima</strong><span>${escapeHtml(minimum.description || "Executar o menor passo útil")}${minimum.estimatedMinutes ? ` · ${minimum.estimatedMinutes} min` : ""}.</span></span></button>` : ""}${contingencies.map((c) => `<button type="button" class="ux-execution-option ux-planb" data-ux-run="contingency:${c.id}"><span class="mark">B</span><span><strong>Contingência aplicável</strong><span>Se ${escapeHtml(c.condition)}, então ${escapeHtml(c.response)}.</span></span></button>`).join("")}<button type="button" class="ux-execution-option ux-deep" data-ux-run="deep"><span class="mark">D</span><span><strong>Deep Work</strong><span>Tela focada, objetivo, ritual, distrações e encerramento.</span></span></button>`;
+  const ritualSelect = document.getElementById("uxExecutionRitual");
+  ritualSelect.onchange = () => {
+    uxRuntime.ritualChoice = ritualSelect.value ? { ritualId: ritualSelect.value, provenance: "explicit" } : { ritualId: "", provenance: "none" };
+    uxExecutionDialog.dataset.ritualId = uxRuntime.ritualChoice.ritualId;
+    uxExecutionDialog.dataset.ritualProvenance = uxRuntime.ritualChoice.provenance;
+  };
+  uxExecutionBody.querySelectorAll("[data-ux-run]").forEach((button) => button.addEventListener("click", () => {
+    const value = ritualSelect.value || "";
+    const choice = value !== uxRuntime.ritualInitialValue
+      ? { ritualId: value, provenance: value ? "explicit" : "none" }
+      : uxRuntime.ritualChoice;
+    button.dataset.ritualId = choice.ritualId;
+    button.dataset.ritualProvenance = choice.provenance;
+  }, { capture: true }));
   uxExecutionDialog.showModal();
 }
-function uxRun(value) {
+function uxRun(value, trigger) {
   const s = uxRuntime.selected;
   if (!s) return;
+  const ritualValue = trigger?.dataset.ritualId ?? uxExecutionDialog.dataset.ritualId ?? "";
+  const ritualProvenance = trigger?.dataset.ritualProvenance ?? uxExecutionDialog.dataset.ritualProvenance ?? "none";
+  const ritualChoice = { ritualId: ritualValue, provenance: ritualProvenance };
   uxExecutionDialog.close();
   if (value === "deep") {
-    deepOpen(s.domain, s.itemId);
-    requestAnimationFrame(() => {
-      if (globalThis.ritualSessionSelect) {
-        ritualSessionSelect.value = uxRuntime.ritualId;
-        ritualSessionSelect.dispatchEvent(new Event("change"));
-      }
-    });
+    deepOpen(s.domain, s.itemId, { ritualSelection: ritualChoice });
     return;
   }
   if (!["reading", "study"].includes(s.domain))
     return showToast("Use Deep Work para esta ação");
-  openSessionStart(s.domain, s.itemId);
+  if (typeof openSessionStartCore === "function") openSessionStartCore(s.domain, s.itemId, { ritualSelection: ritualChoice });
+  else openSessionStart(s.domain, s.itemId, { ritualSelection: ritualChoice });
   requestAnimationFrame(() => {
     const select = document.getElementById("sessionVariant");
     if (select) {
@@ -142,19 +155,6 @@ CompassoFeatures.action("[data-ux-more]", ({ target }) => {
   menu?.classList.toggle("open");
 });
 CompassoFeatures.action("[data-ux-run]", ({ target }) =>
-  uxRun(target.dataset.uxRun),
-);
-sessionStartForm.addEventListener("submit", () =>
-  queueMicrotask(() => {
-    const session = sessionActive(),
-      ritual = (state.data.ritualTemplates || []).find(
-        (x) => x.id === uxRuntime.ritualId,
-      );
-    if (session && ritual && !session.ritualSnapshot) {
-      session.ritualSnapshot = ritualModel.snapshot(ritual);
-      session.updatedAt = new Date().toISOString();
-      window.CompassoStorage?.save?.(STORAGE_KEY, state.data);
-    }
-  }),
+  uxRun(target.dataset.uxRun, target),
 );
 CompassoFeatures.install();

@@ -9,6 +9,7 @@
     drag: null,
     position: null,
     suppressOpen: false,
+    encoding: { executionId: null, stage: "closed", operation: null, surface: null, originId: null },
   };
 
   function activity() {
@@ -27,6 +28,7 @@
         elapsedMs: deepModel.elapsedMs(deep),
         domain: deep.domain,
         learningContext: deep.learningContext || null,
+        ritualSnapshot: deep.ritualSnapshot || null,
       };
     }
     const session = state.data.sessions?.find(candidate => candidate.id === canonical.source?.id);
@@ -43,6 +45,7 @@
       elapsedMs: sessionElapsedMs(session),
       domain: session.domain,
       learningContext: session.learningContext || null,
+      ritualSnapshot: session.ritualSnapshot || null,
     };
   }
   function clock(ms) {
@@ -54,11 +57,87 @@
       ? `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`
       : `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
   }
+  const encodingOperations = Object.freeze({
+    connect: { label: "Conectar", instruction: "Relacione a ideia a algo que você já conhece." },
+    contrast: { label: "Contrastar", instruction: "Compare com uma ideia relacionada, diferente ou oposta." },
+    organize: { label: "Organizar", instruction: "Identifique a estrutura: partes, grupos, níveis ou relações." },
+  });
+  function encodingPrefix(surface) { return surface === "deep" ? "deepEncoding" : "sessionEncoding"; }
+  function encodingElements(surface) {
+    const prefix=encodingPrefix(surface);
+    return { shell:document.getElementById(`${prefix}Shell`),trigger:document.getElementById(`${prefix}Trigger`),orientation:document.getElementById(`${prefix}Orientation`),orientationList:document.getElementById(`${prefix}OrientationList`),panel:document.getElementById(`${prefix}Panel`),reconstruct:document.getElementById(`${prefix}Reconstruct`),operation:document.getElementById(`${prefix}Operation`),reconstructHeading:document.getElementById(`${prefix}ReconstructHeading`),operationHeading:document.getElementById(`${prefix}OperationHeading`),instruction:document.getElementById(`${prefix}Instruction`),returnButton:document.getElementById(`${prefix}Return`) };
+  }
+  function encodingMarkup(surface) {
+    const prefix=encodingPrefix(surface),name=`${prefix}Choice`;
+    return `<div class="encoding-checkpoint ${surface==='deep'?'encoding-checkpoint-deep':''}" id="${prefix}Shell" hidden><button type="button" class="encoding-trigger" id="${prefix}Trigger" aria-controls="${prefix}Panel" aria-expanded="false">Pausa para processar</button><details class="encoding-orientation" id="${prefix}Orientation" hidden><summary>Orientação do ritual</summary><ul id="${prefix}OrientationList"></ul></details><section class="encoding-panel" id="${prefix}Panel" role="region" aria-labelledby="${prefix}ReconstructHeading" hidden><div id="${prefix}Reconstruct"><h3 id="${prefix}ReconstructHeading" tabindex="-1">Reconstrua antes de consultar</h3><p>Sem consultar, reconstrua a ideia principal com suas palavras.</p><div class="encoding-actions"><button type="button" data-encoding-close="${surface}">Fechar</button><button type="button" class="encoding-primary" data-encoding-next="${surface}">Escolher uma operação</button></div></div><div id="${prefix}Operation" hidden><fieldset aria-labelledby="${prefix}OperationHeading"><legend id="${prefix}OperationHeading" tabindex="-1">Escolha uma operação</legend>${Object.entries(encodingOperations).map(([value,content])=>`<label class="encoding-operation"><input type="radio" name="${name}" value="${value}" data-encoding-choice="${surface}"><span><strong>${content.label}</strong><small>${content.instruction}</small></span></label>`).join('')}</fieldset><p class="encoding-instruction" id="${prefix}Instruction" aria-live="polite">Escolha uma operação para orientar esta pausa.</p><div class="encoding-actions"><button type="button" data-encoding-close="${surface}">Fechar</button><button type="button" class="encoding-primary" id="${prefix}Return" data-encoding-return="${surface}" disabled>Voltar à execução</button></div></div></section></div>`;
+  }
+  function installEncodingUi() {
+    const sessionMount=document.getElementById('sessionCompanionEncodingMount'),deepMount=document.getElementById('deepEncodingMount');
+    if(sessionMount&&!document.getElementById('sessionEncodingShell'))sessionMount.innerHTML=encodingMarkup('session');
+    if(deepMount&&!document.getElementById('deepEncodingShell'))deepMount.innerHTML=encodingMarkup('deep');
+    for(const surface of ['session','deep']){
+      const elements=encodingElements(surface);if(!elements.trigger||elements.trigger.dataset.encodingBound)continue;
+      elements.trigger.dataset.encodingBound='true';elements.trigger.addEventListener('click',()=>openEncoding(surface,elements.trigger));
+      document.querySelectorAll(`[data-encoding-next="${surface}"]`).forEach(button=>button.addEventListener('click',()=>setEncodingStage('operation')));
+      document.querySelectorAll(`[data-encoding-close="${surface}"]`).forEach(button=>button.addEventListener('click',()=>closeEncoding(true)));
+      document.querySelectorAll(`[data-encoding-return="${surface}"]`).forEach(button=>button.addEventListener('click',()=>closeEncoding(true)));
+      document.querySelectorAll(`[data-encoding-choice="${surface}"]`).forEach(control=>control.addEventListener('change',()=>selectEncodingOperation(control.value)));
+    }
+  }
+  function encodingEligible(current) {
+    return Boolean(current&&['running','active','paused'].includes(current.status)&&globalThis.CompassoRitualModel?.isEncodingCheckpointSnapshot?.(current.ritualSnapshot));
+  }
+  function resetEncoding() { runtime.encoding={executionId:null,stage:'closed',operation:null,surface:null,originId:null}; }
+  function renderEncodingOrientation(surface,current) {
+    const elements=encodingElements(surface),preparation=Array.isArray(current?.ritualSnapshot?.preparation)?current.ritualSnapshot.preparation.filter(item=>item?.text):[],key=JSON.stringify(preparation.map(item=>item.text));
+    if(!elements.orientation)return;elements.orientation.hidden=!preparation.length;
+    if(preparation.length&&elements.orientationList?.dataset.key!==key){elements.orientationList.innerHTML=preparation.map(item=>`<li>${escapeHtml(item.text)}</li>`).join('');elements.orientationList.dataset.key=key}
+  }
+  function renderEncodingSurface(surface,current,visible) {
+    const elements=encodingElements(surface);if(!elements.shell)return;
+    elements.shell.hidden=!visible;if(!visible){elements.panel.hidden=true;elements.trigger?.setAttribute('aria-expanded','false');return}
+    renderEncodingOrientation(surface,current);
+    const open=runtime.encoding.executionId===current.id&&runtime.encoding.surface===surface&&runtime.encoding.stage!=='closed';
+    elements.trigger.setAttribute('aria-expanded',String(open));elements.panel.hidden=!open;
+    if(!open)return;
+    const operationStage=runtime.encoding.stage==='operation';elements.reconstruct.hidden=operationStage;elements.operation.hidden=!operationStage;elements.panel.setAttribute('aria-labelledby',operationStage?elements.operationHeading.id:elements.reconstructHeading.id);
+    elements.shell.closest('.session-companion')?.classList.toggle('encoding-open',surface==='session');
+    if(operationStage){
+      elements.operation.querySelectorAll('input[type="radio"]').forEach(control=>{control.checked=control.value===runtime.encoding.operation});
+      const selected=encodingOperations[runtime.encoding.operation];elements.instruction.textContent=selected?.instruction||'Escolha uma operação para orientar esta pausa.';elements.returnButton.disabled=!selected;
+    }
+  }
+  function renderEncoding(current=activity()) {
+    installEncodingUi();const eligible=encodingEligible(current),deepOpen=Boolean(document.getElementById('deepDialog')?.open);
+    if(!eligible||runtime.encoding.executionId&&runtime.encoding.executionId!==current.id){resetEncoding()}
+    if(current?.status==='finishing')resetEncoding();
+    const sessionVisible=eligible&&(current.kind==='session'||current.kind==='deep'&&!deepOpen),deepVisible=eligible&&current.kind==='deep'&&deepOpen;
+    renderEncodingSurface('session',current,sessionVisible);renderEncodingSurface('deep',current,deepVisible);
+    if(runtime.encoding.stage==='closed')document.getElementById('sessionCompanion')?.classList.remove('encoding-open');
+  }
+  function openEncoding(surface,origin) {
+    const current=activity();if(!encodingEligible(current))return;
+    if(current.kind==='deep'&&surface==='session'){
+      const dialog=document.getElementById('deepDialog');if(!dialog?.open)dialog?.showModal();deepTick();renderEncoding(current);surface='deep';origin=encodingElements('deep').trigger;
+    }
+    runtime.encoding={executionId:current.id,stage:'reconstruct',operation:null,surface,originId:origin?.id||encodingElements(surface).trigger?.id||null};renderEncoding(current);
+    requestAnimationFrame(()=>encodingElements(surface).reconstructHeading?.focus());
+  }
+  function setEncodingStage(stage) {
+    if(runtime.encoding.stage==='closed'||stage!=='operation')return;runtime.encoding.stage='operation';runtime.encoding.operation=null;renderEncoding();requestAnimationFrame(()=>encodingElements(runtime.encoding.surface).operationHeading?.focus());
+  }
+  function selectEncodingOperation(operation) {
+    if(runtime.encoding.stage!=='operation'||!encodingOperations[operation])return;runtime.encoding.operation=operation;renderEncoding();
+  }
+  function closeEncoding(restoreFocus=false) {
+    const surface=runtime.encoding.surface,originId=runtime.encoding.originId;resetEncoding();renderEncoding();
+    if(restoreFocus)requestAnimationFrame(()=>{const original=document.getElementById(originId),stable=encodingElements(surface).trigger;(original?.offsetParent!==null?original:stable)?.focus?.()});
+  }
   function installUi() {
     if (document.getElementById("sessionCompanion")) return;
     document.body.insertAdjacentHTML(
       "beforeend",
-      `<aside id="sessionCompanion" class="session-companion" hidden aria-live="polite"><button type="button" class="session-companion-main" id="sessionCompanionOpen" title="Toque para abrir; arraste para mover" aria-description="No celular, arraste para reposicionar sem cobrir a navegação"><span class="session-companion-dot"></span><span class="session-companion-copy"><small id="sessionCompanionLabel">Sessão em andamento</small><strong id="sessionCompanionTitle"></strong><small class="session-companion-future-use" id="sessionCompanionFutureUse" hidden></small></span><time id="sessionCompanionTime">00:00</time></button><div class="session-companion-actions"><button type="button" id="sessionCompanionPause" aria-label="Pausar sessão" title="Pausar ou retomar">Ⅱ</button><button type="button" id="sessionCompanionFinish" aria-label="Concluir sessão" title="Concluir sessão">✓</button><button type="button" id="sessionCompanionFloat" aria-label="Abrir janela flutuante" title="Manter sobre outras janelas">▣</button></div></aside>`,
+      `<aside id="sessionCompanion" class="session-companion" hidden aria-live="polite"><button type="button" class="session-companion-main" id="sessionCompanionOpen" title="Toque para abrir; arraste para mover" aria-description="No celular, arraste para reposicionar sem cobrir a navegação"><span class="session-companion-dot"></span><span class="session-companion-copy"><small id="sessionCompanionLabel">Sessão em andamento</small><strong id="sessionCompanionTitle"></strong><small class="session-companion-future-use" id="sessionCompanionFutureUse" hidden></small></span><time id="sessionCompanionTime">00:00</time></button><div class="session-companion-actions"><button type="button" id="sessionCompanionPause" aria-label="Pausar sessão" title="Pausar ou retomar">Ⅱ</button><button type="button" id="sessionCompanionFinish" aria-label="Concluir sessão" title="Concluir sessão">✓</button><button type="button" id="sessionCompanionFloat" aria-label="Abrir janela flutuante" title="Manter sobre outras janelas">▣</button></div><div id="sessionCompanionEncodingMount" class="session-companion-encoding"></div></aside>`,
     );
     sessionCompanionOpen.addEventListener("click", (event) => {
       if (runtime.suppressOpen) {
@@ -73,6 +152,7 @@
     sessionCompanionFinish.addEventListener("click", finishActivity);
     sessionCompanionFloat.addEventListener("click", openPictureInPicture);
     sessionCompanionFloat.hidden = !("documentPictureInPicture" in window);
+    installEncodingUi();
   }
   function dragBounds(companion) {
     const viewportWidth = document.documentElement.clientWidth;
@@ -114,7 +194,7 @@
     runtime.drag = null;
   }
   function startDrag(event) {
-    if (matchMedia("(min-width: 521px)").matches || event.button > 0) return;
+    if (matchMedia("(min-width: 521px)").matches || event.button > 0 || document.getElementById('sessionCompanion')?.classList.contains('encoding-open')) return;
     const handle = event.currentTarget,
       companion = document.getElementById("sessionCompanion"),
       rect = companion.getBoundingClientRect();
@@ -284,6 +364,7 @@
       companion = document.getElementById("sessionCompanion");
     companion.hidden = !current;
     if (!current) {
+      renderEncoding(null);
       document.title = originalTitle;
       clearInterval(runtime.timer);
       runtime.timer = null;
@@ -316,6 +397,7 @@
       "title",
       current.kind === "deep" ? "Concluir Deep Work" : "Concluir sessão",
     );
+    renderEncoding(current);
     document.title = `● ${current.kind === "deep" ? "Deep Work" : "Sessão"} · ${current.title}`;
     updatePip(current);
     updateBadge(current);
@@ -333,6 +415,10 @@
   });
   sessionStartForm.addEventListener("submit", requestReminderPermission);
   deepStart.addEventListener("click", requestReminderPermission);
+  document.getElementById("deepDialog")?.addEventListener("close", () => {
+    if (runtime.encoding.surface === "deep") resetEncoding();
+    renderEncoding();
+  });
   document.addEventListener("visibilitychange", () => {
     const current = activity();
     if (document.hidden && current) showNotification(current, true);
