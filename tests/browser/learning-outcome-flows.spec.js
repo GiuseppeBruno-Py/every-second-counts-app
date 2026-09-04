@@ -3,6 +3,7 @@ const { test, expect } = require('@playwright/test');
 async function openCapabilities(page) {
   await page.route(/^https?:\/(?!\/127\.0\.0\.1)/, route => route.abort());
   await page.addInitScript(() => localStorage.setItem('compasso.ux.mode.v1', 'essential'));
+  await page.addInitScript(()=>{globalThis.CompassoDriveSync||={prepareLocalState(input){return{data:structuredClone(input),baseline:new Map()}},activateLocalState(){}};});
   await page.goto('/?view=capabilities', { waitUntil:'domcontentloaded' });
   await page.waitForFunction(() => globalThis.CompassoFeatures?.installed && globalThis.CompassoLearningOutcomeModel);
   await expect(page.locator('#capabilitiesView')).toBeVisible();
@@ -166,8 +167,13 @@ test('backup JSON preserva forma completa e backup legado abre sem migração de
   expect(path).toBeTruthy();
 
   await page.locator('#importInput').setInputFiles(path);
+  await expect(page.locator('#restoreDialog')).toBeVisible();
+  await page.locator('#restoreConfirmBtn').click();
+  await expect(page.locator('#restoreDialog')).not.toBeVisible();
   await expect.poll(() => page.evaluate(() => state.data.learningOutcomes[0]?.status)).toBe('archived');
-  await page.locator('#settingsBtn').click();
+  if (await page.locator('#settingsMenu').evaluate(menu => menu.classList.contains('open'))) {
+    await page.locator('#settingsBtn').click();
+  }
   await expect(page.locator('#settingsMenu')).not.toHaveClass(/open/);
   await page.locator('[data-outcome-mode="archived"]').click();
   await expect(page.locator('.learning-outcome-card')).toContainText('Diagnosticar uma consulta lenta');
@@ -179,6 +185,9 @@ test('backup JSON preserva forma completa e backup legado abre sem migração de
 
   const legacy = JSON.stringify({ reading:[{id:'legacy-reading',title:'Legado',progress:25,status:'active'}], study:[], goal:[], focus:[], folders:[], notes:[], captures:[], untouched:{keep:true} });
   await page.locator('#importInput').setInputFiles({ name:'legacy.json', mimeType:'application/json', buffer:Buffer.from(legacy) });
+  await expect(page.locator('#restoreDialog')).toBeVisible();
+  await page.locator('#restoreConfirmBtn').click();
+  await expect(page.locator('#restoreDialog')).not.toBeVisible();
   expect(await page.evaluate(() => state.data.learningOutcomes)).toEqual([]);
   expect(await page.evaluate(() => state.data.untouched)).toEqual({keep:true});
   expect(await page.evaluate(() => state.data.reading[0].title)).toBe('Legado');

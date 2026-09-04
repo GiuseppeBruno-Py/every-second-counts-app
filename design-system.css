@@ -1326,3 +1326,75 @@ dialog[data-ds-component] form {
   .encoding-panel,
   .encoding-trigger { scroll-behavior: auto; transition: none !important; animation: none !important; }
 }
+
+/* Local Data Safety · truthful Notes status and guarded restore */
+.note-save-feedback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .5rem;
+  min-width: 0;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.note-save-feedback .save-state {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.note-save-feedback[data-state="unsaved"] .save-state,
+.note-save-feedback[data-state="saving"] .save-state { color: var(--muted); }
+.note-save-feedback[data-state="failed"] .save-state { color: var(--red); font-weight: 800; }
+.note-save-feedback button {
+  min-height: 2.25rem;
+  border: 1px solid var(--red);
+  border-radius: .6rem;
+  background: var(--surface-strong);
+  color: var(--red);
+  padding: .45rem .7rem;
+  font-size: .68rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.note-save-feedback button[hidden] { display: none; }
+
+.import-status {
+  display: block;
+  min-width: 0;
+  color: var(--red);
+  font-size: .68rem;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.import-status:empty { display: none; }
+
+#restoreDialog .restore-modal {
+  width: min(32rem, calc(100vw - 2rem));
+  max-width: 100%;
+}
+#restoreDialog .modal-body p { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
+.restore-status {
+  min-height: 1.5em;
+  margin-top: .75rem !important;
+  color: var(--red);
+  font-weight: 750;
+}
+.restore-status:empty { min-height: 0; margin-top: 0 !important; }
+.restore-actions { display: flex; justify-content: flex-end; gap: .75rem; flex-wrap: wrap; }
+.restore-actions button { min-width: 9rem; }
+.restore-status:focus-visible,
+.import-status:focus-visible { outline: 3px solid var(--focus-ring, #695bd8); outline-offset: 3px; }
+
+@media (pointer: coarse) {
+  .note-save-feedback button,
+  .restore-actions button,
+  #importBtn { min-height: 44px; }
+}
+
+@media (max-width: 390px) {
+  .note-meta-line { align-items: flex-start; flex-wrap: wrap; }
+  .note-save-feedback { width: 100%; justify-content: space-between; margin-left: 0; }
+  #restoreDialog .restore-modal { width: calc(100vw - 1rem); }
+  .restore-actions { display: grid; grid-template-columns: 1fr; }
+  .restore-actions button { width: 100%; min-width: 0; }
+}

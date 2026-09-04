@@ -10,17 +10,25 @@
   let databasePromise = null;
   const memory = new Map();
   const writeQueues = new Map();
+  const replacementLocks = new Map();
   let persistenceMode = 'indexeddb';
 
-  function readLocal(key) {
-    try { return localStorage.getItem(key); }
+  function readLocalSnapshot(key) {
+    try {
+      const serialized = localStorage.getItem(key);
+      return { readable: true, present: serialized !== null, serialized };
+    }
     catch (error) {
       console.warn('[CompassoStorage] localStorage indisponível para leitura.', error);
-      return null;
+      return { readable: false, present: false, serialized: null };
     }
   }
 
-  function removeLocal(key) {
+  function readLocal(key) {
+    return readLocalSnapshot(key).serialized;
+  }
+
+  function removeLocalValue(key) {
     try { localStorage.removeItem(key); return true; }
     catch (error) {
       console.warn('[CompassoStorage] Não foi possível remover o espelho local.', error);
@@ -28,9 +36,12 @@
     }
   }
 
-  function mirrorLocally(key, serialized, { allowLarge = false } = {}) {
+  function writeLocalValue(key, serialized, {
+    allowLarge = false,
+    preservePreviousOnFailure = false
+  } = {}) {
     if (!allowLarge && serialized.length > LOCAL_MIRROR_LIMIT) {
-      removeLocal(key);
+      if (!preservePreviousOnFailure) removeLocalValue(key);
       return false;
     }
     try {
@@ -39,7 +50,7 @@
     } catch (error) {
       // O IndexedDB é a fonte de verdade. Um espelho cheio nunca pode impedir
       // o bootstrap nem uma gravação válida no banco principal.
-      removeLocal(key);
+      if (!preservePreviousOnFailure) removeLocalValue(key);
       console.warn('[CompassoStorage] Espelho local ignorado por falta de espaço.', error);
       return false;
     }
@@ -141,6 +152,13 @@
     });
   }
 
+  async function readStateSnapshot(key) {
+    const db = await openDatabase();
+    if (!db) return { readable: false, present: false, record: null };
+    const record = await readStateRecord(key);
+    return { readable: true, present: Boolean(record), record: clone(record) };
+  }
+
   async function writeStateRecord(key, serialized) {
     const db = await openDatabase();
     if (!db) return false;
@@ -165,19 +183,160 @@
     });
   }
 
-  function enqueueWrite(key, serialized) {
-    const previous = writeQueues.get(key) || Promise.resolve();
-    const next = previous
-      .catch(() => undefined)
-      .then(() => writeStateRecord(key, serialized))
-      .catch(error => {
-        persistenceMode = 'memory-fallback';
-        console.error('[CompassoStorage] Falha ao gravar no IndexedDB.', error);
-        return false;
-      });
+  async function deleteStateRecord(key) {
+    const db = await openDatabase();
+    if (!db) throw new Error('IndexedDB indisponível para restauração');
 
-    writeQueues.set(key, next);
-    return next;
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STATE_STORE, 'readwrite');
+      transaction.objectStore(STATE_STORE).delete(key);
+      transaction.oncomplete = () => resolve(true);
+      transaction.onerror = () => reject(transaction.error || new Error('Falha ao remover o estado'));
+      transaction.onabort = () => reject(transaction.error || new Error('Remoção cancelada'));
+    });
+  }
+
+  async function restoreStateRecord(snapshot, key) {
+    if (!snapshot.readable) return;
+    const current = await readStateSnapshot(key);
+    if (!current.readable) throw new Error('IndexedDB indisponível durante a compensação');
+
+    const sameRecord = current.present === snapshot.present
+      && JSON.stringify(current.record) === JSON.stringify(snapshot.record);
+    if (sameRecord) return;
+
+    if (!snapshot.present) {
+      await deleteStateRecord(key);
+      return;
+    }
+
+    const db = await openDatabase();
+    if (!db) throw new Error('IndexedDB indisponível durante a compensação');
+    await new Promise((resolve, reject) => {
+      const transaction = db.transaction(STATE_STORE, 'readwrite');
+      transaction.objectStore(STATE_STORE).put(clone(snapshot.record));
+      transaction.oncomplete = () => resolve(true);
+      transaction.onerror = () => reject(transaction.error || new Error('Falha ao restaurar o estado'));
+      transaction.onabort = () => reject(transaction.error || new Error('Restauração cancelada'));
+    });
+  }
+
+  function restoreLocalValue(snapshot, key) {
+    if (!snapshot.readable) return;
+    const current = readLocalSnapshot(key);
+    if (!current.readable) throw new Error('localStorage indisponível durante a compensação');
+    if (current.present === snapshot.present && current.serialized === snapshot.serialized) return;
+    if (snapshot.present) localStorage.setItem(key, snapshot.serialized);
+    else localStorage.removeItem(key);
+  }
+
+  function snapshotsMatch(left, right, valueField) {
+    if (!left.readable || !right.readable) return left.readable === right.readable;
+    return left.present === right.present
+      && JSON.stringify(left[valueField]) === JSON.stringify(right[valueField]);
+  }
+
+  async function captureCheckpoint(key) {
+    return {
+      memory: {
+        present: memory.has(key),
+        serialized: memory.has(key) ? memory.get(key) : null
+      },
+      indexedDB: await readStateSnapshot(key),
+      localStorage: readLocalSnapshot(key),
+      persistenceMode
+    };
+  }
+
+  async function restoreCheckpoint(key, checkpoint) {
+    try {
+      await restoreStateRecord(checkpoint.indexedDB, key);
+      restoreLocalValue(checkpoint.localStorage, key);
+
+      if (checkpoint.memory.present) memory.set(key, checkpoint.memory.serialized);
+      else memory.delete(key);
+      persistenceMode = checkpoint.persistenceMode;
+
+      const currentIndexedDB = await readStateSnapshot(key);
+      const currentLocal = readLocalSnapshot(key);
+      const memoryMatches = memory.has(key) === checkpoint.memory.present
+        && (!checkpoint.memory.present || memory.get(key) === checkpoint.memory.serialized);
+      const indexedDBMatches = snapshotsMatch(
+        currentIndexedDB,
+        checkpoint.indexedDB,
+        'record'
+      );
+      const localMatches = snapshotsMatch(
+        currentLocal,
+        checkpoint.localStorage,
+        'serialized'
+      );
+
+      if (!memoryMatches || !indexedDBMatches || !localMatches) {
+        throw new Error('A compensação não corresponde ao checkpoint anterior');
+      }
+    } catch (cause) {
+      const error = new Error('Não foi possível confirmar a recuperação do estado anterior.');
+      error.code = 'storage-rollback-failed';
+      error.cause = cause;
+      throw error;
+    }
+  }
+
+  async function persistSerialized(key, serialized, { allowLocal = true } = {}) {
+    let primaryPersisted = false;
+    try {
+      primaryPersisted = await writeStateRecord(key, serialized);
+    } catch (error) {
+      console.error('[CompassoStorage] Falha ao gravar no IndexedDB.', error);
+    }
+
+    if (primaryPersisted) {
+      persistenceMode = 'indexeddb';
+      if (allowLocal) {
+        writeLocalValue(key, serialized, {
+          allowLarge: false,
+          preservePreviousOnFailure: false
+        });
+      }
+      return true;
+    }
+
+    const fallbackPersisted = allowLocal && writeLocalValue(key, serialized, {
+      allowLarge: true,
+      preservePreviousOnFailure: true
+    });
+    if (fallbackPersisted) {
+      persistenceMode = 'localstorage-fallback';
+      return true;
+    }
+
+    persistenceMode = 'memory-fallback';
+    return false;
+  }
+
+  function enqueueTask(key, task, { propagate = false } = {}) {
+    const previous = writeQueues.get(key) || Promise.resolve();
+    const operation = previous
+      .catch(() => undefined)
+      .then(task);
+    const tail = operation.catch(() => undefined);
+
+    writeQueues.set(key, tail);
+    if (propagate) return operation;
+    return operation.catch(error => {
+      persistenceMode = 'memory-fallback';
+      console.error('[CompassoStorage] Falha inesperada ao persistir.', error);
+      return false;
+    });
+  }
+
+  function enqueueWrite(key, serialized) {
+    return enqueueTask(key, () => persistSerialized(key, serialized));
+  }
+
+  function enqueueReplacement(key, task) {
+    return enqueueTask(key, task, { propagate: true });
   }
 
   function announceReady(migrated) {
@@ -203,14 +362,13 @@
     if (legacySerialized && (!record || legacySerialized !== record.serialized)) {
       memory.set(key, legacySerialized);
       const migrated = await enqueueWrite(key, legacySerialized);
-      if (migrated) mirrorLocally(key, legacySerialized);
       announceReady(Boolean(migrated));
       return;
     }
 
     if (record?.serialized) {
       memory.set(key, record.serialized);
-      mirrorLocally(key, record.serialized);
+      writeLocalValue(key, record.serialized);
     }
 
     announceReady(false);
@@ -233,20 +391,78 @@
   }
 
   function save(key, value) {
+    if (replacementLocks.has(key)) return Promise.resolve(false);
+
     let serialized;
     try { serialized = JSON.stringify(value); }
     catch (error) {
       console.error('[CompassoStorage] Estado não serializável; gravação ignorada.', error);
       return Promise.resolve(false);
     }
+    if (typeof serialized !== 'string') return Promise.resolve(false);
     memory.set(key, serialized);
-    const write = enqueueWrite(key, serialized);
-    if (serialized.length <= LOCAL_MIRROR_LIMIT || persistenceMode === 'localstorage-fallback') {
-      mirrorLocally(key, serialized, { allowLarge: persistenceMode === 'localstorage-fallback' });
-    } else {
-      write.then(persisted => { if (persisted) removeLocal(key); });
+    return enqueueWrite(key, serialized);
+  }
+
+  function replace(key, value, activate) {
+    if (replacementLocks.has(key)) return Promise.resolve(false);
+
+    let serialized;
+    try { serialized = JSON.stringify(value); }
+    catch (error) {
+      console.error('[CompassoStorage] Candidato de restauração não serializável.', error);
+      return Promise.resolve(false);
     }
-    return write;
+    if (typeof serialized !== 'string') return Promise.resolve(false);
+
+    const persistedCandidate = JSON.parse(serialized);
+    replacementLocks.set(key, true);
+
+    const operation = enqueueReplacement(key, async () => {
+      let checkpoint;
+      let candidateTouchedMemory = false;
+
+      try {
+        checkpoint = await captureCheckpoint(key);
+        memory.set(key, serialized);
+        candidateTouchedMemory = true;
+
+        const persisted = await persistSerialized(key, serialized, {
+          allowLocal: checkpoint.localStorage.readable
+        });
+        if (!persisted) {
+          await restoreCheckpoint(key, checkpoint);
+          return false;
+        }
+
+        try {
+          await activate(persistedCandidate);
+          return true;
+        } catch (error) {
+          console.error('[CompassoStorage] Falha ao ativar a restauração; compensando.', error);
+          await restoreCheckpoint(key, checkpoint);
+          return false;
+        }
+      } catch (error) {
+        if (error?.code === 'storage-rollback-failed') throw error;
+        if (checkpoint && candidateTouchedMemory) {
+          await restoreCheckpoint(key, checkpoint);
+        }
+        console.error('[CompassoStorage] Restauração local interrompida.', error);
+        return false;
+      }
+    });
+
+    return operation.then(
+      result => {
+        replacementLocks.delete(key);
+        return result;
+      },
+      error => {
+        if (error?.code !== 'storage-rollback-failed') replacementLocks.delete(key);
+        throw error;
+      }
+    );
   }
 
   async function flush(key) {
@@ -270,6 +486,7 @@
     getSerialized,
     load,
     save,
+    replace,
     flush,
     diagnostics,
     DB_NAME,
