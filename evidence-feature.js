@@ -35,20 +35,6 @@ function evidenceCapabilityProjection(evidence) {
     : `<div class="evidence-capability unavailable"><span>Capacidade indisponível</span><strong>Tentativa registrada: ${escapeHtml(resolved.attemptText)}</strong>${futureUseLine}</div>`;
 }
 
-function installEvidenceStyles() {
-  const style = document.getElementById('compassoSessionStyles');
-  if (!style || style.textContent.includes('.evidence-box')) return;
-  style.textContent += `
-    .evidence-box{border:1px solid var(--line);border-radius:14px;padding:15px;background:#fbfaf7;display:grid;gap:13px}
-    .evidence-box-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.evidence-box-head strong{font:800 13px/1.35 Manrope,sans-serif}.evidence-box-head span{display:block;color:var(--muted);font-size:10px;margin-top:4px;line-height:1.45}
-    .evidence-grid{display:grid;grid-template-columns:180px 1fr;gap:12px}.session-dialog select{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;color:var(--ink)}
-    .evidence-help{color:var(--muted);font-size:10px;line-height:1.45;margin:0}.evidence-required{color:var(--red)}
-    .evidence-history{margin-top:10px;padding:11px 12px;border-radius:11px;background:var(--green-soft);color:#245f51}.evidence-history b{display:inline-block;font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}.evidence-history strong{display:block;font-size:11px;line-height:1.45}.evidence-history span{color:#3d7164!important;margin-top:5px!important}
-    .evidence-count{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;background:var(--green-soft);color:var(--green);font-size:9px;font-weight:800;margin-left:5px}
-    @media(max-width:620px){.evidence-grid{grid-template-columns:1fr}}
-  `;
-}
-
 function installEvidenceFields() {
   const reflectionField = document.getElementById('sessionReflection')?.closest('.field');
   if (!reflectionField || document.getElementById('sessionEvidenceSummary')) return;
@@ -195,7 +181,6 @@ deleteSession = function(id) {
   }
 };
 
-installEvidenceStyles();
 installEvidenceFields();
 installEvidenceCompletion();
 CompassoFeatures.on('execution:recorded',payload=>renderEvidenceCompletion(payload));
