@@ -212,8 +212,8 @@ function journalSessionCapture(event){event.preventDefault();const session=sessi
 
 function renderJournalIntegrations(){
   const today=document.querySelector('#todayView .today-shell');if(today&&!document.getElementById('journalTodayPanel'))today.insertAdjacentHTML('beforeend',`<section class="today-panel journal-today" id="journalTodayPanel"><div class="today-panel-head"><div><div class="eyebrow">Journal de hoje</div><h3>Registros e decisões</h3><p id="journalTodayIntention"></p></div><div><button class="secondary-btn" type="button" data-journal-register>Registrar</button> <button class="quiet-btn" type="button" data-journal-open> Abrir diário</button></div></div><div class="journal-today-summary" id="journalTodaySummary"></div></section>`);
-  const todayPanel = document.getElementById('journalTodayPanel'); const todayGrid = today?.querySelector('.today-grid');
-  if (todayPanel && todayGrid) todayGrid.before(todayPanel);
+  const todayPanel = document.getElementById('journalTodayPanel'); const remainingPlan = today?.querySelector('#todayRemainingPlan');
+  if (todayPanel && remainingPlan && remainingPlan.nextElementSibling !== todayPanel) remainingPlan.after(todayPanel);
   const todayEntries=journalModel.entriesForDate(state.data,journalModel.dateKey());const todayTasks=todayEntries.filter(item=>item.entryType==='task');const currentIntention=journalDay(journalModel.dateKey()).intention;
   const journalTodayIntention = journalEl('journalTodayIntention');
   if(journalTodayIntention){journalTodayIntention.textContent=currentIntention||'Nenhuma intenção registrada para hoje.';journalTodayIntention.classList.toggle('is-empty',!currentIntention)}
