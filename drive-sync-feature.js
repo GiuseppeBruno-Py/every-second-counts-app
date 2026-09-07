@@ -43,7 +43,7 @@ function friendlyDriveError(error) {
   return { message: message.length > 180 ? `${message.slice(0, 177)}…` : message };
 }
 
-function ensureSyncMetadata(data, touchChanged = false) {
+function applySyncMetadata(data, touchChanged = false, baseline = driveSyncState.baseline) {
   const now = syncNowIso();
   data._sync = data._sync && typeof data._sync === 'object' ? data._sync : {};
   data._sync.schemaVersion = 1;
@@ -63,21 +63,20 @@ function ensureSyncMetadata(data, touchChanged = false) {
       const key = syncRecordKey(collection, record.id);
       const fingerprint = syncFingerprint(record);
       if (!record.updatedAt) record.updatedAt = now;
-      if (touchChanged && driveSyncState.baseline.has(key) && driveSyncState.baseline.get(key) !== fingerprint) record.updatedAt = now;
+      if (touchChanged && baseline.has(key) && baseline.get(key) !== fingerprint) record.updatedAt = now;
     });
     if (touchChanged) {
-      driveSyncState.baseline.forEach((_, key) => {
+      baseline.forEach((_, key) => {
         const prefix = `${collection}:`;
         if (key.startsWith(prefix) && !currentIds.has(key.slice(prefix.length))) data._sync.tombstones[key] ||= now;
       });
     }
   });
   data._sync.updatedAt = touchChanged ? now : (data._sync.updatedAt || now);
-  captureSyncBaseline(data);
   return data;
 }
 
-function captureSyncBaseline(data) {
+function buildSyncBaseline(data) {
   const next = new Map();
   const collections = globalThis.CompassoStateFoundation
     ? globalThis.CompassoStateFoundation.collectionNames('array')
@@ -88,7 +87,30 @@ function captureSyncBaseline(data) {
       if (record?.id) next.set(syncRecordKey(collection, record.id), syncFingerprint(record));
     });
   });
-  driveSyncState.baseline = next;
+  return next;
+}
+
+function captureSyncBaseline(data) {
+  driveSyncState.baseline = buildSyncBaseline(data);
+}
+
+function ensureSyncMetadata(data, touchChanged = false) {
+  applySyncMetadata(data, touchChanged);
+  captureSyncBaseline(data);
+  return data;
+}
+
+function prepareLocalState(input) {
+  const data = syncClone(input);
+  applySyncMetadata(data, false, new Map());
+  return { data, baseline: buildSyncBaseline(data) };
+}
+
+function activateLocalState(prepared) {
+  if (!prepared || !prepared.data || !(prepared.baseline instanceof Map)) {
+    throw new Error('Estado local preparado inválido');
+  }
+  driveSyncState.baseline = new Map(prepared.baseline);
 }
 
 function installSyncAwareSave() {
@@ -400,8 +422,10 @@ window.CompassoDriveSync = {
   connect: connectGoogleDrive,
   disconnect: disconnectGoogleDrive,
   isConnected: isDriveConnected,
-  getAccessToken: () => isDriveConnected() ? driveSyncState.accessToken : ''
-  ,sync: syncGoogleDrive
+  getAccessToken: () => isDriveConnected() ? driveSyncState.accessToken : '',
+  sync: syncGoogleDrive,
+  prepareLocalState,
+  activateLocalState
 };
 
 installSyncAwareSave();

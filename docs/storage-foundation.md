@@ -10,10 +10,24 @@ Migrar a persistência do estado principal para IndexedDB sem interromper o func
 2. `CompassoStorage.ready()` abre o banco `compasso-db` e cria o schema versionado.
 3. Quando ainda não existe estado no IndexedDB, o conteúdo atual de `compasso.app.v1` é copiado do `localStorage`.
 4. Quando os dois armazenamentos divergem, o valor visível no aplicativo legado tem precedência e é migrado.
-5. Toda gravação atualiza a memória e entra em uma fila serial de escrita no IndexedDB.
-6. O `localStorage` recebe apenas estados pequenos (até 256 KiB) para compatibilidade; estados maiores permanecem exclusivamente no IndexedDB.
-7. Falta de espaço no `localStorage` é capturada, o espelho é removido e nunca interrompe o bootstrap ou a gravação principal.
-8. Se o IndexedDB estiver indisponível, o aplicativo tenta o espelho legado sem propagar erros de quota.
+5. Toda gravação serializável atualiza a memória e entra em uma fila por chave. Cada entrada conclui toda a tentativa IndexedDB → espelho/fallback antes de liberar a seguinte.
+6. `CompassoStorage.save()` continua retornando `Promise<boolean>`: `true` confirma o candidato exato no IndexedDB ou no fallback `localStorage`; retenção somente em memória retorna `false`.
+7. Com IndexedDB confirmado, o `localStorage` recebe apenas estados pequenos (até 256 KiB) como espelho opcional. Falha ou quota do espelho não transforma o commit principal em falha.
+8. Se o IndexedDB estiver indisponível ou rejeitar o candidato, o mesmo item da fila tenta o estado exato no `localStorage`, inclusive quando ele excede o limite normal do espelho. Falha dos dois backends preserva a edição em memória para retry, mas não é anunciada como salva.
+
+## Substituição segura durante restore
+
+O restore JSON usa `CompassoStorage.replace()` somente para a chave existente do estado principal. A operação:
+
+1. reserva uma barreira exclusiva e fica atrás das gravações já enfileiradas;
+2. captura presença e valor anteriores na memória, no IndexedDB e no `localStorage`;
+3. persiste o candidato sem promovê-lo para `state.data`;
+4. libera a ativação somente depois de um backend durável confirmar o candidato;
+5. se a ativação falhar, restaura e verifica o checkpoint anterior antes de retornar uma falha recuperável.
+
+Se a compensação não puder ser confirmada, a operação lança `storage-rollback-failed` e mantém a barreira. A interface não afirma que os dados anteriores foram recuperados até essa confirmação.
+
+Antes da barreira, o arquivo é analisado, validado e normalizado como candidato isolado. O formato aceito continua sendo o objeto raiz atual/legado com `reading`, `study` e `goal` como arrays. Coleções opcionais e campos compatíveis desconhecidos continuam sob os normalizadores atuais; o restore não adiciona envelope `{ data: ... }`, versão de estado ou efeito remoto automático.
 
 ## Stores da versão 1
 
@@ -32,7 +46,9 @@ Migrar a persistência do estado principal para IndexedDB sem interromper o func
 
 - O formato do backup JSON permanece inalterado.
 - O `localStorage` continua como espelho temporário somente enquanto o estado for pequeno.
-- Estados grandes exigem uma versão com suporte ao IndexedDB, evitando o limite reduzido do armazenamento legado.
+- Quando o IndexedDB falha, o `localStorage` também é um backend de contingência durável e seu sucesso é suficiente para o resultado booleano.
+- Estados grandes tentam o fallback quando necessário, mas o IndexedDB continua sendo o caminho primário confiável diante da quota reduzida do armazenamento legado.
+- `compasso.state.v3`, a versão do banco, as stores, as coleções e a chave do estado permanecem inalterados.
 - Nenhum dado pessoal é enviado ao GitHub ou a serviços externos.
 
 ## Diagnóstico
@@ -52,3 +68,5 @@ O resultado deve indicar `mode: "indexeddb"` e listar as stores do schema.
 - O aplicativo continua operando offline.
 - Importação e exportação JSON continuam compatíveis.
 - Falhas do IndexedDB não impedem a abertura do aplicativo.
+- Notes só apresenta `Salvo` depois da confirmação de um backend durável; falha mantém o texto atual editável e permite retry.
+- Restore cancelado, inválido ou sem persistência deixa o estado anterior ativo e recuperável.

@@ -537,7 +537,9 @@
         <button id="updateAppBtn" aria-describedby="compassoUpdateStatus"><svg><use href="#i-reset"/></svg>Verificar atualização</button>
         <span id="compassoUpdateStatus" class="compasso-update-status" role="status" aria-live="polite"></span>
         <button id="exportBtn"><svg><use href="#i-export"/></svg>Exportar dados</button>
-        <label><svg><use href="#i-import"/></svg>Importar dados<input type="file" id="importInput" accept="application/json"></label>
+        <button id="importBtn" type="button" aria-describedby="importStatus"><svg><use href="#i-import"/></svg>Importar dados</button>
+        <input type="file" id="importInput" accept="application/json" hidden>
+        <span id="importStatus" class="import-status" role="status" aria-live="polite" aria-atomic="true" tabindex="-1"></span>
         <button id="resetBtn"><svg><use href="#i-reset"/></svg>Restaurar exemplo</button>
         <div class="menu-version" id="settingsAppVersion">Compasso v71</div>
       </div>
@@ -629,6 +631,20 @@
     </form>
   </dialog>
 
+  <dialog id="restoreDialog" aria-labelledby="restoreTitle">
+    <div class="modal restore-modal">
+      <div class="modal-head"><h2 id="restoreTitle">Substituir dados locais?</h2></div>
+      <div class="modal-body">
+        <p>O backup substituirá os dados locais atuais deste navegador. Esta ação só continuará depois que o novo estado puder ser salvo com segurança.</p>
+        <p id="restoreStatus" class="restore-status" role="status" aria-live="polite" aria-atomic="true" tabindex="-1"></p>
+      </div>
+      <div class="modal-foot restore-actions">
+        <button type="button" class="quiet-btn" id="restoreCancelBtn">Cancelar</button>
+        <button type="button" class="danger-btn show" id="restoreConfirmBtn">Substituir dados</button>
+      </div>
+    </div>
+  </dialog>
+
   <div class="toast" id="toast" role="status"></div>
 
   <script src="./storage.js"></script>
@@ -704,9 +720,134 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       collapsedFolders: new Set(),
       editorMode: 'split'
     };
+    const noteSaveRuntime = { epoch:0, byId:new Map() };
+    const restoreRuntime = { operationId:0, prepared:null, busy:false, returnFocus:null };
     // Preserve the public runtime hooks that existed while the app used a classic
     // script. Browser diagnostics and feature extensions still rely on them.
     globalThis.state = state;
+
+    function noteSaveEntry(noteId) {
+      if (!noteSaveRuntime.byId.has(noteId)) {
+        noteSaveRuntime.byId.set(noteId, {
+          revision:0,
+          confirmedRevision:0,
+          status:'saved',
+          timerId:null,
+          epoch:noteSaveRuntime.epoch
+        });
+      }
+      return noteSaveRuntime.byId.get(noteId);
+    }
+
+    function noteSaveText(status) {
+      return {
+        saved:'Salvo',
+        unsaved:'Alterações não salvas',
+        saving:'Salvando…',
+        failed:'Não foi possível salvar'
+      }[status] || 'Alterações não salvas';
+    }
+
+    function renderNoteSaveFeedback(noteId) {
+      if (state.selectedNoteId !== noteId) return;
+      const entry = noteSaveEntry(noteId);
+      const group = document.querySelector('.note-save-feedback');
+      const status = document.getElementById('noteSaveState');
+      const retry = document.getElementById('noteSaveRetry');
+      if (!group || !status || !retry) return;
+      group.dataset.state = entry.status;
+      const text = noteSaveText(entry.status);
+      if (status.textContent !== text) status.textContent = text;
+      retry.hidden = entry.status !== 'failed';
+    }
+
+    function setNoteSaveStatus(noteId, status) {
+      const entry = noteSaveEntry(noteId);
+      if (entry.status === status) return;
+      entry.status = status;
+      renderNoteSaveFeedback(noteId);
+    }
+
+    function scheduleNoteAutosave(noteId, delay = 450) {
+      const entry = noteSaveEntry(noteId);
+      clearTimeout(entry.timerId);
+      entry.timerId = setTimeout(() => attemptNoteAutosave(noteId), delay);
+    }
+
+    async function attemptNoteAutosave(noteId) {
+      const note = state.data.notes.find(candidate => candidate.id === noteId);
+      const entry = noteSaveRuntime.byId.get(noteId);
+      if (!note || !entry) return false;
+      clearTimeout(entry.timerId);
+      entry.timerId = null;
+      const revision = entry.revision;
+      const epoch = entry.epoch;
+      setNoteSaveStatus(noteId, 'saving');
+
+      let persisted = false;
+      try {
+        persisted = await window.CompassoStorage.save(STORAGE_KEY, state.data);
+      } catch (error) {
+        console.error('[Compasso] Falha no autosave da nota.', error);
+      }
+
+      const current = noteSaveRuntime.byId.get(noteId);
+      if (current !== entry || current.revision !== revision || current.epoch !== epoch) return persisted;
+      if (persisted) {
+        current.confirmedRevision = revision;
+        setNoteSaveStatus(noteId, 'saved');
+        renderFileTree();
+      } else {
+        setNoteSaveStatus(noteId, 'failed');
+      }
+      return persisted;
+    }
+
+    function markNoteUnsaved(noteId) {
+      const entry = noteSaveEntry(noteId);
+      entry.revision += 1;
+      entry.epoch = noteSaveRuntime.epoch;
+      setNoteSaveStatus(noteId, 'unsaved');
+      scheduleNoteAutosave(noteId);
+    }
+
+    function pauseNoteAutosavesForRestore() {
+      const snapshot = [...noteSaveRuntime.byId.entries()].map(([noteId, entry]) => [noteId, {
+        revision:entry.revision,
+        confirmedRevision:entry.confirmedRevision,
+        status:entry.status === 'saving' ? 'unsaved' : entry.status
+      }]);
+      noteSaveRuntime.epoch += 1;
+      noteSaveRuntime.byId.forEach(entry => {
+        clearTimeout(entry.timerId);
+        entry.timerId = null;
+        entry.epoch = noteSaveRuntime.epoch;
+        if (entry.status === 'saving') entry.status = 'unsaved';
+      });
+      return snapshot;
+    }
+
+    function restoreNoteAutosavesAfterRestore(snapshot) {
+      noteSaveRuntime.byId.forEach(entry => clearTimeout(entry.timerId));
+      noteSaveRuntime.byId.clear();
+      snapshot.forEach(([noteId, saved]) => {
+        noteSaveRuntime.byId.set(noteId, {
+          ...saved,
+          timerId:null,
+          epoch:noteSaveRuntime.epoch
+        });
+      });
+      noteSaveRuntime.byId.forEach((entry, noteId) => {
+        if (entry.status === 'unsaved') scheduleNoteAutosave(noteId);
+      });
+      if (state.selectedNoteId) renderNoteSaveFeedback(state.selectedNoteId);
+    }
+
+    function resetNoteSaveRuntime() {
+      noteSaveRuntime.byId.forEach(entry => clearTimeout(entry.timerId));
+      noteSaveRuntime.byId.clear();
+      noteSaveRuntime.epoch += 1;
+    }
 
     function loadData() {
       try {
@@ -803,6 +944,36 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
         ? globalThis.CompassoCapabilityContextModel.normalizeSignalCollection(normalized.learningSignals)
         : (Array.isArray(normalized.learningSignals) ? normalized.learningSignals : []);
       return normalized;
+    }
+
+    function isSupportedBackupRoot(value) {
+      return Boolean(value)
+        && typeof value === 'object'
+        && !Array.isArray(value)
+        && Array.isArray(value.reading)
+        && Array.isArray(value.study)
+        && Array.isArray(value.goal);
+    }
+
+    function prepareRestoreCandidate(raw) {
+      let candidate = normalizeData(structuredClone(raw));
+      if (globalThis.CompassoStateFoundation) candidate = globalThis.CompassoStateFoundation.migrate(candidate);
+
+      if (globalThis.CompassoRitualModel) {
+        candidate.ritualTemplates = Array.isArray(candidate.ritualTemplates)
+          ? candidate.ritualTemplates.map(item => globalThis.CompassoRitualModel.normalize(item)).filter(Boolean)
+          : globalThis.CompassoRitualModel.defaults(new Date().toISOString());
+      }
+      if (globalThis.CompassoExecutionSessionModel) {
+        candidate.executionSessions = globalThis.CompassoExecutionSessionModel.migrate(candidate);
+      }
+      if (globalThis.CompassoWeeklyPlanModel) {
+        candidate.weeklyPlans = globalThis.CompassoWeeklyPlanModel.normalizeCollection(candidate.weeklyPlans);
+      }
+      if (globalThis.CompassoCaptureModel) candidate = globalThis.CompassoCaptureModel.migrateState(candidate);
+      if (globalThis.CompassoJournalModel) candidate = globalThis.CompassoJournalModel.migrateState(candidate);
+      if (!globalThis.CompassoDriveSync?.prepareLocalState) throw new Error('Preparação local indisponível');
+      return globalThis.CompassoDriveSync.prepareLocalState(candidate);
     }
     function average(items) { return Array.isArray(items) && items.length ? Math.round(items.reduce((sum, item) => sum + clamp(item.progress), 0) / items.length) : 0; }
     function activeItems(domain) { return (Array.isArray(state.data?.[domain]) ? state.data[domain] : []).filter(i => i.status === 'active'); }
@@ -1018,8 +1189,8 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
         <article class="note-workspace">
           <div class="note-tabs"><div class="note-tab">${icon('note')}<span>${escapeHtml(note.title)}.md</span></div></div>
           <div class="note-toolbar"><div class="breadcrumb">Atlas pessoal / ${path.map(f => `<b>${escapeHtml(f.name)}</b>`).join(' / ')}</div><div class="editor-modes"><button class="mode-btn ${state.editorMode === 'editor' ? 'active':''}" data-mode="editor">Editar</button><button class="mode-btn ${state.editorMode === 'split' ? 'active':''}" data-mode="split">Dividir</button><button class="mode-btn ${state.editorMode === 'preview' ? 'active':''}" data-mode="preview">Ler</button></div></div>
-          <div class="note-header"><input class="note-title-input" id="noteTitleInput" value="${escapeHtml(note.title)}" aria-label="Título da nota"><div class="note-meta-line"><span class="note-domain-pill">${escapeHtml(domainLabels[note.domain] || 'Inbox')}</span><input class="tags-input" id="noteTagsInput" value="${escapeHtml((note.tags || []).join(', '))}" placeholder="tags separadas por vírgula"><span class="save-state" id="noteSaveState">Salvo</span></div></div>
-          <div class="editor-split ${state.editorMode === 'editor' ? 'editor-only' : state.editorMode === 'preview' ? 'preview-only' : ''}"><textarea class="markdown-input" id="markdownInput" spellcheck="true">${escapeHtml(note.content)}</textarea><div class="markdown-preview" id="markdownPreview">${renderMarkdown(note.content)}</div></div>
+          <div class="note-header"><input class="note-title-input" id="noteTitleInput" value="${escapeHtml(note.title)}" aria-label="Título da nota" aria-describedby="noteSaveState"><div class="note-meta-line"><span class="note-domain-pill">${escapeHtml(domainLabels[note.domain] || 'Inbox')}</span><input class="tags-input" id="noteTagsInput" value="${escapeHtml((note.tags || []).join(', '))}" placeholder="tags separadas por vírgula" aria-label="Tags da nota" aria-describedby="noteSaveState"><div class="note-save-feedback" data-state="saved"><span class="save-state" id="noteSaveState" role="status" aria-live="polite" aria-atomic="true">Salvo</span><button type="button" id="noteSaveRetry" hidden>Tentar novamente</button></div></div></div>
+          <div class="editor-split ${state.editorMode === 'editor' ? 'editor-only' : state.editorMode === 'preview' ? 'preview-only' : ''}"><textarea class="markdown-input" id="markdownInput" spellcheck="true" aria-label="Conteúdo da nota em Markdown" aria-describedby="noteSaveState">${escapeHtml(note.content)}</textarea><div class="markdown-preview" id="markdownPreview">${renderMarkdown(note.content)}</div></div>
         </article>
         <aside class="note-context">
           <section class="context-card"><div class="eyebrow">Ponte de evidência</div><h3>Conhecimento → execução</h3>${linked ? `<div class="link-bridge"><strong>${escapeHtml(linked.title)}</strong><span>${escapeHtml(linked.note || linked.meta)}</span><div class="status-row"><span class="status ${linked.status}">${statusLabels[linked.status]}</span><strong>${clamp(linked.progress)}%</strong></div><div class="progress"><span style="width:${clamp(linked.progress)}%"></span></div></div>` : `<div class="link-bridge"><strong>Nota independente</strong><span>Conecte esta nota manualmente usando links [[assim]].</span></div>`}</section>
@@ -1032,17 +1203,17 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       const tagsInput = document.getElementById('noteTagsInput');
       const contentInput = document.getElementById('markdownInput');
       const folderSelect = document.getElementById('noteFolderSelect');
-      const saveState = document.getElementById('noteSaveState');
       const persist = () => {
         note.title = titleInput.value.trim() || 'Sem título';
         note.tags = tagsInput.value.split(',').map(t => t.trim()).filter(Boolean);
         note.content = contentInput.value;
         note.updated = new Date().toISOString().slice(0,10);
         document.getElementById('markdownPreview').innerHTML = renderMarkdown(note.content);
-        saveState.textContent = 'Salvando…'; clearTimeout(persist.timer);
-        persist.timer = setTimeout(() => { window.CompassoStorage.save(STORAGE_KEY, state.data); saveState.textContent = 'Salvo agora'; renderFileTree(); }, 450);
+        markNoteUnsaved(note.id);
       };
       [titleInput, tagsInput, contentInput].forEach(el => el.addEventListener('input', persist));
+      document.getElementById('noteSaveRetry').addEventListener('click', () => attemptNoteAutosave(note.id));
+      renderNoteSaveFeedback(note.id);
       folderSelect.addEventListener('change', () => { note.folder = folderSelect.value; const folder = state.data.folders.find(f => f.id === note.folder); if (!note.linkedItemId) note.domain = folder?.domain || note.domain; state.selectedFolderId = note.folder; window.CompassoStorage.save(STORAGE_KEY, state.data); renderFileTree(); showToast('Nota movida'); });
     }
 
@@ -1165,6 +1336,102 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     function closeDialog() { document.getElementById('itemDialog').close(); state.editingId = null; }
     function showToast(message) { const toast = document.getElementById('toast'); toast.textContent = message; toast.classList.add('show'); clearTimeout(showToast.timer); showToast.timer = setTimeout(() => toast.classList.remove('show'), 2300); }
 
+    const importBtn = document.getElementById('importBtn');
+    const importInput = document.getElementById('importInput');
+    const importStatus = document.getElementById('importStatus');
+    const restoreDialog = document.getElementById('restoreDialog');
+    const restoreStatus = document.getElementById('restoreStatus');
+    const restoreCancelBtn = document.getElementById('restoreCancelBtn');
+    const restoreConfirmBtn = document.getElementById('restoreConfirmBtn');
+
+    function setImportStatus(message, { focus = false } = {}) {
+      importStatus.textContent = message;
+      if (focus) importStatus.focus({ preventScroll:true });
+    }
+
+    function setRestoreBusy(busy) {
+      restoreRuntime.busy = busy;
+      restoreCancelBtn.disabled = busy;
+      restoreConfirmBtn.disabled = busy;
+    }
+
+    function discardRestoreCandidate({ cancelled = false } = {}) {
+      if (restoreRuntime.busy) return false;
+      restoreRuntime.operationId += 1;
+      restoreRuntime.prepared = null;
+      importInput.value = '';
+      restoreStatus.textContent = '';
+      restoreConfirmBtn.textContent = 'Substituir dados';
+      if (restoreDialog.open) restoreDialog.close();
+      if (cancelled) setImportStatus('Restauração cancelada.');
+      const target = restoreRuntime.returnFocus || importBtn;
+      restoreRuntime.returnFocus = null;
+      requestAnimationFrame(() => target?.focus({ preventScroll:true }));
+      return true;
+    }
+
+    function showRestoreFailure(message) {
+      setRestoreBusy(false);
+      restoreStatus.textContent = message;
+      restoreConfirmBtn.textContent = 'Tentar novamente';
+      restoreStatus.focus({ preventScroll:true });
+    }
+
+    async function confirmRestore() {
+      const prepared = restoreRuntime.prepared;
+      if (!prepared || restoreRuntime.busy) return;
+
+      const previousState = state.data;
+      const previousPrepared = globalThis.CompassoDriveSync.prepareLocalState(previousState);
+      const noteSnapshot = pauseNoteAutosavesForRestore();
+      let noteRuntimeRestored = false;
+      setRestoreBusy(true);
+      restoreStatus.textContent = 'Restaurando…';
+
+      try {
+        const restored = await window.CompassoStorage.replace(STORAGE_KEY, prepared.data, async persistedCandidate => {
+          state.data = persistedCandidate;
+          try {
+            globalThis.CompassoDriveSync.activateLocalState(prepared);
+            resetNoteSaveRuntime();
+            renderAll();
+          } catch (error) {
+            state.data = previousState;
+            globalThis.CompassoDriveSync.activateLocalState(previousPrepared);
+            restoreNoteAutosavesAfterRestore(noteSnapshot);
+            noteRuntimeRestored = true;
+            renderAll();
+            throw error;
+          }
+        });
+
+        if (!restored) {
+          if (!noteRuntimeRestored) restoreNoteAutosavesAfterRestore(noteSnapshot);
+          showRestoreFailure('Não foi possível restaurar. Seus dados atuais foram preservados.');
+          return;
+        }
+
+        restoreRuntime.prepared = null;
+        setRestoreBusy(false);
+        importInput.value = '';
+        restoreStatus.textContent = '';
+        restoreConfirmBtn.textContent = 'Substituir dados';
+        restoreDialog.close();
+        const target = restoreRuntime.returnFocus || importBtn;
+        restoreRuntime.returnFocus = null;
+        requestAnimationFrame(() => target?.focus({ preventScroll:true }));
+        showToast('Backup restaurado.');
+      } catch (error) {
+        if (error?.code === 'storage-rollback-failed') {
+          restoreStatus.textContent = 'A recuperação local não pôde ser confirmada. Mantenha esta tela aberta e tente novamente.';
+          restoreStatus.focus({ preventScroll:true });
+          return;
+        }
+        if (!noteRuntimeRestored) restoreNoteAutosavesAfterRestore(noteSnapshot);
+        showRestoreFailure('Não foi possível restaurar. Seus dados atuais foram preservados.');
+      }
+    }
+
     document.addEventListener('click', event => {
       const nav = event.target.closest('[data-view]'); if (nav) switchView(nav.dataset.view);
       const go = event.target.closest('[data-go]'); if (go) switchView(go.dataset.go);
@@ -1203,6 +1470,20 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
     document.getElementById('newNoteBtn').addEventListener('click', () => createNote());
     document.getElementById('newFolderBtn').addEventListener('click', createFolder);
     document.getElementById('settingsBtn').addEventListener('click', () => document.getElementById('settingsMenu').classList.toggle('open'));
+    importBtn.addEventListener('click', () => {
+      if (restoreRuntime.busy || restoreRuntime.prepared) return;
+      setImportStatus('');
+      importInput.click();
+    });
+    restoreCancelBtn.addEventListener('click', () => discardRestoreCandidate({ cancelled:true }));
+    restoreConfirmBtn.addEventListener('click', confirmRestore);
+    restoreDialog.addEventListener('cancel', event => {
+      event.preventDefault();
+      discardRestoreCandidate({ cancelled:true });
+    });
+    restoreDialog.addEventListener('click', event => {
+      if (event.target === restoreDialog) discardRestoreCandidate({ cancelled:true });
+    });
 
     let deferredInstallPrompt = null;
     const installBtn = document.getElementById('installBtn');
@@ -1277,11 +1558,55 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       const blob = new Blob([JSON.stringify(exportData, null, 2)], {type:'application/json'});
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `compasso-backup-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href); showToast('Backup exportado');
     });
-    document.getElementById('importInput').addEventListener('change', async event => {
-      const file = event.target.files[0]; if (!file) return;
-      try { const imported = JSON.parse(await file.text()); if (!imported.reading || !imported.study || !imported.goal) throw new Error(); if (!imported.folders || !imported.notes) { imported.folders = structuredClone(initialData.folders); imported.notes = structuredClone(initialData.notes); } state.data = normalizeData(imported); saveData('Backup importado'); }
-      catch { showToast('Arquivo de backup inválido'); }
-      event.target.value = '';
+    importInput.addEventListener('change', async event => {
+      const file = event.target.files[0];
+      if (!file || restoreRuntime.busy || restoreRuntime.prepared) { event.target.value = ''; return; }
+      const operationId = ++restoreRuntime.operationId;
+      restoreRuntime.busy = true;
+      importBtn.disabled = true;
+      setImportStatus('Lendo backup…');
+
+      let imported;
+      try {
+        imported = JSON.parse(await file.text());
+      } catch {
+        if (operationId !== restoreRuntime.operationId) return;
+        restoreRuntime.busy = false;
+        importBtn.disabled = false;
+        event.target.value = '';
+        setImportStatus('Arquivo JSON inválido.', { focus:true });
+        return;
+      }
+
+      if (operationId !== restoreRuntime.operationId) return;
+      if (!isSupportedBackupRoot(imported)) {
+        restoreRuntime.busy = false;
+        importBtn.disabled = false;
+        event.target.value = '';
+        setImportStatus('Backup do Compasso inválido.', { focus:true });
+        return;
+      }
+
+      try {
+        restoreRuntime.prepared = prepareRestoreCandidate(imported);
+      } catch (error) {
+        console.error('[Compasso] Falha ao preparar o backup.', error);
+        restoreRuntime.busy = false;
+        importBtn.disabled = false;
+        event.target.value = '';
+        setImportStatus('Backup do Compasso inválido.', { focus:true });
+        return;
+      }
+
+      restoreRuntime.busy = false;
+      importBtn.disabled = false;
+      restoreRuntime.returnFocus = importBtn;
+      setImportStatus('');
+      restoreStatus.textContent = '';
+      restoreConfirmBtn.textContent = 'Substituir dados';
+      restoreDialog._dsOpener = importBtn;
+      restoreDialog.showModal();
+      requestAnimationFrame(() => restoreCancelBtn.focus({ preventScroll:true }));
     });
     document.getElementById('resetBtn').addEventListener('click', () => { if (confirm('Restaurar os dados iniciais? Suas alterações locais serão substituídas.')) { state.data = normalizeData(structuredClone(initialData)); saveData('Painel restaurado'); } });
 
