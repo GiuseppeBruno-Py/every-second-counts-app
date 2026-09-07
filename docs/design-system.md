@@ -56,4 +56,31 @@ Ao criar uma feature, prefira HTML semântico e deixe o aprimoramento central ad
 
 ## Verificação
 
+### Piloto Core Visual Revamp — Caderno de trabalho
+
+O piloto usa tokens locais `--pilot-*` em `#todayView`, `#todayDialog`,
+`#sessionStartDialog`, `#sessionFinishDialog`, `#executionCompletionPanel` e
+`#sessionCompanion`. A paleta clara usa canvas `#f5f3ed`, superfície `#fffef9`,
+texto `#252b27`, secundário `#596259`, acento `#315a46` e foco `#6b3eb5`.
+Não há nova preferência de tema nem fonte externa para o piloto.
+
+Texto principal usa 17px equivalentes, auxiliares 14px e campos editáveis 16px,
+com unidades rem e títulos em Georgia. Controles têm alvo mínimo de 44px;
+checkboxes mantêm tamanho nativo dentro de labels maiores. Ações ficam abaixo
+da tentativa; o plano precede o Journal também no DOM. Os diálogos mantêm os
+elementos nativos e os handlers de foco, cancelamento e persistência existentes.
+
+O CSS antes injetado por Today, Sessions e Evidence está na seção estática de
+compatibilidade em `design-system.css`. Regras locais posteriores aplicam a
+nova apresentação. Histórico, correção de histórico e mapa de energia têm
+canários de estilos computados; não alterar os seletores globais para expandir
+o piloto. As demais injeções legadas permanecem fora desta migração.
+
+`tests/browser/core-visual-revamp-flows.spec.js` usa a fixture PWA completa em
+4174, pois a fixture reduzida não inclui todos os diálogos. Cobre seis estados,
+360/390/768/1280px, teclado, contraste, movimento reduzido, cancelamento e
+Evidence após reload. Screenshots são evidência revisada; os snapshots existentes
+de telas fora do piloto não foram atualizados. Zoom CSS não substitui a inspeção
+do zoom real do navegador a 200%; consulte o relatório SDD para seu status.
+
 Execute `npm test` para validar o contrato declarativo e `npm run test:browser` para os fluxos de teclado, estados, ausência de overflow e snapshots de 360, 768 e 1280 px.

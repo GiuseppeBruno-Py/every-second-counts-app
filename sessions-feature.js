@@ -70,21 +70,6 @@ function sessionMetricLabel(session) {
   return `${formatNumber(start)} → ${formatNumber(end)} ${config.unit} · +${formatNumber(delta)}`;
 }
 
-function installSessionStyles() {
-  if (document.getElementById('compassoSessionStyles')) return;
-  const style = document.createElement('style');
-  style.id = 'compassoSessionStyles';
-  style.textContent = `
-    .session-banner{position:fixed;right:22px;bottom:22px;z-index:45;width:min(420px,calc(100vw - 32px));background:#252521;color:#fff;border:1px solid #45443e;border-radius:17px;padding:16px;box-shadow:0 18px 50px rgba(20,20,17,.25)}
-    .session-banner[hidden]{display:none}.session-banner-top{display:flex;gap:12px;align-items:flex-start}.session-pulse{width:10px;height:10px;border-radius:50%;margin-top:6px;background:#8e82ff;box-shadow:0 0 0 5px rgba(142,130,255,.15)}.session-banner.paused .session-pulse{background:#dc7e3f;box-shadow:0 0 0 5px rgba(220,126,63,.16)}
-    .session-banner-main{min-width:0;flex:1}.session-banner-label{font-size:9px;text-transform:uppercase;letter-spacing:.15em;color:#aaa79f;font-weight:800}.session-banner-title{display:block;font:700 14px/1.35 Manrope,sans-serif;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.session-timer{font:800 25px/1 Manrope,sans-serif;letter-spacing:-.04em;margin:14px 0 12px}.session-banner-actions{display:flex;gap:8px;flex-wrap:wrap}.session-banner-actions button{min-height:36px;border-radius:9px;padding:0 12px;border:1px solid #4c4b45;background:#34342f;color:#fff;font-size:11px;font-weight:700;cursor:pointer}.session-banner-actions button.primary{background:#f8f6f0;color:#252521;border-color:#f8f6f0}
-    .session-card-button{font-weight:800!important;color:var(--violet)!important}.session-card-button[disabled]{opacity:.45;cursor:not-allowed}.session-history-button{color:var(--muted)!important}
-    .session-dialog{width:min(620px,calc(100vw - 28px));border:0;border-radius:20px;padding:0;background:var(--surface-strong);color:var(--ink);box-shadow:0 24px 80px rgba(25,23,18,.25)}.session-dialog::backdrop{background:rgba(31,30,27,.55);backdrop-filter:blur(4px)}.session-dialog-head{padding:21px 23px 16px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.session-dialog-head h2{margin:3px 0 0;font:800 20px/1.2 Manrope,sans-serif;letter-spacing:-.035em}.session-dialog-body{padding:22px 23px;display:grid;gap:16px}.session-dialog-foot{padding:15px 23px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:9px}.session-dialog .field label{display:block;font-size:11px;font-weight:700;margin-bottom:7px}.session-dialog input,.session-dialog textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;color:var(--ink)}.session-dialog textarea{min-height:88px;resize:vertical}.session-summary{padding:13px 14px;border-radius:12px;background:var(--violet-soft);color:var(--violet);font-size:12px;line-height:1.55}.session-history-list{display:grid;gap:10px;max-height:55vh;overflow:auto}.session-history-row{border:1px solid var(--line);border-radius:13px;padding:13px;display:grid;grid-template-columns:1fr auto;gap:10px}.session-history-row strong{font-size:12px}.session-history-row span{display:block;color:var(--muted);font-size:10px;margin-top:4px}.session-history-row button{border:0;background:transparent;color:var(--red);font-size:10px;font-weight:700;cursor:pointer}.session-empty{padding:28px;text-align:center;color:var(--muted);font-size:12px;border:1px dashed var(--line);border-radius:13px}
-    @media(max-width:720px){.session-banner{right:16px;bottom:16px}.session-dialog-head,.session-dialog-body,.session-dialog-foot{padding-left:17px;padding-right:17px}.session-dialog-foot{flex-wrap:wrap}.session-dialog-foot button{flex:1}.session-history-row{grid-template-columns:1fr}}
-  `;
-  document.head.appendChild(style);
-}
-
 function installSessionUi() {
   if (document.getElementById('sessionBanner')) return;
   document.body.insertAdjacentHTML('beforeend', `
@@ -458,7 +443,6 @@ function resumeSession() {
   return true;
 }
 
-installSessionStyles();
 installSessionUi();
 CompassoFeatures.command('session.startDefault',sessionStartDefault);
 CompassoFeatures.command('session.openConfiguration',sessionOpenConfiguration);
