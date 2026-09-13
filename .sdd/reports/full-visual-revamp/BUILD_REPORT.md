@@ -182,3 +182,8 @@ failing only the obsolete `design-system-360-chromium-linux.png` comparison
 failed. DESIGN 1.2 adds failure-artifact retention to the Browser workflow so
 the actual Ubuntu-rendered image can be downloaded, reviewed and used as the
 Linux baseline. A Windows image will not be copied into the Linux baseline.
+The first retained artifact confirmed only the first-loop 360px mismatch because
+Playwright stops that test at the first failed expectation. DESIGN 1.3 therefore
+uses the existing manual workflow dispatch as a focused native-Linux renderer for
+all 360/768/1280 baselines, uploads those files for review, and leaves pull-request
+runs on the unchanged canonical `npm run test:all` gate.

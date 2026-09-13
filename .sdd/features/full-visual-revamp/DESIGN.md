@@ -190,3 +190,4 @@ Legacy !important/inline rules may require narrowly scoped CSS; do not solve the
 | 1.0 | 2026-09-07 | Codex | Static shared-system expansion, separate PiP treatment, complete edit manifest and coverage/test plan |
 | 1.1 | 2026-09-12 | Codex | Replaced Today’s flat full-width document treatment with a repository-grounded semantic desktop board and explicit responsive verification |
 | 1.2 | 2026-09-13 | Codex | Added failure-artifact retention after remote Linux CI exposed an obsolete platform snapshot that cannot be regenerated safely on Windows |
+| 1.3 | 2026-09-13 | Codex | Added a workflow-dispatch snapshot-render path so all three native Linux baselines can be reviewed together before the canonical rerun |
