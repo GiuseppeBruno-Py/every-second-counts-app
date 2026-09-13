@@ -187,3 +187,9 @@ Playwright stops that test at the first failed expectation. DESIGN 1.3 therefore
 uses the existing manual workflow dispatch as a focused native-Linux renderer for
 all 360/768/1280 baselines, uploads those files for review, and leaves pull-request
 runs on the unchanged canonical `npm run test:all` gate.
+
+Workflow-dispatch run 34785347051 generated all three Linux baselines in 51s and
+passed the focused snapshot procedure. The downloaded 360/768/1280 PNGs were
+visually reviewed before replacing their matching Linux files. They show readable
+controls, bounded cards and contained navigation at each viewport. The subsequent
+pull-request run remains the authoritative remote canonical gate.
