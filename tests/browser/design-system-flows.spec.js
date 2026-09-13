@@ -60,6 +60,12 @@ test("tabs, menu e diálogo oferecem navegação completa por teclado", async ({
     page.locator('#studyGrid .ux-menu.open [role="menuitem"]').nth(1),
   ).toBeFocused();
 
+  // Toggle the menu closed by keyboard before activating a control behind it.
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(trigger).toBeFocused();
+
   await page.locator("#studyGrid .ux-execute").first().click();
   const dialog = page.locator("#uxExecutionDialog");
   await expect(dialog).toHaveAttribute("aria-modal", "true");
