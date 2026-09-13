@@ -173,3 +173,12 @@ checks module boundaries and proportions at 1280/1600px, single-column order at
 1024/390px, recommendation hierarchy, hover feedback and global overflow. The
 generated 1600/1024/390 captures were inspected; an initially stretched empty
 intention module was corrected before the final run.
+
+## Remote Linux reconciliation — 2026-09-13
+
+PR #81 run 34784166655 completed 213 Node tests and 236 Browser tests before
+failing only the obsolete `design-system-360-chromium-linux.png` comparison
+(50,503 pixels, ratio 0.18). No product, layout, overflow or behavior assertion
+failed. DESIGN 1.2 adds failure-artifact retention to the Browser workflow so
+the actual Ubuntu-rendered image can be downloaded, reviewed and used as the
+Linux baseline. A Windows image will not be copied into the Linux baseline.

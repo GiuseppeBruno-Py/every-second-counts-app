@@ -113,6 +113,7 @@ Paths relative to this worktree. No moves/deletes. Optional graph color changes 
 | 18 | `.sdd/features/full-visual-revamp/DESIGN.md` | Modify | Build status and controlled revisions | All checks | All |
 | 19 | `.sdd/features/full-visual-revamp/SURFACE_COVERAGE.md` | Modify | Actual inventory reconciliation and per-surface evidence | 7 | AT-012 |
 | 20 | `.sdd/reports/full-visual-revamp/BUILD_REPORT.md` | Create | Exact acceptance/boundary results, command outputs and residual gates | All checks | All |
+| 21 | `.github/workflows/browser-tests.yml` | Modify | Retain Playwright failure evidence so platform-native Linux snapshots can be reviewed and updated without copying Windows output | Remote CI finding | AT-001,AT-008,AT-012 |
 
 Generated .test-dist, node_modules, test-results, screenshots outside the named snapshot files and logs are not checkpoint source. Service-worker.js, storage.js, state models, domain handlers, route model and existing SDD archives have no authorized changes.
 
@@ -188,3 +189,4 @@ Legacy !important/inline rules may require narrowly scoped CSS; do not solve the
 |---|---|---|---|
 | 1.0 | 2026-09-07 | Codex | Static shared-system expansion, separate PiP treatment, complete edit manifest and coverage/test plan |
 | 1.1 | 2026-09-12 | Codex | Replaced Today’s flat full-width document treatment with a repository-grounded semantic desktop board and explicit responsive verification |
+| 1.2 | 2026-09-13 | Codex | Added failure-artifact retention after remote Linux CI exposed an obsolete platform snapshot that cannot be regenerated safely on Windows |
