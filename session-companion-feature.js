@@ -285,12 +285,18 @@
       if (runtime.pipWindow && !runtime.pipWindow.closed)
         return runtime.pipWindow.focus();
       const pip = await window.documentPictureInPicture.requestWindow({
-        width: 320,
-        height: 132,
+        width: 360,
+        height: 240,
       });
       runtime.pipWindow = pip;
       const doc = pip.document;
-      doc.head.innerHTML = `<title>Compasso · sessão ativa</title><style>*{box-sizing:border-box}body{margin:0;padding:12px;background:#252521;color:#fff;font-family:system-ui,sans-serif}main{display:grid;grid-template-columns:9px minmax(0,1fr) auto;gap:9px;align-items:center}main>span{width:8px;height:8px;border-radius:50%;background:#8e82ff;box-shadow:0 0 0 4px #8e82ff24}small,strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}small{color:#aaa79f;font-size:8px;text-transform:uppercase;letter-spacing:.1em}strong{font-size:12px;margin-top:4px}time{font-size:18px;font-weight:800}button{width:100%;margin-top:12px;height:32px;border:1px solid #55544d;border-radius:8px;background:#34342f;color:#fff;font-weight:700}</style>`;
+      doc.documentElement.dataset.visualSystem = "notebook";
+      doc.body.dataset.compassoPip = "";
+      doc.head.innerHTML = '<title>Compasso · sessão ativa</title>';
+      const stylesheet = doc.createElement("link");
+      stylesheet.rel = "stylesheet";
+      stylesheet.href = new URL("./design-system.css", document.baseURI).href;
+      doc.head.appendChild(stylesheet);
       doc.body.innerHTML = pipMarkup(current);
       doc.getElementById("pipReturn").onclick = () => {
         window.focus();

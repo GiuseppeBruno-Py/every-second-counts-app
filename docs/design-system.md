@@ -84,3 +84,35 @@ de telas fora do piloto não foram atualizados. Zoom CSS não substitui a inspe�
 do zoom real do navegador a 200%; consulte o relatório SDD para seu status.
 
 Execute `npm test` para validar o contrato declarativo e `npm run test:browser` para os fluxos de teclado, estados, ausência de overflow e snapshots de 360, 768 e 1280 px.
+
+
+### Expansão visual Caderno de trabalho (em validação)
+
+A raiz `html[data-visual-system="notebook"]` habilita os tokens compartilhados
+no CSS estático existente. A estrutura global, listas, formulários e diálogos
+usam canvas claro, acento verde, títulos Georgia e controles de no mínimo 44px.
+A navegação e os modos existentes continuam com a mesma semântica.
+
+Os seletores de família devem preservar `hidden`, estados de loading e os
+limites dos editores. Não usar uma regra de fonte/background em `*` nem ocultar
+overflow para mascarar um erro. Filtros móveis quebram entre botões, não entre
+letras. A árvore de Notas usa cores compatíveis com a barra lateral clara.
+
+A janela Picture-in-Picture usa o mesmo `design-system.css`, com URL absoluta
+resolvida na origem do documento principal e marcador `data-compasso-pip` no
+body. Não recebe CSS injetado nem altera o timer, retorno ou lifecycle.
+
+Em Hoje, os módulos semânticos usam uma única superfície e borda. A partir de
+1200px, a grade de 12 colunas forma três pares: próxima ação e intenção, plano
+e foco semanal, recomendações e decisões. O conteúdo de trabalho ocupa oito
+colunas e o contexto ocupa quatro. Abaixo desse ponto, os mesmos elementos
+voltam para uma coluna na ordem do DOM. Resultados do Flow Matching são registros
+interativos dentro do módulo de sugestões; o primeiro ocupa a largura disponível
+e as alternativas formam duas colunas apenas quando há espaço.
+
+A matriz `full-visual-revamp-flows.spec.js` cobre 16 rotas, 30 diálogos e a
+composição de Hoje em 390/1024/1280/1600px. Ela também cobre os estados reais
+de maior variação em quatro larguras. Abrir diálogos programaticamente comprova
+layout, não substitui os
+fluxos reais de abertura/foco/persistência. Consulte o BUILD_REPORT e a matriz
+SDD para as verificações funcionais e humanas ainda pendentes.

@@ -1627,3 +1627,396 @@ dialog[data-ds-component] form {
 @media (forced-colors: active) {
   :is(#todayView, #todayDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) { --pilot-focus: Highlight; --pilot-border: CanvasText; }
 }
+
+/* Full Visual Revamp: Caderno de trabalho, shared static presentation. */
+:root[data-visual-system="notebook"] {
+  --canvas:#f5f3ed; --surface:#fffef9; --surface-strong:#fffef9;
+  --ink:#252b27; --muted:#596259; --line:#868e80;
+  --violet:#315a46; --violet-soft:#e7ecdf;
+  --green:#26613d; --green-soft:#e7ecdf; --red:#a32630;
+  --orange:#76520b; --orange-soft:#f1ead9;
+  --shadow:none;
+  --ds-color-canvas:var(--canvas); --ds-color-surface:var(--surface);
+  --ds-color-raised:var(--surface-strong); --ds-color-text:var(--ink);
+  --ds-color-muted:var(--muted); --ds-color-border:var(--line);
+  --ds-color-accent:var(--violet); --ds-color-focus:#6b3eb5;
+  --ds-color-success:var(--green); --ds-color-warning:var(--orange); --ds-color-danger:var(--red);
+  --ds-type-body:1.0625rem; --ds-type-caption:.875rem; --ds-type-label:.875rem;
+  --ds-shadow:none; --ds-radius-xl:1rem;
+}
+html[data-visual-system="notebook"] body {font:1.0625rem/1.55 system-ui,sans-serif; background:var(--canvas);color:var(--ink)}
+html[data-visual-system="notebook"] :is(.sidebar,.topbar,.menu,.context-card,.editor-panel) {background:var(--surface);color:var(--ink);box-shadow:none}
+html[data-visual-system="notebook"] .sidebar {border-right:1px solid var(--line)}
+html[data-visual-system="notebook"] :is(.brand-mark,.sidebar-card,.avatar) {background:var(--violet-soft);color:var(--ink);border-color:var(--line);box-shadow:none}
+html[data-visual-system="notebook"] .sidebar :is(span,strong,.nav-label,.nav-item,.file-tree button,.sidebar-card button) {color:var(--ink);font-size:.875rem;line-height:1.5}
+html[data-visual-system="notebook"] .sidebar .brand strong {font:500 1.5rem/1.2 Georgia,serif}
+html[data-visual-system="notebook"] .sidebar :is(.nav-item.active,.nav-item[aria-current="page"]) {background:var(--violet-soft);color:var(--violet);border-color:var(--violet)}
+html[data-visual-system="notebook"] :is(.page-title,.view h2,dialog h2) {font:500 1.75rem/1.25 Georgia,serif;letter-spacing:normal;color:var(--ink)}
+html[data-visual-system="notebook"] :is(.view h3,dialog h3,.view h4,dialog h4) {font:500 1.25rem/1.35 Georgia,serif;letter-spacing:normal;color:var(--ink)}
+html[data-visual-system="notebook"] :is(.view,dialog,.menu,.topbar) :is(p,label,small,summary,legend,.eyebrow) {font-family:system-ui,sans-serif;font-size:.875rem;line-height:1.55;color:var(--muted);letter-spacing:normal}
+html[data-visual-system="notebook"] .view p {font-size:1.0625rem}
+html[data-visual-system="notebook"] :is(.view,dialog,.menu,.topbar,.sidebar) :is(button,input,select,textarea) {font-family:system-ui,sans-serif;font-size:.875rem;line-height:1.5;min-width:0;max-width:100%;box-sizing:border-box}
+html[data-visual-system="notebook"] :is(.view,dialog,.menu,.topbar,.sidebar) button {min-height:44px;min-width:44px;white-space:normal;overflow-wrap:anywhere;border-radius:.75rem}
+html[data-visual-system="notebook"] :is(.view,dialog) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select,textarea) {font-size:1rem;min-height:48px;background:var(--surface);color:var(--ink);border-color:var(--line)}
+html[data-visual-system="notebook"] :is(.view,dialog) label:has(input:is([type="checkbox"],[type="radio"])) {min-height:44px;align-items:center}
+html[data-visual-system="notebook"] :is(button,input,select,textarea,a,summary,[tabindex]):focus-visible {outline:3px solid var(--ds-color-focus);outline-offset:3px}
+html[data-visual-system="notebook"] :is(.view,dialog,.menu) button:not([data-ds-role="primary"]):not([data-ds-role="destructive"]):not([aria-busy="true"]) {color:var(--ink);background:var(--surface);border-color:var(--line)}
+html[data-visual-system="notebook"] :is(.view,dialog,.menu) button:not(:disabled):hover {box-shadow:none;transform:none;border-color:var(--violet)}
+html[data-visual-system="notebook"] :is(.ia-hero,.learning-outcome-hero,.journal-hero,.weekly-hero,.outcomes-hero,.analytics-hero,.recall-hero,.weakness-hero,.capture-hero,.context-hero) {background:transparent;color:var(--ink);box-shadow:none;border:0;border-radius:0;padding:1.5rem 0}
+html[data-visual-system="notebook"] :is(.ia-card,.item-card,.learning-outcome-card,.journal-panel,.context-card) {background:var(--surface);color:var(--ink);border-color:var(--line);box-shadow:none}
+html[data-visual-system="notebook"] :is(.view-intro,.tabs-tools,.top-actions,.learning-outcome-card-foot,.learning-outcome-card-foot>div) {flex-wrap:wrap;gap:.75rem}
+html[data-visual-system="notebook"] :is(.view,.item-card,dialog) {overflow-wrap:anywhere}
+html[data-visual-system="notebook"] :is(.ia-card small,.item-card small,.item-card span,.item-card p,.learning-outcome-card span,.journal-entry span,.context-stat,.page-kicker,.menu-version) {font-size:.875rem;line-height:1.55;color:var(--muted)}
+html[data-visual-system="notebook"] :is(.ia-card strong,.item-card h3,.learning-outcome-card h3) {font-size:1.25rem;line-height:1.4;color:var(--ink)}
+html[data-visual-system="notebook"] :is(.ia-grid,.items-grid) {grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr));gap:1.5rem}
+html[data-visual-system="notebook"] dialog {color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:1rem;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;box-shadow:0 8px 24px rgb(25 35 29 / 12%)}
+html[data-visual-system="notebook"] dialog :is(form,.field,.field-row) {min-width:0}
+html[data-visual-system="notebook"] dialog :is(.modal-foot,.session-dialog-foot,.learning-outcome-dialog-foot) {flex-wrap:wrap;gap:.75rem}
+html[data-visual-system="notebook"] #settingsMenu {width:min(24rem,calc(100vw - 24px));max-height:calc(100dvh - 100px);overflow:auto}
+html[data-visual-system="notebook"] :is(.markdown-input,.markdown-preview) {font-size:1.0625rem;line-height:1.65;color:var(--ink);background:var(--surface);padding:1.5rem;min-width:0}
+html[data-visual-system="notebook"] .markdown-input {font-family:ui-monospace,monospace;font-size:1rem}
+html[data-visual-system="notebook"] .markdown-preview :is(p,li) {font-size:1.0625rem;line-height:1.65}
+html[data-visual-system="notebook"] .markdown-preview pre {max-width:100%;overflow:auto}
+html[data-visual-system="notebook"] .markdown-preview code {font:1rem/1.6 ui-monospace,monospace}
+html[data-visual-system="notebook"] :is(.editor-toolbar,.note-toolbar,.journal-toolbar) {flex-wrap:wrap;gap:.5rem}
+html[data-visual-system="notebook"] :is(.editor-title,.note-title-input) {color:var(--ink);font-family:Georgia,serif}
+html[data-visual-system="notebook"] :is(.notes-shell,.editor-split,.note-context) {min-width:0}
+html[data-visual-system="notebook"] :is(.encoding-panel,.encoding-trigger,.encoding-operation,.session-summary,.flow-box) {background:var(--surface);color:var(--ink);border-color:var(--line);box-shadow:none}
+html[data-visual-system="notebook"] :is(.encoding-panel,.encoding-orientation) :is(p,li,span,small) {color:var(--ink);font-size:.875rem}
+html[data-visual-system="notebook"] .view svg text {font-size:14px}
+html[data-visual-system="notebook"] body[data-compasso-pip] {margin:0;padding:16px;background:var(--surface)}
+html[data-visual-system="notebook"] [data-compasso-pip] main {display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+html[data-visual-system="notebook"] [data-compasso-pip] :is(small,strong) {display:block;white-space:normal;overflow-wrap:anywhere;font-size:1rem;line-height:1.5}
+html[data-visual-system="notebook"] [data-compasso-pip] time {font-size:1.5rem;font-variant-numeric:tabular-nums}
+html[data-visual-system="notebook"] [data-compasso-pip] button {width:100%;min-height:44px;margin-top:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:.75rem;font-size:1rem}
+@media(max-width:767px) {
+  html[data-visual-system="notebook"] .topbar {align-items:flex-start;gap:1rem;flex-wrap:wrap}
+  html[data-visual-system="notebook"] :is(.notes-shell,.note-context,.editor-split) {grid-template-columns:minmax(0,1fr)}
+  html[data-visual-system="notebook"] dialog .field-row {grid-template-columns:minmax(0,1fr)}
+  html[data-visual-system="notebook"] .sidebar {border-right:0;border-top:1px solid var(--line)}
+}
+@media(forced-colors:active) {
+  :root[data-visual-system="notebook"] {--ds-color-focus:Highlight;--line:CanvasText}
+}
+
+/* Legacy mobile action sizes are important; keep this override equally narrow. */
+html[data-visual-system="notebook"] :is(.ux-note,.ux-progress,.ux-complete) {font-size:.875rem !important}
+html[data-visual-system="notebook"] .ia-installed .nav-label {font-size:0}
+html[data-visual-system="notebook"] .ia-installed .nav-label::after {font-size:.875rem;letter-spacing:.08em}
+html[data-visual-system="notebook"] .sidebar :is(.brand-mark svg,.nav-item svg) {color:var(--violet)}
+
+html[data-visual-system="notebook"].ia-installed .nav-label {font-size:0}
+html[data-visual-system="notebook"].ia-installed .nav-label::after {font-size:.875rem;letter-spacing:.08em}
+html[data-visual-system="notebook"] .sidebar .file-tree button {background:var(--surface);color:var(--ink)}
+html[data-visual-system="notebook"] .sidebar .file-tree button.active {background:var(--violet-soft);color:var(--violet)}
+html[data-visual-system="notebook"] :is(.view,dialog) :is(span,small,strong,b) {font-size:max(.875rem,1em);line-height:1.5}
+html[data-visual-system="notebook"] :is(.editor-tab,.editor-breadcrumb,.note-save-status,.journal-empty,.weekly-empty,.item-subtitle) {font-size:.875rem;line-height:1.55;color:var(--muted)}
+html[data-visual-system="notebook"] :is(.weekly-hero,.journal-hero,.outcomes-hero)::after {content:none}
+html[data-visual-system="notebook"] .journal-intention {background:transparent;border-color:var(--line)}
+html[data-visual-system="notebook"] .ux-execute {background:var(--violet) !important;color:#fff !important;box-shadow:none}
+html[data-visual-system="notebook"] :is(.ux-note,.ux-progress,.ux-complete) {background:var(--surface) !important;color:var(--ink) !important;border-color:var(--line) !important}
+
+html[data-visual-system="notebook"] body.ia-installed .sidebar .nav-label {font-size:0}
+html[data-visual-system="notebook"] body.ia-installed .sidebar .nav-label::after {font-size:.875rem}
+html[data-visual-system="notebook"] .view .filters {display:flex;flex-wrap:wrap;gap:.5rem}
+html[data-visual-system="notebook"] .view .filters button {flex:0 1 auto;width:auto;min-width:min-content;overflow-wrap:normal;white-space:normal}
+html[data-visual-system="notebook"] .view .ux-execute {border-color:var(--violet) !important}
+
+html[data-visual-system="notebook"] .analytics-kpis {grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr))}
+html[data-visual-system="notebook"] .analytics-kpi span {font-size:.875rem;text-transform:none;letter-spacing:normal}
+html[data-visual-system="notebook"] .analytics-kpi strong {font-size:1.5rem}
+html[data-visual-system="notebook"] .analytics-hero::after {content:none}
+html[data-visual-system="notebook"] .analytics-domain-row header>div {display:flex;flex-wrap:wrap;gap:.35rem}
+html[data-visual-system="notebook"] .journal-tools {display:flex;flex-wrap:wrap;gap:.5rem}
+html[data-visual-system="notebook"] .journal-tools :is(input,select) {flex:1 1 12rem;width:auto}
+html[data-visual-system="notebook"] .journal-intention-card {background:transparent;border:0;border-top:1px solid var(--line);border-radius:0}
+
+/* Remaining contextual and graph text surfaces use the same readable scale. */
+html[data-visual-system="notebook"] .context-rag-hero {background:transparent;color:var(--ink);padding:0;border-radius:0}
+html[data-visual-system="notebook"] .context-rag-stat :is(strong,span) {color:var(--ink)}
+html[data-visual-system="notebook"] :is(.analytics-empty,#analyticsInsight,.context-learning-empty,.graph-help,.graph-inspector-empty,.graph-inspector-definition,.graph-inspector-meta,.graph-search-result,.graph-legend) {font-size:.875rem;line-height:1.5}
+html[data-visual-system="notebook"] .graph-node-label {font-size:14px}
+html[data-visual-system="notebook"] .weak-hero {background:transparent;color:var(--ink);padding:0;border-radius:0;box-shadow:none}
+html[data-visual-system="notebook"] :is(.weak-hero,.recall-hero)::after {content:none}
+html[data-visual-system="notebook"] :is(.weak-stats,.recall-hero-stats) :is(strong,span) {color:var(--ink)}
+html[data-visual-system="notebook"] :is(.weak-empty,.recall-empty) {font-size:.875rem;line-height:1.5}
+
+html[data-visual-system="notebook"] :is(.breadcrumb,#dictionarySummary,.item-meta,.journal-private,.outcomes-empty) {font-size:.875rem;line-height:1.5}
+
+html[data-visual-system="notebook"] :is(.capture-counter,.drive-reconcile-empty,.vault-preview-empty) {font-size:.875rem;line-height:1.5}
+html[data-visual-system="notebook"] .deep-dialog :is(label,small,.eyebrow) {color:var(--muted)!important}
+html[data-visual-system="notebook"] .deep-dialog :is(input,textarea)::placeholder {color:var(--muted)!important}
+html[data-visual-system="notebook"] :is(.deep-outcome,.deep-metrics,.deep-metrics strong) {color:var(--ink)}
+html[data-visual-system="notebook"] .deep-log div {background:var(--surface);color:var(--ink);font-size:.875rem}
+
+html[data-visual-system="notebook"] :is(.capture-empty,.capture-card-content,.capture-preview,.capture-warning,#captureProcessError) {font-size:.875rem;line-height:1.5}
+
+html[data-visual-system="notebook"] .graph-inspector-meta div {flex-wrap:wrap}
+html[data-visual-system="notebook"] .graph-inspector-meta div>span {flex-shrink:0;white-space:nowrap}
+html[data-visual-system="notebook"] .dictionary-isolated {color:var(--muted)}
+html[data-visual-system="notebook"] .graph-inspector-type {color:var(--ink)!important}
+html[data-visual-system="notebook"] #learningOutcomeResourceOptions label {font-size:.875rem;line-height:1.5}
+html[data-visual-system="notebook"] #captureProcessBody>p {font-size:.875rem!important;line-height:1.5}
+html[data-visual-system="notebook"] #recallDialogSource {font-size:.875rem;line-height:1.5}
+html[data-visual-system="notebook"] .journal-entry-content,
+html[data-visual-system="notebook"] #journalMigrationContent,
+html[data-visual-system="notebook"] #journalTransformContent,
+html[data-visual-system="notebook"] #journalCloseSummary {font-size:.875rem;line-height:1.5}
+html[data-visual-system="notebook"] textarea#journalEntryContent {font-size:1rem}
+html[data-visual-system="notebook"] #analyticsHistory :is(div,span,time,p,b,strong,button) {font-size:.875rem;line-height:1.5}
+html[data-visual-system="notebook"] #settingsMenu :is(button,label,div,span,p,strong,a) {font-size:.875rem!important;line-height:1.5;letter-spacing:normal}
+html[data-visual-system="notebook"] #vaultDialog :is(.vault-warning,.vault-status) {font-size:.875rem;line-height:1.5}
+html[data-visual-system="notebook"] .error-row header {align-items:flex-start;flex-direction:column;gap:.25rem}
+html[data-visual-system="notebook"] .error-row header span {overflow-wrap:normal;word-break:normal}
+
+/* Today desktop composition: one semantic surface per planning module. */
+html[data-visual-system="notebook"] #todayView {
+  --today-module-border: color-mix(in srgb, var(--line) 58%, transparent);
+  --today-module-shadow: 0 1px 2px rgb(37 43 39 / 5%), 0 10px 28px rgb(37 43 39 / 4%);
+  background: transparent;
+  padding: 0;
+}
+html[data-visual-system="notebook"] #todayView .today-shell,
+html[data-visual-system="notebook"] #todayView #todaySecondaryContext {
+  gap: 1rem;
+}
+html[data-visual-system="notebook"] #todayView .today-heading {
+  align-items: center;
+  min-height: 4.5rem;
+  padding: .25rem .25rem .75rem;
+  border-bottom: 1px solid var(--today-module-border);
+}
+html[data-visual-system="notebook"] #todayView .today-score {
+  padding: .625rem .875rem;
+  border: 1px solid var(--today-module-border);
+  border-radius: .875rem;
+  background: color-mix(in srgb, var(--surface) 84%, var(--violet-soft));
+}
+html[data-visual-system="notebook"] #todayView :is(.today-primary, .today-panel, .today-hero) {
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--today-module-border);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: var(--today-module-shadow);
+}
+html[data-visual-system="notebook"] #todayView .today-primary-card {
+  padding: 0;
+  gap: 1rem;
+}
+html[data-visual-system="notebook"] #todayView .today-primary-card:not([hidden]) {
+  display: grid;
+}
+html[data-visual-system="notebook"] #todayView .today-panel-head {
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+html[data-visual-system="notebook"] #todayView .today-panel-head > div:first-child {
+  min-width: 0;
+  max-width: 62ch;
+}
+html[data-visual-system="notebook"] #todayView .today-panel-head :is(h3, p),
+html[data-visual-system="notebook"] #todayView .today-primary-copy :is(h3, p) {
+  margin-bottom: 0;
+}
+html[data-visual-system="notebook"] #todayView .today-panel-head > div:last-child:not(:first-child) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .5rem;
+}
+html[data-visual-system="notebook"] #todayView #journalTodayPanel {
+  margin-top: 0;
+}
+html[data-visual-system="notebook"] #todayView #journalTodayPanel .today-panel-head {
+  display: grid;
+}
+html[data-visual-system="notebook"] #todayView #journalTodayPanel .today-panel-head > div:last-child {
+  justify-content: flex-start;
+}
+html[data-visual-system="notebook"] #todayView .journal-today-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+  margin: 1.25rem 0 0;
+}
+html[data-visual-system="notebook"] #todayView .journal-today-summary div {
+  min-width: 0;
+  padding: .875rem;
+  border: 1px solid color-mix(in srgb, var(--line) 38%, transparent);
+  border-radius: .75rem;
+  background: color-mix(in srgb, var(--surface) 78%, var(--violet-soft));
+}
+html[data-visual-system="notebook"] #todayView .journal-today-summary strong {
+  display: block;
+  color: var(--ink);
+  font-size: 1.125rem;
+}
+html[data-visual-system="notebook"] #todayView .today-row,
+html[data-visual-system="notebook"] #todayView .today-candidate {
+  padding: .875rem;
+  border: 1px solid color-mix(in srgb, var(--line) 42%, transparent);
+  border-radius: .75rem;
+  background: color-mix(in srgb, var(--surface) 92%, var(--canvas));
+}
+html[data-visual-system="notebook"] #todayView .today-candidate:first-child {
+  padding-top: .875rem;
+}
+html[data-visual-system="notebook"] #todayView :is(.today-row, .today-candidate, .flow-result) {
+  transition: border-color .16s ease, background-color .16s ease;
+}
+html[data-visual-system="notebook"] #todayView :is(.today-row, .today-candidate, .flow-result):hover {
+  border-color: var(--violet);
+  background: color-mix(in srgb, var(--surface) 82%, var(--violet-soft));
+}
+html[data-visual-system="notebook"] #todayView .flow-box {
+  margin: 0;
+  padding: 1rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--today-module-border);
+  border-radius: 0;
+  background: transparent;
+}
+html[data-visual-system="notebook"] #todayView .flow-box > p {
+  max-width: 62ch;
+  margin-bottom: 1rem;
+}
+html[data-visual-system="notebook"] #todayView .flow-inputs {
+  gap: .75rem;
+}
+html[data-visual-system="notebook"] #todayView .flow-inputs label {
+  color: var(--ink);
+  font-weight: 650;
+}
+html[data-visual-system="notebook"] #todayView .flow-check {
+  padding-inline: .875rem;
+  border-color: var(--today-module-border);
+  background: color-mix(in srgb, var(--surface) 88%, var(--canvas));
+}
+html[data-visual-system="notebook"] #todayView .flow-run {
+  margin-top: .75rem;
+}
+html[data-visual-system="notebook"] #todayView .flow-results {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: .75rem;
+  margin-top: 1rem;
+}
+html[data-visual-system="notebook"] #todayView .flow-result {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  padding: 1rem;
+  border-color: var(--today-module-border);
+  background: color-mix(in srgb, var(--surface) 92%, var(--canvas));
+}
+html[data-visual-system="notebook"] #todayView .flow-result.primary {
+  grid-column: 1 / -1;
+  border-color: var(--violet);
+  background: color-mix(in srgb, var(--surface) 76%, var(--violet-soft));
+  box-shadow: inset 4px 0 0 var(--violet);
+}
+html[data-visual-system="notebook"] #todayView .flow-result-head {
+  align-items: flex-start;
+}
+html[data-visual-system="notebook"] #todayView .flow-result-head strong {
+  min-width: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+html[data-visual-system="notebook"] #todayView .flow-score {
+  flex: none;
+  padding: .25rem .5rem;
+  border-radius: 999px;
+  background: var(--violet-soft);
+  color: var(--violet);
+}
+html[data-visual-system="notebook"] #todayView .flow-reasons {
+  margin: .75rem 0;
+  gap: .375rem;
+}
+html[data-visual-system="notebook"] #todayView .flow-reason {
+  border: 1px solid color-mix(in srgb, var(--line) 32%, transparent);
+}
+html[data-visual-system="notebook"] #todayView .flow-result-actions {
+  align-self: end;
+  margin-top: auto;
+  padding-top: .25rem;
+}
+
+@media (min-width: 1200px) {
+  html[data-visual-system="notebook"] #todayView .today-shell {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  html[data-visual-system="notebook"] #todayView .today-shell > .today-heading {
+    grid-column: 1 / -1;
+  }
+  html[data-visual-system="notebook"] #todayView .today-shell > #todayPrimaryAction,
+  html[data-visual-system="notebook"] #todayView .today-shell > #todayRemainingPlan {
+    grid-column: 1 / span 8;
+  }
+  html[data-visual-system="notebook"] #todayView .today-shell > #journalTodayPanel {
+    grid-column: 9 / -1;
+    grid-row: 2;
+  }
+  html[data-visual-system="notebook"] #todayView .today-shell > #todaySecondaryContext {
+    display: contents;
+  }
+  html[data-visual-system="notebook"] #todayView #todaySecondaryContext > .today-grid:first-child {
+    display: contents;
+  }
+  html[data-visual-system="notebook"] #todayView #todaySecondaryContext > .today-grid:last-child {
+    display: contents;
+  }
+  html[data-visual-system="notebook"] #todayView #todaySecondaryContext > .today-grid:first-child > .today-panel {
+    grid-column: 9 / -1;
+    grid-row: 3;
+  }
+  html[data-visual-system="notebook"] #todayView #todaySecondaryContext > .today-grid:last-child > .today-panel:first-child {
+    grid-column: 1 / span 8;
+    grid-row: 4;
+  }
+  html[data-visual-system="notebook"] #todayView #todaySecondaryContext > .today-grid:last-child > .today-panel:last-child {
+    grid-column: 9 / -1;
+    grid-row: 4;
+    align-self: start;
+  }
+}
+
+@media (max-width: 1199px) {
+  html[data-visual-system="notebook"] #todayView .today-shell,
+  html[data-visual-system="notebook"] #todayView #todaySecondaryContext,
+  html[data-visual-system="notebook"] #todayView .today-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  html[data-visual-system="notebook"] #todayView :is(.today-primary, .today-panel, .today-hero) {
+    padding: 1rem;
+  }
+  html[data-visual-system="notebook"] #todayView .today-heading {
+    align-items: flex-start;
+  }
+  html[data-visual-system="notebook"] #todayView .today-score {
+    text-align: left;
+  }
+  html[data-visual-system="notebook"] #todayView .flow-inputs,
+  html[data-visual-system="notebook"] #todayView .flow-results {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html[data-visual-system="notebook"] #todayView .flow-result.primary {
+    grid-column: auto;
+  }
+  html[data-visual-system="notebook"] #todayView .flow-result-head {
+    display: grid;
+  }
+  html[data-visual-system="notebook"] #todayView .flow-score {
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-visual-system="notebook"] #todayView :is(.today-row, .today-candidate, .flow-result) {
+    transition: none;
+  }
+}
