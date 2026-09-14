@@ -30,11 +30,13 @@ Transformar tempo investido em registro verificável. Ao encerrar uma sessão de
 
 ## Continuação após a sessão
 
-Depois que Session/Deep Work e Evidence são persistidos, `execution:recorded` abre um painel efêmero e não modal. O foco vai para o título somente após o sucesso. O painel oferece **Voltar para Hoje**, **Registrar sinal** apenas quando existe capacidade ativa e **Abrir capacidade** quando a referência continua disponível. Ele não sobrevive ao refresh e não representa um novo registro de jornada.
+Depois que Session/Deep Work e Evidence são persistidos, `execution:recorded` abre um painel efêmero e não modal. O foco vai para o título somente após o sucesso. O painel oferece **Voltar para Hoje**, **Refletir sobre esta evidência** quando a Evidence resolve uma capacidade ativa e **Abrir capacidade** quando a referência continua disponível. Ele não sobrevive ao refresh e não representa um novo registro de jornada.
 
-**Registrar sinal** reutiliza o diálogo e a persistência existentes de `learningSignals`. Uma síntese útil de Evidence pode aparecer como sugestão editável, com proveniência visível; sem texto útil, o formulário abre vazio. Cancelar não cria registro nem tombstone. Somente **Salvar sinal** cria o sinal com origem `learner` ou `confirmed-suggestion`. Falha de sinal mantém Session/Evidence já salvas, conserva o texto para nova tentativa e não anuncia sucesso.
+**Refletir sobre esta evidência** reutiliza o diálogo e a persistência existentes de `learningSignals`, mas abre uma apresentação específica e opcional. O campo pergunta **O que esta evidência demonstra que você já consegue fazer?**, começa vazio e não copia nem infere uma resposta a partir da Evidence. Somente **Salvar reflexão** cria um `insight` com autoria `learner` e `sourceRef` para a Evidence exata.
 
-Evidence continua sem `learningContext`: o contexto é resolvido exclusivamente pelo `sessionId` canônico. Sessões/Evidence legadas sem vínculo continuam válidas, sem ação de sinal de capacidade e sem associação inferida. Nenhuma continuação conclui Hoje, altera a capacidade ou muda a próxima tentativa.
+Cancelar ou pressionar Escape descarta apenas o texto efêmero, não cria registro/tombstone e devolve o foco ao botão de origem. Falha de gravação mantém Session/Evidence já salvas, conserva o texto para nova tentativa e não anuncia sucesso. Uma conclusão de execução ativa sem Evidence preserva o caminho genérico **Registrar sinal**; os demais pontos de entrada de sinais continuam inalterados.
+
+Evidence continua sem `learningContext` ou campo de calibração: o contexto é resolvido exclusivamente pelo `sessionId` canônico. Sessões/Evidence legadas sem vínculo, referência ausente ou capacidade não ativa continuam válidas, sem ação de calibração e sem associação inferida. Nenhuma continuação conclui Hoje, altera a capacidade ou muda a próxima tentativa.
 
 ## Modelo de dados
 
@@ -70,6 +72,7 @@ Evidence continua sem `learningContext`: o contexto é resolvido exclusivamente 
 5. Backup exportado contém o array `evidence`.
 6. Excluir a sessão remove a evidência correspondente.
 7. O recurso funciona offline.
+8. A reflexão pós-Evidence é opcional, começa vazia e só existe após confirmação explícita.
 
 ## Correções e sincronização
 
