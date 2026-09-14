@@ -229,6 +229,12 @@ test('controlled complete cache reopens offline with composition and local state
   await expect(page.locator('#learningSignalDialog')).toBeHidden();
   await page.reload();
   await coherent(page);
+  await page.evaluate(() => CompassoInformationArchitecture.open('today'));
+  const offlineRecall=page.locator('#todayPrimaryAction .today-evidence-recall');
+  await expect(offlineRecall).toContainText('Encoding e Evidence preservados offline');
+  const offlineEvidenceId=await offlineRecall.locator('[data-today-open-evidence]').getAttribute('data-today-open-evidence');
+  await offlineRecall.locator('[data-today-open-evidence]').click();
+  await expect(page.locator(`[data-capability-evidence="${offlineEvidenceId}"]`)).toBeFocused();
   await page.evaluate(() => CompassoInformationArchitecture.open('capabilities'));
   await expect(page.locator('[data-outcome-card]')).toContainText('Explicar o ciclo offline');
   await expect(page.locator('[data-outcome-card]')).toContainText('Evidência preservada offline');

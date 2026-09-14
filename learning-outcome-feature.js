@@ -17,7 +17,8 @@ const learningOutcomeRuntime = {
   signalOutcomeId:null,
   signalSourceRef:null,
   signalOrigin:'learner',
-  signalPresentation:'default'
+  signalPresentation:'default',
+  focusEvidenceId:null
 };
 
 function outcomeElement(id) { return document.getElementById(id); }
@@ -164,7 +165,8 @@ function outcomeContextSummary(outcome, indexes) {
   const summary = capabilityContextModel.capabilitySummary(outcome.id, state.data, indexes);
   const today = summary.today.find(entry => entry.plan?.date === todayDateKey());
   const executions = summary.executions.slice(0, 3);
-  const evidence = summary.evidence.slice(0, 4);
+  const focusedEvidence=learningOutcomeRuntime.focusEvidenceId?summary.evidence.find(item=>item.id===learningOutcomeRuntime.focusEvidenceId):null;
+  const evidence=(focusedEvidence?[focusedEvidence,...summary.evidence.filter(item=>item.id!==focusedEvidence.id)]:summary.evidence).slice(0,4);
   const projected = [];
   executions.forEach(session => { if (String(session.result || session.reflection || '').trim()) projected.push({kind:'feedback',text:session.result || session.reflection,sourceRef:{type:'execution',id:session.id}}); });
   evidence.forEach(item => { if (['question','insight'].includes(item.type)) projected.push({kind:item.type,text:item.summary,sourceRef:{type:'evidence',id:item.id}}); });
@@ -172,7 +174,7 @@ function outcomeContextSummary(outcome, indexes) {
   const sections = [];
   if (today) sections.push(`<div class="capability-context-block"><h4>Hoje</h4><p>${today.item.completedAt ? 'Planejada e concluída no dia' : 'Pronta no plano do dia'} · ${escapeHtml(capabilityContextModel.resolveCapabilityRef(today.item.capabilityRef,[outcome]).attemptText)}</p><button type="button" data-outcome-open-today="${escapeHtml(outcome.id)}">Abrir em Hoje</button></div>`);
   if (executions.length) sections.push(`<div class="capability-context-block"><h4>Última execução e tentativas finalizadas</h4>${executions.map(session=>`<article><strong>${escapeHtml(session.learningContext?.attemptText || outcome.nextAttempt.text)}</strong><span>${escapeHtml(outcomeDate(session.endedAt || session.startedAt))} · ${session.status === 'interrupted' ? 'Interrompida' : 'Concluída'}</span>${session.learningContext?.futureUse?`<p class="future-use-context">${escapeHtml(outcomeFutureUseText(session.learningContext.futureUse,'Uso na execução'))}</p>`:''}${session.result || session.reflection ? `<p>${escapeHtml(session.result || session.reflection)}</p>` : ''}<button type="button" data-signal-new="${escapeHtml(outcome.id)}" data-signal-source-type="execution" data-signal-source-id="${escapeHtml(session.id)}" data-signal-kind="feedback" data-signal-text="${escapeHtml(session.result || session.reflection || '')}">Registrar sinal desta tentativa</button></article>`).join('')}</div>`);
-  if (evidence.length) sections.push(`<div class="capability-context-block"><h4>Evidence</h4>${evidence.map(item=>`<article><strong>${escapeHtml(item.summary)}</strong><span>${escapeHtml((typeof evidenceTypeLabels==='object'&&evidenceTypeLabels[item.type])||'Evidência')}</span>${['question','insight'].includes(item.type)?`<button type="button" data-signal-new="${escapeHtml(outcome.id)}" data-signal-source-type="evidence" data-signal-source-id="${escapeHtml(item.id)}" data-signal-kind="${item.type}" data-signal-text="${escapeHtml(item.summary)}">Registrar como sinal</button>`:''}</article>`).join('')}</div>`);
+  if (evidence.length) sections.push(`<div class="capability-context-block"><h4>Evidence</h4>${evidence.map(item=>`<article data-capability-evidence="${escapeHtml(item.id)}" tabindex="-1" aria-label="Evidence: ${escapeHtml(item.summary)}"><strong>${escapeHtml(item.summary)}</strong><span>${escapeHtml((typeof evidenceTypeLabels==='object'&&evidenceTypeLabels[item.type])||'Evidência')}</span>${['question','insight'].includes(item.type)?`<button type="button" data-signal-new="${escapeHtml(outcome.id)}" data-signal-source-type="evidence" data-signal-source-id="${escapeHtml(item.id)}" data-signal-kind="${item.type}" data-signal-text="${escapeHtml(item.summary)}">Registrar como sinal</button>`:''}</article>`).join('')}</div>`);
   if (projected.length) sections.push(`<div class="capability-context-block capability-source-signals"><h4>Sinais nas fontes</h4><p>${projected.length} ${projected.length===1?'registro permanece em sua fonte':'registros permanecem em suas fontes'}; nada é copiado automaticamente.</p></div>`);
   if (summary.signals.length) sections.push(`<div class="capability-context-block"><h4>Sinais confirmados</h4>${summary.signals.map(signal=>`<article class="learning-signal-row"><span>${escapeHtml(outcomeSignalLabel(signal.kind))}${signal.sourceRef?' · com origem':' · sem origem'}</span><strong>${escapeHtml(signal.text)}</strong><button type="button" data-signal-edit="${escapeHtml(signal.id)}">Editar</button></article>`).join('')}</div>`);
   if (reflection) sections.push(`<div class="capability-context-block"><h4>Reflexão mais recente</h4>${reflection.reflection?`<p>${escapeHtml(reflection.reflection)}</p>`:''}<strong>${reflection.decision==='revise'?'Tentativa revisada':'Tentativa mantida'}: ${escapeHtml(reflection.decidedAttemptText)}</strong><span>${escapeHtml(outcomeDate(reflection.decidedAt))}</span></div>`);
@@ -440,7 +442,25 @@ function outcomeStartExecution(id, trigger) {
   openOutcomeSessionStart(outcome.id,{learningContext,resources:outcomeResolved(outcome)});
 }
 
+function outcomeOpenEvidence({outcomeId,evidenceId}={}) {
+  const outcome=outcomeFind(outcomeId),selected=capabilityContextModel.selectRecentEvidence(outcomeId,state.data);
+  if(!outcome||!selected||selected.evidenceId!==evidenceId)return false;
+  learningOutcomeRuntime.mode=outcome.status==='archived'?'archived':'active';
+  learningOutcomeRuntime.focusEvidenceId=evidenceId;
+  switchView('capabilities');
+  outcomeRender();
+  const card=document.querySelector(`[data-outcome-card="${CSS.escape(outcomeId)}"]`);
+  const details=card?.querySelector('.capability-context-summary');
+  const target=card?.querySelector(`[data-capability-evidence="${CSS.escape(evidenceId)}"]`);
+  learningOutcomeRuntime.focusEvidenceId=null;
+  if(!details||!target)return false;
+  details.open=true;
+  requestAnimationFrame(()=>{target.scrollIntoView?.({behavior:'smooth',block:'center'});target.focus?.()});
+  return true;
+}
+
 CompassoFeatures.command('learningSignal.open',payload=>outcomeOpenSignal(payload||{},payload?.trigger));
+CompassoFeatures.command('capability.openEvidence',outcomeOpenEvidence);
 
 CompassoFeatures.register('learning-outcomes', {
   order:68,

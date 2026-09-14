@@ -60,6 +60,7 @@ All three trimmed strings are required. The live attempt text is shown only when
 
 - **Capacidades:** derives today's reference, resources, finalized attempts, Evidence, source projections, confirmed signals, and the latest weekly decision. Active cards can add/open Hoje, execute, and register a signal. Archived cards remain historical.
 - **Hoje:** owns one `type: 'capability-attempt'` item per outcome/attempt/day. Toggle and removal modify only the daily plan. Missing or archived capabilities retain snapshot text and cannot start a new session.
+- **Recall em Hoje:** derives at most one eligible Evidence for the current primary capability through canonical Session provenance, ordered by Evidence creation time. It has no durable read state and opens the exact source record inside the Capability context.
 - **Estudos/Leituras:** derive reverse links from `learningOutcomes.resourceRefs`. The resource-side manager updates only outcome records. Missing resources remain unavailable until explicitly unlinked.
 - **Sessions/Deep Work:** Study/Reading starts default to `Sem capacidade`. An explicit active/current choice is revalidated and passed through the shipped `learningContext` adapters; resource metrics remain authoritative.
 - **Evidence:** stores no new capability field. Projection is strictly `Evidence.sessionId → executionSessions.id → learningContext`.
@@ -76,6 +77,7 @@ The UX Simplification delivery composes the shipped owners into one perceptible 
 - Session and Deep Work emit the completion handoff only after canonical Session/Evidence persistence succeeds.
 - The completion panel is ephemeral. When a saved Evidence resolves an active capability, **Refletir sobre esta evidência** asks **O que esta evidência demonstra que você já consegue fazer?**. The response starts empty and becomes an existing `learningSignals` insight only through explicit save, with `origin: learner` and the exact Evidence `sourceRef`.
 - Cancel, Escape, navigation, refresh before save, and persistence failure create no calibration record. The generic signal entry points remain unchanged, and execution-only completion without Evidence retains the existing generic signal action.
+- Before a current planned attempt, Today may recall the most recent valid Evidence from the same capability. The card is omitted when canonical provenance is absent; **Ver evidência** revalidates and focuses the exact record without changing state.
 - Weekly Review puts capability reflection and keep/revise decisions before closure and collapsed supporting summaries. Only an explicit successful revise changes the next attempt.
 - Focus transitions, native keyboard behavior, coarse-pointer targets, reduced motion, 360–390 px layouts and 200% zoom are part of the same UI contract.
 
@@ -99,4 +101,4 @@ Notes, folders, Markdown/vault metadata, wikilinks, source links, Relations/grap
 
 ## PWA and rollback
 
-`app-manifest.js` owns the current candidate generation `compasso-pages-v81`, includes `capability-context-model.js`, and keeps the Service Worker implementation unchanged. Before publication, rollback is the complete scoped release unit. Rollback after v81 exposure must use a later forward generation that preserves `learningSignals` and nested reflection/Today fields. Never clear user storage, backups, vaults, or unrelated caches.
+`app-manifest.js` owns the current candidate generation `compasso-pages-v82`, includes `capability-context-model.js`, and keeps the Service Worker implementation unchanged. Before publication, rollback is the complete scoped release unit. Rollback after v82 exposure must use a later forward generation that preserves `learningSignals` and nested reflection/Today fields. Never clear user storage, backups, vaults, or unrelated caches.
