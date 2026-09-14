@@ -80,7 +80,8 @@ function renderEvidenceCompletion(payload={}) {
   document.getElementById('executionCompletionSummary').textContent=evidence?.summary||execution?.result||execution?.reflection||'O encerramento foi salvo. Escolha como continuar.';
   const futureUse=learningOutcomeModel.futureUsePresentation(capabilityRef?.futureUse),futureUseTarget=document.getElementById('executionCompletionFutureUse');futureUseTarget.textContent=futureUse?`Uso na execução: ${futureUse.label}`:'';futureUseTarget.hidden=!futureUse;
   document.getElementById('executionCompletionStatus').textContent='A ação de Hoje e a próxima tentativa permanecem como estavam.';
-  document.getElementById('executionCompletionActions').innerHTML=`<button type="button" class="primary-btn" data-completion-today>Voltar para Hoje</button>${resolved.active?'<button type="button" class="secondary-btn" data-completion-signal>Registrar sinal</button>':''}${resolved.available?'<button type="button" class="quiet-btn" data-completion-capability>Abrir capacidade</button>':''}`;
+  const learningAction=resolved.active?(evidence?'<button type="button" class="secondary-btn" data-completion-calibration>Refletir sobre esta evidência</button>':'<button type="button" class="secondary-btn" data-completion-signal>Registrar sinal</button>'):'';
+  document.getElementById('executionCompletionActions').innerHTML=`<button type="button" class="primary-btn" data-completion-today>Voltar para Hoje</button>${learningAction}${resolved.available?'<button type="button" class="quiet-btn" data-completion-capability>Abrir capacidade</button>':''}`;
   panel.hidden=false;
   requestAnimationFrame(()=>{panel.scrollIntoView?.({block:'nearest'});panel.focus()});
 }
@@ -188,7 +189,7 @@ CompassoFeatures.on('view:changed',()=>{const panel=document.getElementById('exe
 CompassoFeatures.on('learning-signal:saved',payload=>{
   if(!payload||payload.sourceRef?.id!==evidenceCompletionRuntime.evidenceId&&payload.sourceRef?.id!==evidenceCompletionRuntime.sessionId)return;
   evidenceCompletionRuntime.signalSaved=true;
-  const status=document.getElementById('executionCompletionStatus');if(status)status.textContent='Sinal salvo após sua confirmação. A próxima tentativa não foi alterada.';
+  const status=document.getElementById('executionCompletionStatus');if(status)status.textContent=payload.sourceRef?.id===evidenceCompletionRuntime.evidenceId?'Reflexão salva após sua confirmação. A próxima tentativa não foi alterada.':'Sinal salvo após sua confirmação. A próxima tentativa não foi alterada.';
   requestAnimationFrame(()=>document.querySelector('[data-completion-today]')?.focus?.());
 });
 CompassoFeatures.action('[data-evidence-capability]',({target})=>{
@@ -201,8 +202,11 @@ CompassoFeatures.action('[data-completion-capability]',()=>{
   const {resolved}=evidenceCompletionContext();if(!resolved.available)return;
   dismissEvidenceCompletion();learningOutcomeRuntime.mode=resolved.outcome.status==='archived'?'archived':'active';switchView('capabilities');outcomeRender();requestAnimationFrame(()=>document.querySelector(`[data-outcome-card="${CSS.escape(resolved.outcome.id)}"]`)?.focus?.());
 });
+CompassoFeatures.action('[data-completion-calibration]',({target})=>{
+  const {execution,evidence,resolved}=evidenceCompletionContext();if(!execution||!evidence||!resolved.active)return renderEvidenceCompletion({sessionId:evidenceCompletionRuntime.sessionId,evidenceId:evidenceCompletionRuntime.evidenceId});
+  CompassoFeatures.execute('learningSignal.open',{outcomeId:resolved.outcome.id,sourceRef:{type:'evidence',id:evidence.id},kind:'insight',text:'',origin:'learner',presentation:'evidence-calibration',trigger:target});
+});
 CompassoFeatures.action('[data-completion-signal]',({target})=>{
-  const {execution,evidence,resolved}=evidenceCompletionContext();if(!execution||!resolved.active)return renderEvidenceCompletion({sessionId:evidenceCompletionRuntime.sessionId,evidenceId:evidenceCompletionRuntime.evidenceId});
-  const suggestion=(evidence?.summary||'').trim(),sourceRef=evidence?{type:'evidence',id:evidence.id}:{type:'execution',id:execution.id};
-  CompassoFeatures.execute('learningSignal.open',{outcomeId:resolved.outcome.id,sourceRef,kind:['question','insight'].includes(evidence?.type)?evidence.type:'feedback',text:suggestion,origin:suggestion?'confirmed-suggestion':'learner',provenance:suggestion?'Sugestão baseada na Evidence que acabou de ser salva. Revise antes de confirmar.':'Escreva apenas se este registro ajudar sua próxima decisão.',trigger:target});
+  const {execution,evidence,resolved}=evidenceCompletionContext();if(!execution||evidence||!resolved.active)return renderEvidenceCompletion({sessionId:evidenceCompletionRuntime.sessionId,evidenceId:evidenceCompletionRuntime.evidenceId});
+  CompassoFeatures.execute('learningSignal.open',{outcomeId:resolved.outcome.id,sourceRef:{type:'execution',id:execution.id},kind:'feedback',text:'',origin:'learner',provenance:'Escreva apenas se este registro ajudar sua próxima decisão.',trigger:target});
 });

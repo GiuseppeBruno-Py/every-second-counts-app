@@ -179,6 +179,7 @@ test('controlled complete cache reopens offline with composition and local state
   await page.locator('[name="nextAttempt"]').fill('Reabrir a capacidade sem rede');
   await page.locator('#learningOutcomeForm [type="submit"]').click();
   await expect(page.locator('#learningOutcomeDialog')).toBeHidden();
+  const offlineOutcomeId=await page.evaluate(() => state.data.learningOutcomes[0].id);
   await page.locator('[data-outcome-today]').click();
   await expect(page.locator('[data-today-capability]')).toContainText('Reabrir a capacidade sem rede');
   await page.locator('[data-today-open-capability]').click();
@@ -200,6 +201,8 @@ test('controlled complete cache reopens offline with composition and local state
   await page.evaluate(async () => { const index=state.data.ritualTemplates.findIndex(item=>item.actionType==='study'&&!item.archived),ritual=CompassoRitualModel.update(state.data.ritualTemplates[index],{encodingCheckpoint:true});state.data.ritualTemplates[index]=ritual;state.data.study.find(item=>item.id==='example-study').ritualId=ritual.id;await CompassoStorage.save('compasso.app.v1',state.data);CompassoInformationArchitecture.open('study');renderAll(); });
   await page.locator('#studyGrid .ux-execute').first().click();
   await page.locator('[data-ux-run="ideal"]').click();
+  await page.locator('#sessionOptionalConfig summary').click();
+  await page.locator('#sessionCapability').selectOption(offlineOutcomeId);
   await page.locator('#sessionStartForm').evaluate(form=>form.requestSubmit());
   await expect(page.locator('#sessionEncodingTrigger')).toBeVisible();
   await page.evaluate(() => localStorage.setItem('compasso.test.offline', 'preserved'));
@@ -218,6 +221,14 @@ test('controlled complete cache reopens offline with composition and local state
   await page.locator('#sessionEvidenceSummary').fill('Encoding e Evidence preservados offline');
   await page.locator('#sessionFinishForm').evaluate(form=>form.requestSubmit());
   await expect(page.locator('#executionCompletionPanel')).toBeVisible();
+  await page.locator('[data-completion-calibration]').click();
+  await expect(page.locator('label[for="learningSignalText"]')).toHaveText('O que esta evidência demonstra que você já consegue fazer?');
+  await expect(page.locator('#learningSignalText')).toHaveValue('');
+  await page.locator('#learningSignalText').fill('Já consigo concluir a execução e preservar a evidência sem rede');
+  await page.locator('#learningSignalForm').evaluate(form=>form.requestSubmit());
+  await expect(page.locator('#learningSignalDialog')).toBeHidden();
+  await page.reload();
+  await coherent(page);
   await page.evaluate(() => CompassoInformationArchitecture.open('capabilities'));
   await expect(page.locator('[data-outcome-card]')).toContainText('Explicar o ciclo offline');
   await expect(page.locator('[data-outcome-card]')).toContainText('Evidência preservada offline');
@@ -227,6 +238,7 @@ test('controlled complete cache reopens offline with composition and local state
   expect(await page.evaluate(() => state.data.executionSessions.some(item => item.learningContext?.attemptText === 'Reabrir a capacidade sem rede'))).toBe(true);
   expect(await page.evaluate(() => state.data.dailyPlans.some(plan => plan.items?.some(item => item.type === 'capability-attempt')))).toBe(true);
   expect(await page.evaluate(() => state.data.learningSignals.some(item => item.text.includes('disponível offline')))).toBe(true);
+  expect(await page.evaluate(() => state.data.learningSignals.some(item => item.kind === 'insight' && item.origin === 'learner' && item.sourceRef?.type === 'evidence' && item.text.includes('preservar a evidência sem rede')))).toBe(true);
   expect(await page.evaluate(() => state.data.weeklyReviews.some(review => review.capabilityReflections?.some(item => item.decision === 'keep')))).toBe(true);
   expect(await page.evaluate(() => state.data.evidence.some(item => item.summary === 'Encoding e Evidence preservados offline'))).toBe(true);
   await expect(page.locator('link[href="./design-system.css"]')).toHaveCount(1);

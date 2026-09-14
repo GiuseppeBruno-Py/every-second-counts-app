@@ -16,7 +16,8 @@ const learningOutcomeRuntime = {
   signalId:null,
   signalOutcomeId:null,
   signalSourceRef:null,
-  signalOrigin:'learner'
+  signalOrigin:'learner',
+  signalPresentation:'default'
 };
 
 function outcomeElement(id) { return document.getElementById(id); }
@@ -119,9 +120,9 @@ function outcomeInstallShell() {
     document.body.insertAdjacentHTML('beforeend', `
       <dialog class="learning-outcome-dialog learning-signal-dialog" id="learningSignalDialog" aria-labelledby="learningSignalTitle">
         <form id="learningSignalForm">
-          <div class="learning-outcome-dialog-head"><div><div class="eyebrow">Decisão do aprendiz</div><h2 id="learningSignalTitle">Registrar sinal</h2></div><button class="icon-btn" type="button" data-signal-close aria-label="Fechar">${icon('x')}</button></div>
-          <div class="learning-outcome-form"><label for="learningSignalKind">Tipo</label><select id="learningSignalKind"><option value="feedback">Feedback</option><option value="gap">Lacuna ou assunto fraco</option><option value="question">Pergunta</option><option value="insight">Insight</option></select><label for="learningSignalText">O que deve informar sua próxima decisão?</label><textarea id="learningSignalText" maxlength="1000" required aria-describedby="learningSignalProvenance learningSignalConsent"></textarea><p class="learning-signal-provenance" id="learningSignalProvenance" hidden></p><p id="learningSignalConsent">O sinal só será salvo após sua confirmação e nunca mudará a tentativa automaticamente.</p><p class="learning-outcome-error" id="learningSignalError" role="alert" hidden></p></div>
-          <div class="learning-outcome-dialog-foot"><button class="quiet-btn learning-outcome-delete" id="learningSignalDelete" type="button" data-signal-delete hidden>Excluir</button><span></span><button class="secondary-btn" type="button" data-signal-close>Cancelar</button><button class="primary-btn" type="submit">Salvar sinal</button></div>
+          <div class="learning-outcome-dialog-head"><div><div class="eyebrow" id="learningSignalEyebrow">Decisão do aprendiz</div><h2 id="learningSignalTitle">Registrar sinal</h2></div><button class="icon-btn" type="button" data-signal-close aria-label="Fechar">${icon('x')}</button></div>
+          <div class="learning-outcome-form"><label id="learningSignalKindLabel" for="learningSignalKind">Tipo</label><select id="learningSignalKind"><option value="feedback">Feedback</option><option value="gap">Lacuna ou assunto fraco</option><option value="question">Pergunta</option><option value="insight">Insight</option></select><label id="learningSignalTextLabel" for="learningSignalText">O que deve informar sua próxima decisão?</label><textarea id="learningSignalText" maxlength="1000" required aria-describedby="learningSignalProvenance learningSignalConsent"></textarea><p class="learning-signal-provenance" id="learningSignalProvenance" hidden></p><p id="learningSignalConsent">O sinal só será salvo após sua confirmação e nunca mudará a tentativa automaticamente.</p><p class="learning-outcome-error" id="learningSignalError" role="alert" hidden></p></div>
+          <div class="learning-outcome-dialog-foot"><button class="quiet-btn learning-outcome-delete" id="learningSignalDelete" type="button" data-signal-delete hidden>Excluir</button><span></span><button class="secondary-btn" type="button" data-signal-close>Cancelar</button><button class="primary-btn" id="learningSignalSubmit" type="submit">Salvar sinal</button></div>
         </form>
       </dialog>`);
   }
@@ -393,22 +394,35 @@ async function outcomeAddToToday(id){
 }
 
 function outcomeSignalFind(id){return(state.data.learningSignals||[]).find(item=>item.id===id)||null}
-function outcomeOpenSignal({outcomeId,signalId=null,sourceRef=null,kind='feedback',text='',origin='learner',provenance=''},trigger){
+function outcomeApplySignalPresentation(mode='default'){
+  const calibration=mode==='evidence-calibration';
+  learningOutcomeRuntime.signalPresentation=calibration?'evidence-calibration':'default';
+  outcomeElement('learningSignalEyebrow').textContent=calibration?'Reflexão opcional':'Decisão do aprendiz';
+  outcomeElement('learningSignalTitle').textContent=calibration?'Calibrar com evidência':'Registrar sinal';
+  outcomeElement('learningSignalTextLabel').textContent=calibration?'O que esta evidência demonstra que você já consegue fazer?':'O que deve informar sua próxima decisão?';
+  outcomeElement('learningSignalKindLabel').hidden=calibration;
+  outcomeElement('learningSignalKind').hidden=calibration;
+  outcomeElement('learningSignalSubmit').textContent=calibration?'Salvar reflexão':'Salvar sinal';
+  outcomeElement('learningSignalConsent').textContent=calibration?'A reflexão só será salva após sua confirmação e nunca mudará a tentativa automaticamente.':'O sinal só será salvo após sua confirmação e nunca mudará a tentativa automaticamente.';
+}
+function outcomeOpenSignal({outcomeId,signalId=null,sourceRef=null,kind='feedback',text='',origin='learner',provenance='',presentation='default'},trigger){
   const signal=signalId?outcomeSignalFind(signalId):null,outcome=outcomeFind(outcomeId||signal?.capabilityRef?.outcomeId);
   if(!signal&&(!outcome||outcome.status!=='active'))return;
+  const calibration=!signal&&presentation==='evidence-calibration'&&sourceRef?.type==='evidence'&&Boolean(String(sourceRef.id||'').trim())&&kind==='insight'&&!String(text||'').trim()&&origin==='learner';
   learningOutcomeRuntime.signalId=signal?.id||null;learningOutcomeRuntime.signalOutcomeId=outcome?.id||signal?.capabilityRef?.outcomeId;learningOutcomeRuntime.signalSourceRef=sourceRef||signal?.sourceRef||null;learningOutcomeRuntime.signalOrigin=signal?.origin||(origin==='confirmed-suggestion'?'confirmed-suggestion':'learner');learningOutcomeRuntime.returnFocus=trigger||document.activeElement;
-  outcomeElement('learningSignalTitle').textContent=signal?'Editar sinal':'Registrar sinal';outcomeElement('learningSignalKind').value=signal?.kind||kind;outcomeElement('learningSignalText').value=signal?.text||text;
-  const sourceHelp=outcomeElement('learningSignalProvenance');sourceHelp.textContent=provenance||(learningOutcomeRuntime.signalOrigin==='confirmed-suggestion'?'Este texto veio de uma fonte vinculada e só permanece como sinal depois da sua confirmação.':'');sourceHelp.hidden=!sourceHelp.textContent;
+  outcomeApplySignalPresentation(calibration?'evidence-calibration':'default');if(signal)outcomeElement('learningSignalTitle').textContent='Editar sinal';outcomeElement('learningSignalKind').value=calibration?'insight':signal?.kind||kind;outcomeElement('learningSignalText').value=calibration?'':signal?.text||text;
+  const sourceHelp=outcomeElement('learningSignalProvenance');sourceHelp.textContent=provenance||(calibration?'Sua resposta será ligada à Evidence salva. Ela só existe depois de você confirmar e não altera a próxima tentativa.':learningOutcomeRuntime.signalOrigin==='confirmed-suggestion'?'Este texto veio de uma fonte vinculada e só permanece como sinal depois da sua confirmação.':'');sourceHelp.hidden=!sourceHelp.textContent;
   outcomeElement('learningSignalDelete').hidden=!signal;const error=outcomeElement('learningSignalError');error.hidden=true;error.textContent='';outcomeElement('learningSignalDialog').showModal();queueMicrotask(()=>outcomeElement('learningSignalText').focus());
 }
-function outcomeCloseSignal(){const dialog=outcomeElement('learningSignalDialog');if(dialog?.open)dialog.close();learningOutcomeRuntime.returnFocus?.focus?.();learningOutcomeRuntime.signalId=null;learningOutcomeRuntime.signalOutcomeId=null;learningOutcomeRuntime.signalSourceRef=null;learningOutcomeRuntime.signalOrigin='learner'}
+function outcomeCloseSignal(){const dialog=outcomeElement('learningSignalDialog'),returnFocus=learningOutcomeRuntime.returnFocus;if(dialog?.open)dialog.close();outcomeApplySignalPresentation();returnFocus?.focus?.();learningOutcomeRuntime.returnFocus=null;learningOutcomeRuntime.signalId=null;learningOutcomeRuntime.signalOutcomeId=null;learningOutcomeRuntime.signalSourceRef=null;learningOutcomeRuntime.signalOrigin='learner'}
 async function outcomeSaveSignal(event){
   event.preventDefault();const current=outcomeSignalFind(learningOutcomeRuntime.signalId),outcome=outcomeFind(learningOutcomeRuntime.signalOutcomeId),error=outcomeElement('learningSignalError');
   try{
     const input={kind:outcomeElement('learningSignalKind').value,text:outcomeElement('learningSignalText').value,sourceRef:learningOutcomeRuntime.signalSourceRef,origin:learningOutcomeRuntime.signalOrigin};
     const signal=current?capabilityContextModel.updateSignal(current,input):capabilityContextModel.createSignal({...input,capabilityRef:capabilityContextModel.createCapabilityRef(outcome)});
     const candidate=outcomeClone(state.data);candidate.learningSignals=current?(candidate.learningSignals||[]).map(item=>item.id===signal.id?signal:item):[signal,...(candidate.learningSignals||[])];
-    if(await outcomePersist(candidate,current?'Sinal atualizado':'Sinal registrado','Não foi possível salvar o sinal.')){const payload={signalId:signal.id,outcomeId:signal.capabilityRef.outcomeId,sourceRef:signal.sourceRef};outcomeCloseSignal();CompassoFeatures.emit('learning-signal:saved',payload)}else{error.textContent='Não foi possível salvar o sinal.';error.hidden=false;outcomeElement('learningSignalText').focus()}
+    const calibration=learningOutcomeRuntime.signalPresentation==='evidence-calibration';
+    if(await outcomePersist(candidate,current?'Sinal atualizado':calibration?'Reflexão salva':'Sinal registrado',calibration?'Não foi possível salvar a reflexão.':'Não foi possível salvar o sinal.')){const payload={signalId:signal.id,outcomeId:signal.capabilityRef.outcomeId,sourceRef:signal.sourceRef};outcomeCloseSignal();CompassoFeatures.emit('learning-signal:saved',payload)}else{error.textContent=calibration?'Não foi possível salvar a reflexão.':'Não foi possível salvar o sinal.';error.hidden=false;outcomeElement('learningSignalText').focus()}
   }catch(problem){error.textContent=problem.message||'Revise o sinal.';error.hidden=false;outcomeElement('learningSignalText').focus()}
 }
 async function outcomeDeleteSignal(){
