@@ -74,6 +74,58 @@ test('Evidence resolve contexto somente por sessionId canônico e nunca por dom�
   assert.equal(model.evidenceContext({id:'legacy',domain:'learningOutcome',itemId:'o1'},executions),null);
 });
 
+test('recall escolhe a Evidence válida mais recente da mesma capacidade pelo vínculo canônico',()=>{
+  const otherRef={outcomeId:'o2',attemptId:'a2',attemptText:'Outra tentativa'};
+  const data={
+    executionSessions:[
+      {id:'x-old',status:'completed',learningContext:ref},
+      {id:'x-new-attempt',status:'interrupted',learningContext:{...ref,attemptId:'a-new',attemptText:'Explicar sem notas'}},
+      {id:'x-other',status:'completed',learningContext:otherRef},
+      {id:'x-active',status:'active',learningContext:ref}
+    ],
+    evidence:[
+      {id:'e-old',sessionId:'x-old',summary:'Comparei os dois planos',type:'insight',createdAt:T1},
+      {id:'e-new',sessionId:'x-new-attempt',summary:'Expliquei a diferença com um exemplo',type:'feedback',createdAt:T3},
+      {id:'e-other',sessionId:'x-other',summary:'Texto parecido sobre joins',type:'insight',createdAt:T3},
+      {id:'e-active',sessionId:'x-active',summary:'Ainda não terminou',type:'feedback',createdAt:T3}
+    ]
+  };
+  assert.deepEqual(model.selectRecentEvidence('o1',data,{now:'2026-08-10T12:00:00.000Z'}),{
+    evidenceId:'e-new',sessionId:'x-new-attempt',outcomeId:'o1',summary:'Expliquei a diferença com um exemplo',type:'feedback',createdAt:T3
+  });
+});
+
+test('recall rejeita Evidence inválida, futura, órfã ou inferida por texto e desempata por id',()=>{
+  const data={
+    executionSessions:[
+      {id:'x1',status:'completed',learningContext:ref},
+      {id:'x2',status:'completed',learningContext:{outcomeId:'o2',attemptId:'a2',attemptText:'Comparar joins'}}
+    ],
+    evidence:[
+      {id:'z-tie',sessionId:'x1',summary:'Evidência Z',type:'insight',createdAt:T2},
+      {id:'a-tie',sessionId:'x1',summary:'Evidência A',type:'question',createdAt:T2},
+      {id:'future',sessionId:'x1',summary:'Do futuro',type:'feedback',createdAt:'2026-08-11T00:00:00.000Z'},
+      {id:'short',sessionId:'x1',summary:' x ',type:'feedback',createdAt:T3},
+      {id:'bad-date',sessionId:'x1',summary:'Sem data válida',type:'feedback',createdAt:'agora'},
+      {id:'orphan',sessionId:'missing',summary:'Órfã',type:'feedback',createdAt:T3},
+      {id:'similar',sessionId:'x2',summary:'Explicar joins desta capacidade',type:'feedback',createdAt:T3}
+    ]
+  };
+  const selected=model.selectRecentEvidence('o1',data,{now:T3});
+  assert.equal(selected.evidenceId,'a-tie');
+  assert.equal(model.selectRecentEvidence('missing',data,{now:T3}),null);
+});
+
+test('recall aceita índices pré-construídos e devolve DTO destacado sem mutar o estado',()=>{
+  const data={executionSessions:[{id:'x1',status:'completed',learningContext:ref}],evidence:[{id:'e1',sessionId:'x1',summary:'  Expliquei com clareza  ',type:'insight',createdAt:T2,metadata:{keep:true}}]};
+  const before=JSON.stringify(data),indexes=model.buildIndexes(data);
+  const selected=model.selectRecentEvidence('o1',data,{now:T3,indexes});
+  assert.equal(JSON.stringify(data),before);
+  assert.deepEqual(selected,{evidenceId:'e1',sessionId:'x1',outcomeId:'o1',summary:'Expliquei com clareza',type:'insight',createdAt:T2});
+  selected.summary='alterado';
+  assert.equal(data.evidence[0].summary,'  Expliquei com clareza  ');
+});
+
 test('projeções indexadas mantêm atividade vinculada e não vinculada sem inferência por recurso',()=>{
   const linked={id:'x1',status:'completed',domain:'study',itemId:'s1',learningContext:ref,endedAt:T2};
   const unlinked={id:'x2',status:'completed',domain:'study',itemId:'s1',learningContext:null,endedAt:T2};

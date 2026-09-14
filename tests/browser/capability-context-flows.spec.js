@@ -34,6 +34,30 @@ test('Hoje referencia a tentativa atual e concluir, reabrir, abrir e remover nã
   expect(await page.evaluate(()=>state.data.learningOutcomes[0])).toEqual(before);
 });
 
+test('Hoje deriva uma Evidence canônica recente e abre o registro exato sem persistir estado',async({page},testInfo)=>{
+  await open(page);const card=await createCapability(page,{capability:'Diagnosticar um pipeline',attempt:'Explicar a causa sem ajuda'});await card.locator('[data-outcome-today]').click();
+  const primary=page.locator('#todayPrimaryAction'),recall=primary.locator('.today-evidence-recall');
+  await expect(primary.locator('[data-today-primary-start]')).toBeVisible();await expect(recall).toHaveCount(0);
+  await page.evaluate(()=>{state.data.evidence.push({id:'e-inferred',sessionId:'missing',domain:'learningOutcome',itemId:state.data.learningOutcomes[0].id,summary:'Texto parecido não cria vínculo',type:'insight',createdAt:new Date().toISOString()});renderAll()});
+  await expect(recall).toHaveCount(0);
+  const selected=await page.evaluate(async()=>{
+    const outcome=state.data.learningOutcomes[0],context=CompassoLearningOutcomeModel.createExecutionContext(outcome),base=Date.now()-86400000;
+    for(let index=0;index<5;index+=1){
+      const sessionId=`recall-session-${index}`,evidenceId=`recall-evidence-${index}`;
+      state.data.executionSessions.push({id:sessionId,source:{collection:'sessions',id:sessionId},mode:'quick',status:'completed',domain:'learningOutcome',itemId:outcome.id,learningContext:{...context,attemptId:`historical-${index}`,attemptText:`Tentativa histórica ${index}`},startedAt:new Date(base-index*3600000).toISOString(),endedAt:new Date(base-index*3600000+1000).toISOString(),durationMs:60000,updatedAt:new Date(base-index*3600000+1000).toISOString()});
+      state.data.evidence.push({id:evidenceId,sessionId,summary:index===4?'Identifiquei sozinho a causa no estágio de atualização':`Evidência anterior ${index}`,type:'insight',createdAt:new Date(base+index*60000).toISOString(),updatedAt:new Date(base+(10-index)*3600000).toISOString()});
+    }
+    await CompassoStorage.save('compasso.app.v1',state.data);renderAll();
+    return CompassoCapabilityContextModel.selectRecentEvidence(outcome.id,state.data);
+  });
+  expect(selected.evidenceId).toBe('recall-evidence-4');await expect(recall).toBeVisible();await expect(recall).toContainText('Uma evidência relacionada');await expect(recall).toContainText('Ontem');await expect(recall).toContainText('Identifiquei sozinho a causa no estágio de atualização');
+  expect(await primary.evaluate(element=>Boolean(element.querySelector('.today-primary-actions').compareDocumentPosition(element.querySelector('.today-evidence-recall'))&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+  const button=recall.locator('[data-today-open-evidence]');if(testInfo.project.name==='mobile'){const box=await button.boundingBox();expect(box.width).toBeGreaterThanOrEqual(44);expect(box.height).toBeGreaterThanOrEqual(44);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true)}
+  const before=await page.evaluate(()=>JSON.stringify(state.data));await button.click();const evidence=page.locator('[data-capability-evidence="recall-evidence-4"]');await expect(page.locator('#capabilitiesView')).toBeVisible();await expect(page.locator('.capability-context-summary')).toHaveAttribute('open','');await expect(evidence).toBeFocused();await expect(evidence).toContainText('Identifiquei sozinho a causa no estágio de atualização');expect(await page.evaluate(()=>JSON.stringify(state.data))).toBe(before);
+  await page.evaluate(()=>{CompassoInformationArchitecture.open('today');renderAll()});const staleButton=page.locator('[data-today-open-evidence="recall-evidence-4"]');await expect(staleButton).toBeVisible();await page.evaluate(()=>{state.data.evidence=state.data.evidence.filter(item=>item.id!=='recall-evidence-4')});await staleButton.click();await expect(page.locator('#todayView')).toBeVisible();await expect(page.locator('#toast')).toContainText('não está mais disponível');await expect(recall).toContainText('Evidência anterior 3');
+  await page.evaluate(()=>{state.data.evidence=state.data.evidence.filter(item=>!String(item.id).startsWith('recall-'));renderAll()});await expect(recall).toHaveCount(0);
+});
+
 test('jornada contínua inicia com padrões, salva Evidence e só registra sinal após confirmação',async({page},testInfo)=>{
   await open(page);const card=await createCapability(page,{capability:'Explicar uma decisão técnica',attempt:'Comparar duas alternativas',futureUse:'decide'});const before=await page.evaluate(()=>structuredClone(state.data.learningOutcomes[0]));await card.locator('[data-outcome-today]').click();
   const primary=page.locator('#todayPrimaryAction');await expect(primary).toContainText('Comparar duas alternativas');await primary.locator('[data-today-primary-start]').click();

@@ -183,6 +183,24 @@
     return{outcomes,outcomeById,executions,executionById,evidence,evidenceBySession,signals,signalsByOutcome,todayItems,reflections};
   }
 
+  function selectRecentEvidence(outcomeId,data={},options={}){
+    const id=clean(outcomeId);if(!id)return null;
+    const indexes=options.indexes&&typeof options.indexes==='object'?options.indexes:buildIndexes(data);
+    const now=Date.parse(validIso(options.now)||new Date().toISOString());
+    let selected=null;
+    for(const item of Array.isArray(indexes.evidence)?indexes.evidence:[]){
+      const evidenceId=clean(item?.id),sessionId=clean(item?.sessionId),summary=clean(item?.summary),createdAt=validIso(item?.createdAt);
+      if(!evidenceId||!sessionId||summary.length<3||!createdAt||Date.parse(createdAt)>now)continue;
+      const execution=indexes.executionById instanceof Map?indexes.executionById.get(sessionId):null;
+      if(!execution||!['completed','interrupted'].includes(execution.status))continue;
+      const context=executionContext(execution);
+      if(context?.outcomeId!==id)continue;
+      const candidate={evidenceId,sessionId,outcomeId:id,summary,type:clean(item.type),createdAt};
+      if(!selected||candidate.createdAt>selected.createdAt||(candidate.createdAt===selected.createdAt&&candidate.evidenceId.localeCompare(selected.evidenceId)<0))selected=candidate;
+    }
+    return selected?{...selected}:null;
+  }
+
   function capabilitySummary(outcomeId,data={},indexes=buildIndexes(data)){
     const id=clean(outcomeId),outcome=indexes.outcomeById.get(id)||null;
     const executions=indexes.executions.filter(item=>executionContext(item)?.outcomeId===id&&['completed','interrupted'].includes(item.status)).sort((a,b)=>String(b.endedAt||b.startedAt||b.createdAt||'').localeCompare(String(a.endedAt||a.startedAt||a.createdAt||'')));
@@ -210,6 +228,6 @@
     normalizeTodayItem,createTodayItem,addTodayItem,
     normalizeSourceRef,normalizeSignal,normalizeSignalCollection,createSignal,updateSignal,deleteSignal,
     normalizeReflection,createReflection,normalizeReflections,upsertReflection,
-    executionContext,evidenceContext,buildIndexes,capabilitySummary,capabilitiesForResource,filterExecutionsByCapability
+    executionContext,evidenceContext,buildIndexes,selectRecentEvidence,capabilitySummary,capabilitiesForResource,filterExecutionsByCapability
   });
 });

@@ -6,6 +6,14 @@ Quando a tentativa atual de uma capacidade possui `futureUse`, Hoje mostra **Uso
 
 A presença do contexto não altera a precedência: execução ativa/pausada, tentativa atual válida, outra ação incompleta e planejamento/fallback. O controle global **Executar** não escolhe Active Recall, Deep Work, recursos ou qualquer rota a partir de `futureUse`; ele conserva o comportamento e o foco determinísticos existentes.
 
+## Recall contextual de evidências
+
+Quando a ação principal é a tentativa atual de uma capacidade ativa, Hoje pode mostrar uma única **Uma evidência relacionada** abaixo das ações. A projeção usa somente o vínculo verificável `Evidence.sessionId → executionSessions.id → learningContext.outcomeId`; texto, recurso, domínio ou item parecido nunca criam associação.
+
+São elegíveis apenas Evidence com síntese útil, data válida não futura e execução canônica concluída ou interrompida. Entre as elegíveis da mesma capacidade, vence `createdAt` mais recente; empates usam o menor `id`. `updatedAt` e `editedAt` não mudam o ranking. Sem Evidence elegível, o card é omitido por completo.
+
+**Ver evidência** revalida o estado no clique e abre a Evidence exata no contexto da Capacidade, expandindo o resumo e movendo o foco para o registro. Se o registro deixou de ser elegível, Hoje permanece estável e informa a indisponibilidade. A projeção não cria estado de leitura, não grava analytics e não altera Capability, nextAttempt, Session, Evidence ou plano diário.
+
 ## Objetivo
 
 Unificar direção e execução em uma única central diária, conectada ao Journal, ao foco semanal, às sessões e às frentes do Compasso.
@@ -70,3 +78,4 @@ Os planos são salvos em `state.data.dailyPlans`:
 - A rota inicial e a rota legada de Visão geral abrem Hoje.
 - Estados sem plano, com sessão ativa e com dia encerrado permanecem utilizáveis.
 - A central funciona em 360 px sem overflow horizontal.
+- O recall, quando existe, fica depois das ações principais, abre o registro exato e funciona offline.

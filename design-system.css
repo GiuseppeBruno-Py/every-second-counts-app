@@ -1047,6 +1047,28 @@ dialog[data-ds-component] form {
   gap: .55rem;
   flex-wrap: wrap;
 }
+.today-evidence-recall {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .55rem 1rem;
+  align-items: center;
+  min-width: 0;
+  padding-top: .85rem;
+  border-top: 1px solid var(--line);
+}
+.today-evidence-recall > div { display: flex; align-items: baseline; gap: .55rem; min-width: 0; }
+.today-evidence-recall span { color: var(--text); font-size: .72rem; font-weight: 800; }
+.today-evidence-recall small { color: var(--muted); font-size: .65rem; }
+.today-evidence-recall blockquote {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: .72rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.today-evidence-recall button { grid-column: 2; grid-row: 1; }
 .today-primary .today-session { border-radius: 1.1rem; }
 
 .session-options {
@@ -1150,6 +1172,9 @@ dialog[data-ds-component] form {
   .execution-completion-actions { justify-content: stretch; }
   .today-primary-actions button,
   .execution-completion-actions button { flex: 1 1 11rem; }
+  .today-evidence-recall { grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+  .today-evidence-recall > div { flex-wrap: wrap; }
+  .today-evidence-recall button { grid-column: 1; grid-row: auto; justify-self: start; }
   .weekly-secondary { padding: .75rem; }
   .weekly-support > summary { align-items: flex-start; flex-direction: column; gap: .3rem; }
   .weekly-support > summary span { text-align: left; }
@@ -1160,6 +1185,7 @@ dialog[data-ds-component] form {
   .execution-completion-actions { display: grid; grid-template-columns: 1fr; }
   .today-primary-actions button,
   .execution-completion-actions button { width: 100%; }
+  .today-evidence-recall button { width: 100%; }
   .execution-completion { right: .5rem; left: .5rem; }
 }
 

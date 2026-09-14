@@ -13,6 +13,17 @@ function todayDateKey(date = new Date()) {
   return local.toISOString().slice(0, 10);
 }
 
+function todayEvidenceAge(value, now = new Date()) {
+  const created = new Date(value);
+  if (Number.isNaN(created.getTime())) return '';
+  const day = date => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const days = Math.round((day(now) - day(created)) / 86400000);
+  if (days === 0) return 'Hoje';
+  if (days === 1) return 'Ontem';
+  if (days >= 2 && days <= 30) return `${days} dias atrás`;
+  return new Intl.DateTimeFormat('pt-BR', { day:'2-digit', month:'short', year:'numeric' }).format(created);
+}
+
 function todayPlan() {
   const date = todayDateKey();
   const plans = state.data.dailyPlans = Array.isArray(state.data.dailyPlans) ? state.data.dailyPlans : [];
@@ -165,7 +176,9 @@ function renderTodayPrimary(primary) {
   if (primary.kind === 'capability') {
     content.dataset.todayCapability = primary.resolved.outcome.id;
     const futureUse=learningOutcomeModel.futureUsePresentation(primary.resolved.outcome.nextAttempt?.futureUse);
-    content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima tentativa</div><h3 id="todayPrimaryHeading">${escapeHtml(primary.resolved.attemptText)}</h3><p>${escapeHtml(primary.resolved.outcome.capability)} · atual no seu plano</p>${futureUse?`<p class="today-future-use">Uso pretendido: ${escapeHtml(futureUse.label)}</p>`:''}</div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-primary-start="${escapeHtml(primary.resolved.outcome.id)}">Iniciar agora</button><button class="secondary-btn" type="button" data-today-primary-configure="${escapeHtml(primary.resolved.outcome.id)}">Ajustar sessão</button><button class="quiet-btn" type="button" data-today-open-capability="${escapeHtml(primary.resolved.outcome.id)}">Abrir capacidade</button><button class="quiet-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button><button class="quiet-btn remove" type="button" data-today-remove="${escapeHtml(primary.refKey)}">Remover do plano</button></div>`;
+    const recall=capabilityContextModel.selectRecentEvidence(primary.resolved.outcome.id,state.data);
+    const recallHtml=recall?`<aside class="today-evidence-recall" aria-label="Uma evidência relacionada"><div><span>Uma evidência relacionada</span><small>${escapeHtml(todayEvidenceAge(recall.createdAt))}</small></div><blockquote>${escapeHtml(recall.summary)}</blockquote><button class="quiet-btn" type="button" data-today-open-evidence="${escapeHtml(recall.evidenceId)}" data-today-evidence-outcome="${escapeHtml(recall.outcomeId)}">Ver evidência</button></aside>`:'';
+    content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima tentativa</div><h3 id="todayPrimaryHeading">${escapeHtml(primary.resolved.attemptText)}</h3><p>${escapeHtml(primary.resolved.outcome.capability)} · atual no seu plano</p>${futureUse?`<p class="today-future-use">Uso pretendido: ${escapeHtml(futureUse.label)}</p>`:''}</div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-primary-start="${escapeHtml(primary.resolved.outcome.id)}">Iniciar agora</button><button class="secondary-btn" type="button" data-today-primary-configure="${escapeHtml(primary.resolved.outcome.id)}">Ajustar sessão</button><button class="quiet-btn" type="button" data-today-open-capability="${escapeHtml(primary.resolved.outcome.id)}">Abrir capacidade</button><button class="quiet-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button><button class="quiet-btn remove" type="button" data-today-remove="${escapeHtml(primary.refKey)}">Remover do plano</button></div>${recallHtml}`;
     return;
   }
   delete content.dataset.todayCapability;
@@ -318,6 +331,13 @@ document.addEventListener('click', event => {
     else{plan.items = plan.items.filter(ref => todayRefKey(ref) !== remove.dataset.todayRemove);todaySave('Ação removida do dia');}
   }
   const openCapability=event.target.closest('[data-today-open-capability]');if(openCapability)todayOpenCapability(openCapability.dataset.todayOpenCapability);
+  const openEvidence=event.target.closest('[data-today-open-evidence]');
+  if(openEvidence){
+    const primary=todayPrimaryState(),outcomeId=openEvidence.dataset.todayEvidenceOutcome,evidenceId=openEvidence.dataset.todayOpenEvidence;
+    const current=primary.kind==='capability'&&primary.resolved.outcome.id===outcomeId?capabilityContextModel.selectRecentEvidence(outcomeId,state.data):null;
+    if(!current||current.evidenceId!==evidenceId){renderToday();todayFocusPrimary(todayPrimaryState());showToast('Esta evidência relacionada não está mais disponível.');}
+    else if(CompassoFeatures.execute('capability.openEvidence',{outcomeId,evidenceId,trigger:openEvidence})!==true){todayOpenPrimary({outcomeId});showToast('Não foi possível abrir esta evidência.');}
+  }
   const startCapability=event.target.closest('[data-today-start-capability]');if(startCapability)todayStartCapability(startCapability.dataset.todayStartCapability,{trigger:startCapability});
   const primaryStart=event.target.closest('[data-today-primary-start]');if(primaryStart)todayStartCapability(primaryStart.dataset.todayPrimaryStart,{immediate:true,trigger:primaryStart});
   const primaryConfigure=event.target.closest('[data-today-primary-configure]');if(primaryConfigure)todayStartCapability(primaryConfigure.dataset.todayPrimaryConfigure,{trigger:primaryConfigure,expanded:true});

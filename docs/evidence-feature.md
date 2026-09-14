@@ -38,6 +38,10 @@ Cancelar ou pressionar Escape descarta apenas o texto efêmero, não cria regist
 
 Evidence continua sem `learningContext` ou campo de calibração: o contexto é resolvido exclusivamente pelo `sessionId` canônico. Sessões/Evidence legadas sem vínculo, referência ausente ou capacidade não ativa continuam válidas, sem ação de calibração e sem associação inferida. Nenhuma continuação conclui Hoje, altera a capacidade ou muda a próxima tentativa.
 
+## Recall em Hoje
+
+Hoje pode projetar a Evidence histórica mais recente de uma capacidade antes da próxima tentativa. O registro continua pertencendo ao array `evidence`; nenhum campo, score ou estado de leitura é acrescentado. A seleção exige `sessionId` válido, execução canônica terminal e `learningContext.outcomeId` idêntico à capacidade atual. A ação **Ver evidência** abre e focaliza esse registro exato na própria Capacidade. Exclusão, restauração ou atualização dos dados refazem a seleção no render seguinte, inclusive offline.
+
 ## Modelo de dados
 
 ```javascript
@@ -73,6 +77,7 @@ Evidence continua sem `learningContext` ou campo de calibração: o contexto é 
 6. Excluir a sessão remove a evidência correspondente.
 7. O recurso funciona offline.
 8. A reflexão pós-Evidence é opcional, começa vazia e só existe após confirmação explícita.
+9. O recall de Hoje usa apenas proveniência canônica e não altera a Evidence original.
 
 ## Correções e sincronização
 
