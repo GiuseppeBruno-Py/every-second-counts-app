@@ -2,12 +2,16 @@
  * Injetado após sessions-feature.js e evidence-feature.js no módulo principal.
  */
 
-const WEEKLY_REVIEW_VERSION = 1;
+const WEEKLY_REVIEW_VERSION = 2;
 const weeklySessionKindModel = globalThis.CompassoSessionKindModel;
 state.data.weeklyReviews = Array.isArray(state.data.weeklyReviews) ? state.data.weeklyReviews : [];
 labels.weekly = { title: 'Revisão semanal', kicker: 'Evidências e direção' };
 
 const weeklyReviewRuntime = { offset: 0, renderedRange:null };
+
+function weeklyOptionalText(value) {
+  return typeof value === 'string' ? value : '';
+}
 
 function weeklyStartOfWeek(reference = new Date()) {
   const date = new Date(reference);
@@ -166,6 +170,13 @@ function installWeeklyReviewUi() {
           <section class="weekly-panel capability-week-panel" id="weeklyDecisionRegion" tabindex="-1" aria-labelledby="weeklyDecisionHeading"><div class="weekly-panel-head"><div><div class="eyebrow">Decisão principal</div><h3 id="weeklyDecisionHeading">Reflita e escolha a próxima tentativa</h3><p>Evidence e sinais informam sua decisão; nada muda automaticamente.</p></div></div><p class="weekly-decision-error" id="weeklyDecisionError" role="alert" tabindex="-1" hidden></p><div id="weeklyCapabilities" class="weekly-capability-list"></div></section>
           <section class="weekly-panel weekly-closure"><div class="weekly-panel-head"><div><div class="eyebrow">Fechamento</div><h3>Interprete antes de planejar</h3><p>Transforme a decisão de aprendizagem em direção para a próxima semana.</p></div></div>
             <form class="weekly-review-form" id="weeklyReviewForm">
+              <section class="weekly-positive-reflection" aria-labelledby="weeklyPositiveHeading">
+                <div class="weekly-panel-head"><div><div class="eyebrow">Funcionou → KEEP</div><h3 id="weeklyPositiveHeading">Consolide respostas úteis</h3><p>Registre o que merece ser repetido; manter ou revisar uma tentativa continua sendo uma escolha explícita.</p></div></div>
+                <div class="weekly-form-grid">
+                  <div class="field"><label for="weeklyRepeatablePractice">O que funcionou esta semana e merece ser repetido?</label><textarea id="weeklyRepeatablePractice" maxlength="1000" placeholder="Descreva uma prática, resposta ou abordagem concreta."></textarea></div>
+                  <div class="field"><label for="weeklyEvidenceReflection">Alguma evidência mudou sua percepção sobre o que você consegue fazer?</label><textarea id="weeklyEvidenceReflection" maxlength="1000" placeholder="Se sim, registre a evidência e o que ela demonstrou."></textarea></div>
+                </div>
+              </section>
               <div class="weekly-form-grid">
                 <div class="field"><label for="weeklyWins">Principal avanço</label><textarea id="weeklyWins" maxlength="600" placeholder="O que avançou de forma concreta?"></textarea></div>
                 <div class="field"><label for="weeklyLessons">Aprendizado mais importante</label><textarea id="weeklyLessons" maxlength="600" placeholder="O que esta semana ensinou sobre o conteúdo ou sobre sua forma de executar?"></textarea></div>
@@ -286,6 +297,8 @@ function renderWeeklyPriorityOptions(review) {
 }
 
 function renderWeeklyForm(review) {
+  document.getElementById('weeklyRepeatablePractice').value = weeklyOptionalText(review?.repeatablePractice);
+  document.getElementById('weeklyEvidenceReflection').value = weeklyOptionalText(review?.evidenceReflection);
   document.getElementById('weeklyWins').value = review?.wins || '';
   document.getElementById('weeklyLessons').value = review?.lessons || '';
   document.getElementById('weeklyBlockers').value = review?.blockers || '';
@@ -332,7 +345,7 @@ function renderWeeklyReview() {
 
 async function saveWeeklyReview() {
   const range = weeklyRange();
-  const draft={fields:Object.fromEntries(['weeklyWins','weeklyLessons','weeklyBlockers','weeklyDecision','weeklyQuality','weeklyPriority1','weeklyPriority2','weeklyPriority3'].map(id=>[id,document.getElementById(id).value])),capabilities:[...document.querySelectorAll('[data-weekly-capability]')].map(card=>({id:card.dataset.weeklyCapability,reflection:card.querySelector('[data-weekly-reflection]')?.value||'',decision:card.querySelector('[data-weekly-decision]')?.value||'',attempt:card.querySelector('[data-weekly-attempt]')?.value||'',futureUse:card.querySelector('[data-weekly-future-use]')?.value||''}))};
+  const draft={fields:Object.fromEntries(['weeklyRepeatablePractice','weeklyEvidenceReflection','weeklyWins','weeklyLessons','weeklyBlockers','weeklyDecision','weeklyQuality','weeklyPriority1','weeklyPriority2','weeklyPriority3'].map(id=>[id,document.getElementById(id).value])),capabilities:[...document.querySelectorAll('[data-weekly-capability]')].map(card=>({id:card.dataset.weeklyCapability,reflection:card.querySelector('[data-weekly-reflection]')?.value||'',decision:card.querySelector('[data-weekly-decision]')?.value||'',attempt:card.querySelector('[data-weekly-attempt]')?.value||'',futureUse:card.querySelector('[data-weekly-future-use]')?.value||''}))};
   weeklySetDecisionError('');
   for(const card of document.querySelectorAll('[data-weekly-capability]')){
     const decision=card.querySelector('[data-weekly-decision]');if(!decision)continue;
@@ -369,6 +382,8 @@ async function saveWeeklyReview() {
     schemaVersion: WEEKLY_REVIEW_VERSION,
     weekStart: range.key,
     weekEnd: weeklyDateKey(weeklyAddDays(range.end, -1)),
+    repeatablePractice: document.getElementById('weeklyRepeatablePractice').value.trim(),
+    evidenceReflection: document.getElementById('weeklyEvidenceReflection').value.trim(),
     wins: document.getElementById('weeklyWins').value.trim(),
     lessons: document.getElementById('weeklyLessons').value.trim(),
     blockers: document.getElementById('weeklyBlockers').value.trim(),

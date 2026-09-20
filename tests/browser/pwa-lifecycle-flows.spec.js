@@ -197,6 +197,8 @@ test('controlled complete cache reopens offline with composition and local state
   const weeklyCapability=page.locator('[data-weekly-capability]').first();
   await weeklyCapability.locator('[data-weekly-reflection]').fill('Manter a tentativa após validar o shell offline');
   await weeklyCapability.locator('[data-weekly-decision]').selectOption('keep');
+  await page.locator('#weeklyRepeatablePractice').fill('Repetir a validação completa do shell offline');
+  await page.locator('#weeklyEvidenceReflection').fill('A Evidence demonstrou que o ciclo offline já é executável');
   await page.locator('#weeklyReviewForm').evaluate(form=>form.requestSubmit());
   await page.evaluate(async () => { const index=state.data.ritualTemplates.findIndex(item=>item.actionType==='study'&&!item.archived),ritual=CompassoRitualModel.update(state.data.ritualTemplates[index],{encodingCheckpoint:true});state.data.ritualTemplates[index]=ritual;state.data.study.find(item=>item.id==='example-study').ritualId=ritual.id;await CompassoStorage.save('compasso.app.v1',state.data);CompassoInformationArchitecture.open('study');renderAll(); });
   await page.locator('#studyGrid .ux-execute').first().click();
@@ -246,6 +248,7 @@ test('controlled complete cache reopens offline with composition and local state
   expect(await page.evaluate(() => state.data.learningSignals.some(item => item.text.includes('disponível offline')))).toBe(true);
   expect(await page.evaluate(() => state.data.learningSignals.some(item => item.kind === 'insight' && item.origin === 'learner' && item.sourceRef?.type === 'evidence' && item.text.includes('preservar a evidência sem rede')))).toBe(true);
   expect(await page.evaluate(() => state.data.weeklyReviews.some(review => review.capabilityReflections?.some(item => item.decision === 'keep')))).toBe(true);
+  expect(await page.evaluate(() => state.data.weeklyReviews.some(review => review.repeatablePractice === 'Repetir a validação completa do shell offline' && review.evidenceReflection === 'A Evidence demonstrou que o ciclo offline já é executável'))).toBe(true);
   expect(await page.evaluate(() => state.data.evidence.some(item => item.summary === 'Encoding e Evidence preservados offline'))).toBe(true);
   await expect(page.locator('link[href="./design-system.css"]')).toHaveCount(1);
   await context.setOffline(false);

@@ -267,6 +267,40 @@ test("configuração opcional e detalhes semanais preservam teclado e foco", asy
   await expect(details).not.toHaveAttribute("open", "");
 });
 
+test("Weekly Review positiva preserva labels, foco, toque e zoom", async ({ page }, testInfo) => {
+  await open(page);
+  await page.evaluate(() => CompassoInformationArchitecture.open("weekly"));
+  const repeatable = page.getByLabel("O que funcionou esta semana e merece ser repetido?");
+  const evidence = page.getByLabel("Alguma evidência mudou sua percepção sobre o que você consegue fazer?");
+  await expect(repeatable).toBeVisible();
+  await expect(evidence).toBeVisible();
+  await repeatable.focus();
+  await page.keyboard.press("Tab");
+  await expect(evidence).toBeFocused();
+  for (const width of [360, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    const geometry = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      client: document.documentElement.clientWidth,
+      fields: ["weeklyRepeatablePractice", "weeklyEvidenceReflection"].map(id => {
+        const box = document.getElementById(id).getBoundingClientRect();
+        return { left: box.left, right: box.right, width: box.width };
+      })
+    }));
+    expect(geometry.scroll).toBeLessThanOrEqual(geometry.client + 1);
+    expect(geometry.fields.every(field => field.left >= 0 && field.right <= geometry.client + 1)).toBe(true);
+  }
+  await page.evaluate(() => { document.documentElement.style.zoom = "2"; });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
+  await page.evaluate(() => { document.documentElement.style.zoom = ""; });
+  if (testInfo.project.name === "mobile") {
+    const save = page.locator("#weeklyReviewForm button[type=submit]");
+    const box = await save.boundingBox();
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
 test("ensaio da tentativa preserva semântica, foco, toque e zoom", async ({ page }, testInfo) => {
   await open(page);
   await page.evaluate(() => CompassoInformationArchitecture.open("capabilities"));
