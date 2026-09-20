@@ -267,6 +267,73 @@ test("configuração opcional e detalhes semanais preservam teclado e foco", asy
   await expect(details).not.toHaveAttribute("open", "");
 });
 
+test("ensaio da tentativa preserva semântica, foco, toque e zoom", async ({ page }, testInfo) => {
+  await open(page);
+  await page.evaluate(() => CompassoInformationArchitecture.open("capabilities"));
+  await page.locator("[data-outcome-new]").first().click();
+  await page.locator('[name="capability"]').fill("Explicar uma decisão sob pressão");
+  await page.locator('[name="nextAttempt"]').fill("Responder com um exemplo concreto");
+  await page.locator("#learningOutcomeForm").evaluate((form) => form.requestSubmit());
+  await page.locator("[data-outcome-card] [data-outcome-today]").click();
+  if (testInfo.project.name === "mobile") await page.setViewportSize({ width: 390, height: 844 });
+  const trigger = page.locator("[data-today-primary-rehearse]");
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.locator("#todayRehearsalDialog");
+  await expect(dialog).toHaveAttribute("aria-modal", "true");
+  await expect(dialog).toHaveAttribute("aria-labelledby", "todayRehearsalTitle");
+  await expect(dialog).toHaveAttribute("aria-describedby", "todayRehearsalContext");
+  await expect(page.locator("#todayRehearsalResult")).toBeFocused();
+  await dialog.getByRole("button", { name: "Começar sessão" }).focus();
+  await page.keyboard.press("Tab");
+  await expect(dialog.getByRole("button", { name: "Fechar ensaio" })).toBeFocused();
+  if (testInfo.project.name === "mobile") {
+    for (const width of [360, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      const footer = await dialog.locator('.attempt-rehearsal-actions').evaluate(element => ({
+        display: getComputedStyle(element).display,
+        width: element.clientWidth - parseFloat(getComputedStyle(element).paddingLeft) - parseFloat(getComputedStyle(element).paddingRight),
+        buttons: [...element.querySelectorAll('button')].map(button => {
+          const box = button.getBoundingClientRect();
+          return { x: box.x, y: box.y, width: box.width, height: box.height, overflow: button.scrollWidth > button.clientWidth + 1 };
+        })
+      }));
+      expect(footer.display).toBe('grid');
+      expect(footer.buttons).toHaveLength(3);
+      for (const button of footer.buttons) {
+        expect(button.width).toBeCloseTo(footer.width, 0);
+        expect(button.height).toBeGreaterThanOrEqual(44);
+        expect(button.overflow).toBe(false);
+      }
+      expect(footer.buttons[1].y).toBeGreaterThanOrEqual(footer.buttons[0].y + footer.buttons[0].height);
+      expect(footer.buttons[2].y).toBeGreaterThanOrEqual(footer.buttons[1].y + footer.buttons[1].height);
+      await dialog.getByRole('button', { name: 'Começar sessão' }).scrollIntoViewIfNeeded();
+      await page.screenshot({ path: testInfo.outputPath(`rehearsal-${width}-footer.png`) });
+      await page.locator('#todayRehearsalResult').scrollIntoViewIfNeeded();
+      await page.screenshot({ path: testInfo.outputPath(`rehearsal-${width}.png`) });
+    }
+  } else {
+    for (const width of [768, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.screenshot({ path: testInfo.outputPath(`rehearsal-${width}.png`) });
+    }
+  }
+  await page.evaluate(() => { document.documentElement.style.zoom = "2"; });
+  const geometry = await dialog.evaluate((element) => {
+    const targets = [...element.querySelectorAll("button")].filter((item) => item.offsetParent !== null).map((item) => {
+      const box = item.getBoundingClientRect();
+      return { width: box.width, height: box.height };
+    });
+    return { page: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth, targets };
+  });
+  expect(geometry.page).toBeLessThanOrEqual(geometry.viewport + 1);
+  if (testInfo.project.name === "mobile") expect(geometry.targets.filter((item) => item.width < 43.5 || item.height < 43.5)).toEqual([]);
+  await page.evaluate(() => { document.documentElement.style.zoom = ""; });
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
 test("checkpoint E1 preserva semântica, foco, toque, zoom e redução de movimento", async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   if (testInfo.project.name === "mobile") await page.setViewportSize({ width: 390, height: 844 });

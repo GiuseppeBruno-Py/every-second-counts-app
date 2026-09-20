@@ -1069,6 +1069,10 @@ dialog[data-ds-component] form {
   overflow-wrap: anywhere;
 }
 .today-evidence-recall button { grid-column: 2; grid-row: 1; }
+.attempt-rehearsal-context { margin: 0; overflow-wrap: anywhere; }
+.attempt-rehearsal-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; min-width: 0; }
+.attempt-rehearsal-grid .field { min-width: 0; }
+.attempt-rehearsal-grid textarea { min-height: 4.5rem; overflow-wrap: anywhere; }
 .today-primary .today-session { border-radius: 1.1rem; }
 
 .session-options {
@@ -1151,6 +1155,7 @@ dialog[data-ds-component] form {
   .execution-completion-head button,
   .session-options > summary,
   .weekly-support > summary,
+  .attempt-rehearsal-actions button,
   #iaExecuteBtn { min-width: 44px; min-height: 44px; }
 }
 
@@ -1186,6 +1191,8 @@ dialog[data-ds-component] form {
   .today-primary-actions button,
   .execution-completion-actions button { width: 100%; }
   .today-evidence-recall button { width: 100%; }
+  #todayRehearsalDialog .session-dialog-foot.attempt-rehearsal-actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+  #todayRehearsalDialog .attempt-rehearsal-actions button { width: 100%; }
   .execution-completion { right: .5rem; left: .5rem; }
 }
 
@@ -1453,7 +1460,7 @@ dialog[data-ds-component] form {
 :is(#sessionHistoryDialog,#historySessionDialog,#energyMapDialog) :is(input,textarea,select){background:#fff;padding:11px 12px}
 
 /* Core visual pilot — Caderno de trabalho. Tokens never escape these roots. */
-:is(#todayView, #todayDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) {
+:is(#todayView, #todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) {
   --pilot-canvas: #f5f3ed;
   --pilot-surface: #fffef9;
   --pilot-subtle: #e7ecdf;
@@ -1499,14 +1506,14 @@ dialog[data-ds-component] form {
   overflow-wrap: anywhere;
   min-width: 0;
 }
-:is(#todayView, #todayDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) :is(p, small, label, summary, .eyebrow) {
+:is(#todayView, #todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) :is(p, small, label, summary, .eyebrow) {
   font-family: var(--pilot-font);
   font-size: var(--pilot-secondary);
   line-height: var(--pilot-line);
   color: var(--pilot-muted);
   letter-spacing: normal;
 }
-:is(#todayView, #todayDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) :is(button, input, select, textarea) {
+:is(#todayView, #todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) :is(button, input, select, textarea) {
   box-sizing: border-box;
   min-height: var(--pilot-control-min);
   min-width: var(--pilot-control-min);
@@ -1516,32 +1523,32 @@ dialog[data-ds-component] form {
   white-space: normal;
   overflow-wrap: anywhere;
 }
-:is(#todayView, #todayDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) button {
+:is(#todayView, #todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) button {
   padding: var(--pilot-space-2) var(--pilot-space-3);
   border: 1px solid var(--pilot-border);
   background: var(--pilot-surface);
   color: var(--pilot-text);
 }
-:is(#todayView, #todayDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) button:not(:disabled):hover {
+:is(#todayView, #todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) button:not(:disabled):hover {
   transform: none;
   box-shadow: none;
   border-color: var(--pilot-accent);
 }
-:is(#todayView, #todayDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) :focus-visible,
+:is(#todayView, #todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) :focus-visible,
 :is(#todayPrimaryAction, #executionCompletionPanel):focus-visible {
   outline: 3px solid var(--pilot-focus);
   outline-offset: 3px;
 }
-:is(#todayView, #todayDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) [aria-busy="true"]::after {
+:is(#todayView, #todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) [aria-busy="true"]::after {
   color: var(--pilot-text);
 }
-:is(#todayView, #todayDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) [data-ds-role="primary"][aria-busy="true"]::after {
+:is(#todayView, #todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) [data-ds-role="primary"][aria-busy="true"]::after {
   color: var(--pilot-on-accent);
 }
 #todayView { background: var(--pilot-canvas); padding: var(--pilot-space-4); border-radius: var(--pilot-radius-control); }
 #todayView .today-shell, #todaySecondaryContext { display: grid; gap: var(--pilot-space-8); }
 #todayView .today-heading { display: flex; justify-content: space-between; align-items: start; gap: var(--pilot-space-4); }
-#todayView :is(h2, h3), :is(#todayDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel) h2 {
+#todayView :is(h2, h3), :is(#todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel) h2 {
   font-family: var(--pilot-heading-font);
   font-weight: 500;
   line-height: 1.25;
@@ -1591,7 +1598,7 @@ dialog[data-ds-component] form {
 #todayView .flow-box { padding: 0; border: 0; background: transparent; box-shadow: none; }
 #todayView :is(.flow-reason, .flow-score, .flow-no-results) { font-size: var(--pilot-secondary); line-height: var(--pilot-line); color: var(--pilot-muted); }
 
-:is(#todayDialog, #sessionStartDialog, #sessionFinishDialog) {
+:is(#todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog) {
   width: min(var(--pilot-dialog-width), calc(100vw - 2rem));
   padding: 0;
   border: 1px solid var(--pilot-border);
@@ -1602,10 +1609,10 @@ dialog[data-ds-component] form {
   max-height: 92dvh;
   overflow-y: auto;
 }
-:is(#todayDialog, #sessionStartDialog, #sessionFinishDialog)::backdrop { background: rgb(25 35 29 / 45%); backdrop-filter: none; }
-:is(#todayDialog, #sessionStartDialog, #sessionFinishDialog) :is(.session-dialog-head, .session-dialog-body, .session-dialog-foot, .today-dialog-head, .today-dialog-body, .today-dialog-foot) { padding: var(--pilot-space-6); gap: var(--pilot-space-4); }
-:is(#todayDialog, #sessionStartDialog, #sessionFinishDialog) h2 { font-size: 1.5rem; }
-:is(#todayView, #todayDialog, #sessionStartDialog, #sessionFinishDialog) :is(input:not([type="checkbox"]), textarea, select) {
+:is(#todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog)::backdrop { background: rgb(25 35 29 / 45%); backdrop-filter: none; }
+:is(#todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog) :is(.session-dialog-head, .session-dialog-body, .session-dialog-foot, .today-dialog-head, .today-dialog-body, .today-dialog-foot) { padding: var(--pilot-space-6); gap: var(--pilot-space-4); }
+:is(#todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog) h2 { font-size: 1.5rem; }
+:is(#todayView, #todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog) :is(input:not([type="checkbox"]), textarea, select) {
   width: 100%;
   min-height: var(--pilot-input-min);
   padding: var(--pilot-space-3);
@@ -1614,7 +1621,7 @@ dialog[data-ds-component] form {
   color: var(--pilot-text);
   font: var(--pilot-input)/var(--pilot-line) var(--pilot-font);
 }
-:is(#todayDialog, #sessionStartDialog, #sessionFinishDialog) textarea { resize: vertical; }
+:is(#todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog) textarea { resize: vertical; }
 :is(#sessionStartDialog, #sessionFinishDialog) :is(.session-summary, .evidence-box, .energy-block) { padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--pilot-text); font-size: var(--pilot-body); line-height: var(--pilot-line); }
 :is(#sessionStartDialog, #sessionFinishDialog) :is(.session-summary strong, .evidence-box-head strong, .energy-block strong) { font: 600 var(--pilot-body)/var(--pilot-line) var(--pilot-font); }
 :is(#sessionStartDialog, #sessionFinishDialog) :is(.evidence-box-head span, .energy-block p, .session-summary small) { font-size: var(--pilot-secondary); color: var(--pilot-muted); line-height: var(--pilot-line); }
@@ -1627,8 +1634,8 @@ dialog[data-ds-component] form {
 #sessionStartDialog label:has(input[type="checkbox"]) { min-height: var(--pilot-control-min); padding-block: var(--pilot-space-3); }
 :is(#sessionStartDialog, #sessionFinishDialog) .energy-choices { display: flex; flex-wrap: wrap; gap: var(--pilot-space-2); }
 :is(#sessionStartDialog, #sessionFinishDialog) .energy-choice.selected { background: var(--pilot-subtle); border-color: var(--pilot-accent); color: var(--pilot-text); }
-:is(#todayDialog, #sessionStartDialog, #sessionFinishDialog) :is(.session-dialog-foot, .today-dialog-foot) { display: flex; flex-wrap: wrap; position: static; }
-:is(#sessionStartDialog, #sessionFinishDialog) :is(.session-error, .evidence-required) { color: var(--pilot-danger); font-size: var(--pilot-secondary); }
+:is(#todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog) :is(.session-dialog-foot, .today-dialog-foot) { display: flex; flex-wrap: wrap; position: static; }
+:is(#todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog) :is(.session-error, .evidence-required) { color: var(--pilot-danger); font-size: var(--pilot-secondary); }
 #executionCompletionPanel { padding: var(--pilot-space-6); border: 1px solid var(--pilot-border); border-left: .25rem solid var(--pilot-success); background: var(--pilot-surface); box-shadow: none; scroll-margin-block: var(--pilot-space-8); }
 #executionCompletionPanel h2 { font-size: 1.5rem; }
 #executionCompletionPanel > p { font-size: var(--pilot-body); }
@@ -1648,10 +1655,10 @@ dialog[data-ds-component] form {
   #todayView .today-heading { flex-wrap: wrap; }
   #todayView .today-row { grid-template-columns: auto minmax(0, 1fr); }
   #todayView .today-actions { grid-column: 2; }
-  :is(#todayDialog, #sessionStartDialog, #sessionFinishDialog) :is(.session-dialog-head, .session-dialog-body, .session-dialog-foot, .today-dialog-head, .today-dialog-body, .today-dialog-foot) { padding: var(--pilot-space-4); }
+  :is(#todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog) :is(.session-dialog-head, .session-dialog-body, .session-dialog-foot, .today-dialog-head, .today-dialog-body, .today-dialog-foot) { padding: var(--pilot-space-4); }
 }
 @media (forced-colors: active) {
-  :is(#todayView, #todayDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) { --pilot-focus: Highlight; --pilot-border: CanvasText; }
+  :is(#todayView, #todayDialog, #todayRehearsalDialog, #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) { --pilot-focus: Highlight; --pilot-border: CanvasText; }
 }
 
 /* Full Visual Revamp: Caderno de trabalho, shared static presentation. */

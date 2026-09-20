@@ -6,6 +6,8 @@
 const TODAY_FEATURE_VERSION = 2;
 state.data.dailyPlans = Array.isArray(state.data.dailyPlans) ? state.data.dailyPlans : [];
 let todayRestorePrimaryFocusAfterRender = false;
+const todayRehearsalRuntime = { outcomeId:null, attemptId:null, refKey:null, trigger:null, starting:false, abandoned:false };
+const todayRehearsalFieldIds = ['todayRehearsalResult','todayRehearsalFirstAction','todayRehearsalDifficulty','todayRehearsalResponse'];
 labels.today = { title: 'Hoje', kicker: 'Próximas ações' };
 
 function todayDateKey(date = new Date()) {
@@ -158,6 +160,17 @@ function todayInstallUi() {
       <dialog class="today-dialog" id="todayDialog"><form id="todayForm" method="dialog"><div class="today-dialog-head"><div><div class="eyebrow">Próximas ações</div><h2>Nova ação</h2></div><button class="close-btn" type="button" data-today-close>${icon('x')}</button></div><div class="today-dialog-body"><div class="field"><label for="todayActionTitle">O que precisa ser feito?</label><input id="todayActionTitle" maxlength="180" required placeholder="Ex.: revisar os testes unitários por 30 minutos"></div><div class="field"><label for="todayActionLink">Vincular a uma frente (opcional)</label><select id="todayActionLink"></select></div><p>O vínculo permite abrir o item e iniciar uma sessão quando a frente for uma leitura ou estudo.</p></div><div class="today-dialog-foot"><button class="quiet-btn" type="button" data-today-close>Cancelar</button><button class="primary-btn" type="submit">${icon('check')}Adicionar ao dia</button></div></form></dialog>
     `);
   }
+  if (!document.getElementById('todayRehearsalDialog')) {
+    document.body.insertAdjacentHTML('beforeend', `
+      <dialog class="session-dialog" id="todayRehearsalDialog" aria-describedby="todayRehearsalContext">
+        <form id="todayRehearsalForm" method="dialog">
+          <div class="session-dialog-head"><div><div class="eyebrow">Preparação breve</div><h2 id="todayRehearsalTitle">Ensaiar tentativa</h2></div><button class="close-btn" type="button" aria-label="Fechar ensaio" data-today-rehearsal-cancel data-today-rehearsal-action>${icon('x')}</button></div>
+          <div class="session-dialog-body"><p class="session-summary attempt-rehearsal-context" id="todayRehearsalContext"></p><div class="attempt-rehearsal-grid"><div class="field"><label for="todayRehearsalResult">Qual resultado você quer produzir nesta tentativa?</label><textarea id="todayRehearsalResult" maxlength="280" rows="2"></textarea></div><div class="field"><label for="todayRehearsalFirstAction">Qual é a primeira ação concreta?</label><textarea id="todayRehearsalFirstAction" maxlength="280" rows="2"></textarea></div><div class="field"><label for="todayRehearsalDifficulty">Qual dificuldade provavelmente aparecerá?</label><textarea id="todayRehearsalDifficulty" maxlength="280" rows="2"></textarea></div><div class="field"><label for="todayRehearsalResponse">Como você pretende responder quando ela aparecer?</label><textarea id="todayRehearsalResponse" maxlength="280" rows="2"></textarea></div></div><p class="session-error" id="todayRehearsalError" role="alert" tabindex="-1" hidden></p></div>
+          <div class="session-dialog-foot attempt-rehearsal-actions"><button type="button" class="quiet-btn" data-today-rehearsal-cancel data-today-rehearsal-action>Cancelar</button><button type="button" class="quiet-btn" data-today-rehearsal-skip data-today-rehearsal-action>Pular ensaio e começar</button><button type="submit" class="primary-btn" id="todayRehearsalSubmit" data-today-rehearsal-action>Começar sessão</button></div>
+        </form>
+      </dialog>
+    `);
+  }
 }
 
 function renderTodayPrimary(primary) {
@@ -178,7 +191,7 @@ function renderTodayPrimary(primary) {
     const futureUse=learningOutcomeModel.futureUsePresentation(primary.resolved.outcome.nextAttempt?.futureUse);
     const recall=capabilityContextModel.selectRecentEvidence(primary.resolved.outcome.id,state.data);
     const recallHtml=recall?`<aside class="today-evidence-recall" aria-label="Uma evidência relacionada"><div><span>Uma evidência relacionada</span><small>${escapeHtml(todayEvidenceAge(recall.createdAt))}</small></div><blockquote>${escapeHtml(recall.summary)}</blockquote><button class="quiet-btn" type="button" data-today-open-evidence="${escapeHtml(recall.evidenceId)}" data-today-evidence-outcome="${escapeHtml(recall.outcomeId)}">Ver evidência</button></aside>`:'';
-    content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima tentativa</div><h3 id="todayPrimaryHeading">${escapeHtml(primary.resolved.attemptText)}</h3><p>${escapeHtml(primary.resolved.outcome.capability)} · atual no seu plano</p>${futureUse?`<p class="today-future-use">Uso pretendido: ${escapeHtml(futureUse.label)}</p>`:''}</div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-primary-start="${escapeHtml(primary.resolved.outcome.id)}">Iniciar agora</button><button class="secondary-btn" type="button" data-today-primary-configure="${escapeHtml(primary.resolved.outcome.id)}">Ajustar sessão</button><button class="quiet-btn" type="button" data-today-open-capability="${escapeHtml(primary.resolved.outcome.id)}">Abrir capacidade</button><button class="quiet-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button><button class="quiet-btn remove" type="button" data-today-remove="${escapeHtml(primary.refKey)}">Remover do plano</button></div>${recallHtml}`;
+    content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima tentativa</div><h3 id="todayPrimaryHeading">${escapeHtml(primary.resolved.attemptText)}</h3><p>${escapeHtml(primary.resolved.outcome.capability)} · atual no seu plano</p>${futureUse?`<p class="today-future-use">Uso pretendido: ${escapeHtml(futureUse.label)}</p>`:''}</div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-primary-start="${escapeHtml(primary.resolved.outcome.id)}">Iniciar agora</button><button class="secondary-btn" type="button" data-today-primary-rehearse="${escapeHtml(primary.resolved.outcome.id)}">Ensaiar tentativa</button><button class="quiet-btn" type="button" data-today-primary-configure="${escapeHtml(primary.resolved.outcome.id)}">Ajustar sessão</button><button class="quiet-btn" type="button" data-today-open-capability="${escapeHtml(primary.resolved.outcome.id)}">Abrir capacidade</button><button class="quiet-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button><button class="quiet-btn remove" type="button" data-today-remove="${escapeHtml(primary.refKey)}">Remover do plano</button></div>${recallHtml}`;
     return;
   }
   delete content.dataset.todayCapability;
@@ -271,6 +284,58 @@ function todayStartCapability(outcomeId,{immediate=false,trigger=null,expanded=f
   return CompassoFeatures.execute(immediate?'session.startDefault':'session.openConfiguration',{...payload,expanded});
 }
 
+function todaySetRehearsalError(message=''){
+  const target=document.getElementById('todayRehearsalError');if(!target)return;
+  target.textContent=message;target.hidden=!message;
+}
+function todayClearRehearsalFields(){
+  for(const id of todayRehearsalFieldIds){const field=document.getElementById(id);if(field)field.value=''}
+}
+function todaySetRehearsalBusy(busy){
+  todayRehearsalRuntime.starting=Boolean(busy);
+  document.querySelectorAll('#todayRehearsalDialog [data-today-rehearsal-action]').forEach(control=>{control.disabled=Boolean(busy)});
+}
+function todayDiscardRehearsal({close=true,preservePending=false}={}){
+  const dialog=document.getElementById('todayRehearsalDialog');
+  const pending=preservePending&&todayRehearsalRuntime.starting;
+  todaySetRehearsalBusy(pending);todayClearRehearsalFields();todaySetRehearsalError('');
+  Object.assign(todayRehearsalRuntime,{outcomeId:null,attemptId:null,refKey:null,trigger:null,starting:pending,abandoned:pending});
+  if(close&&dialog?.open)dialog.close();
+}
+function todayOpenRehearsal(outcomeId,trigger=null){
+  if(todayRehearsalRuntime.starting)return false;
+  const primary=todayPrimaryState();
+  if(primary.kind!=='capability'||primary.resolved.outcome.id!==outcomeId){showToast('A capacidade ou tentativa atual não está disponível');return false}
+  const context=learningOutcomeModel.createExecutionContext(primary.resolved.outcome);
+  if(!context)return false;
+  todayDiscardRehearsal({close:false});
+  Object.assign(todayRehearsalRuntime,{outcomeId,attemptId:context.attemptId,refKey:primary.refKey,trigger:trigger||document.activeElement,starting:false});
+  const summary=document.getElementById('todayRehearsalContext');if(summary)summary.textContent=`${primary.resolved.outcome.capability} · ${primary.resolved.attemptText}`;
+  const dialog=document.getElementById('todayRehearsalDialog');dialog._dsOpener=todayRehearsalRuntime.trigger;
+  if(!dialog.open)dialog.showModal();
+  requestAnimationFrame(()=>document.getElementById('todayRehearsalResult')?.focus());
+  return true;
+}
+function todayCurrentRehearsalPayload(){
+  const current=todayRehearsalRuntime,primary=todayPrimaryState();
+  if(state.view!=='today'||!current.outcomeId||primary.kind!=='capability'||primary.resolved.outcome.id!==current.outcomeId||primary.resolved.outcome.nextAttempt?.id!==current.attemptId||primary.refKey!==current.refKey)return null;
+  const options=todayCapabilitySessionOptions(primary.resolved.outcome);
+  return options?{domain:'learningOutcome',itemId:primary.resolved.outcome.id,options,trigger:document.getElementById('todayRehearsalSubmit')||current.trigger}:null;
+}
+async function todayStartFromRehearsal({skip=false}={}){
+  if(todayRehearsalRuntime.starting)return false;
+  const payload=todayCurrentRehearsalPayload();
+  if(!payload){todayDiscardRehearsal();renderToday();requestAnimationFrame(()=>todayFocusPrimary(todayPrimaryState()));showToast('A tentativa mudou ou não está mais disponível.');return false}
+  if(skip)todayClearRehearsalFields();
+  todaySetRehearsalError('');todaySetRehearsalBusy(true);
+  const persisted=await Promise.resolve(CompassoFeatures.execute('session.startDefaultConfirmed',payload));
+  if(todayRehearsalRuntime.abandoned){todayDiscardRehearsal({close:false});return persisted===true}
+  if(persisted===true){todayDiscardRehearsal();return true}
+  todaySetRehearsalBusy(false);todaySetRehearsalError('Não foi possível iniciar a sessão. Tente novamente ou cancele o ensaio.');
+  requestAnimationFrame(()=>{if(state.view==='today'&&document.getElementById('todayRehearsalDialog')?.open)document.getElementById('todayRehearsalError')?.focus()});
+  return false;
+}
+
 function openTodayDialog() {
   const options = todayAllCandidates().map(({ item, domain }) => `<option value="${domain}:${item.id}">${escapeHtml(domainLabels[domain])} · ${escapeHtml(item.title)}</option>`).join('');
   document.getElementById('todayActionLink').innerHTML = `<option value="">Sem vínculo</option>${options}`;
@@ -299,6 +364,13 @@ CompassoFeatures.selector('today.primaryState',todayPrimaryState);
 CompassoFeatures.command('today.executePrimary',todayExecutePrimary);
 CompassoFeatures.command('today.openPrimary',todayOpenPrimary);
 CompassoFeatures.register('today',{order:10,afterRender:renderToday});
+CompassoFeatures.on('view:changed',({view})=>{
+  if(view==='today')return;
+  const dialog=document.getElementById('todayRehearsalDialog');
+  // The abandoned opener is hidden; the route owns focus, not this preflight.
+  if(dialog)delete dialog._dsOpener;
+  todayDiscardRehearsal({preservePending:true});
+});
 CompassoFeatures.on('render:after',()=>{
   if (!todayRestorePrimaryFocusAfterRender) return;
   todayRestorePrimaryFocusAfterRender = false;
@@ -307,6 +379,9 @@ CompassoFeatures.on('render:after',()=>{
 });
 
 document.getElementById('todayForm').addEventListener('submit', event => { event.preventDefault(); saveTodayCustomAction(); });
+document.getElementById('todayRehearsalForm').addEventListener('submit',event=>{event.preventDefault();void todayStartFromRehearsal()});
+document.getElementById('todayRehearsalDialog').addEventListener('cancel',event=>{event.preventDefault();if(!todayRehearsalRuntime.starting)todayDiscardRehearsal()});
+document.getElementById('todayRehearsalDialog').addEventListener('close',()=>todayDiscardRehearsal({close:false,preservePending:true}));
 document.addEventListener('click', event => {
   if (event.target.closest('[data-today-custom]')) openTodayDialog();
   if (event.target.closest('[data-today-close]')) document.getElementById('todayDialog').close();
@@ -340,7 +415,10 @@ document.addEventListener('click', event => {
   }
   const startCapability=event.target.closest('[data-today-start-capability]');if(startCapability)todayStartCapability(startCapability.dataset.todayStartCapability,{trigger:startCapability});
   const primaryStart=event.target.closest('[data-today-primary-start]');if(primaryStart)todayStartCapability(primaryStart.dataset.todayPrimaryStart,{immediate:true,trigger:primaryStart});
+  const primaryRehearse=event.target.closest('[data-today-primary-rehearse]');if(primaryRehearse)todayOpenRehearsal(primaryRehearse.dataset.todayPrimaryRehearse,primaryRehearse);
   const primaryConfigure=event.target.closest('[data-today-primary-configure]');if(primaryConfigure)todayStartCapability(primaryConfigure.dataset.todayPrimaryConfigure,{trigger:primaryConfigure,expanded:true});
+  const rehearsalCancel=event.target.closest('[data-today-rehearsal-cancel]');if(rehearsalCancel&&!todayRehearsalRuntime.starting)todayDiscardRehearsal();
+  const rehearsalSkip=event.target.closest('[data-today-rehearsal-skip]');if(rehearsalSkip)void todayStartFromRehearsal({skip:true});
   const open = event.target.closest('[data-today-open]');
   if (open) {
     const [domain, itemId] = open.dataset.todayOpen.split(':');

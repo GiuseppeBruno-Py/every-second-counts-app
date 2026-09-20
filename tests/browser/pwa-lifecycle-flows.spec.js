@@ -251,6 +251,67 @@ test('controlled complete cache reopens offline with composition and local state
   await context.setOffline(false);
 });
 
+test('attempt rehearsal is ephemeral and starts the canonical Session offline', async ({ page, context }) => {
+  const marker = 'ensaio offline não persistido 7319';
+  await page.goto(PWA_URL);
+  await coherent(page);
+  await page.locator('[data-ia-area="fronts"]').click();
+  await page.locator('[data-ia-view="capabilities"]').click();
+  await page.locator('[data-outcome-new]').first().click();
+  await page.locator('[name="capability"]').fill('Explicar uma decisão sem rede');
+  await page.locator('[name="nextAttempt"]').fill('Começar pela definição verificável');
+  await page.locator('#learningOutcomeForm').evaluate((form) => form.requestSubmit());
+  await page.locator('[data-outcome-today]').click();
+  await page.locator('[data-today-primary-rehearse]').click();
+  await page.locator('#todayRehearsalResult').fill(marker);
+  await page.locator('#todayRehearsalFirstAction').fill('Abrir com a definição');
+  await page.locator('#todayRehearsalDifficulty').fill('Confundir conceitos próximos');
+  await page.locator('#todayRehearsalResponse').fill('Comparar com um exemplo');
+  expect(await page.evaluate((value) => JSON.stringify(state.data).includes(value), marker)).toBe(false);
+
+  await context.setOffline(true);
+  await page.reload();
+  await coherent(page);
+  await expect(page.locator('#todayRehearsalDialog')).toBeHidden();
+  expect(await page.evaluate((value) => JSON.stringify(state.data).includes(value), marker)).toBe(false);
+  expect(await page.evaluate(() => state.data.sessions.length)).toBe(0);
+
+  await page.locator('[data-today-primary-rehearse]').click();
+  await page.locator('#todayRehearsalResult').fill(marker);
+  await page.locator('#todayRehearsalSubmit').click();
+  await expect(page.locator('#todayRehearsalDialog')).toBeHidden();
+  await expect.poll(() => page.evaluate(() => state.data.sessions.length)).toBe(1);
+  await expect(page.locator('#sessionCompanionOpen')).toBeVisible();
+  expect(await page.evaluate((value) => JSON.stringify(state.data).includes(value), marker)).toBe(false);
+
+  await page.reload();
+  await coherent(page);
+  await expect(page.locator('#todayRehearsalDialog')).toBeHidden();
+  await expect(page.locator('#sessionCompanionOpen')).toBeVisible();
+  expect(await page.evaluate(() => state.data.sessions.length)).toBe(1);
+  expect(await page.evaluate((value) => JSON.stringify(state.data).includes(value), marker)).toBe(false);
+  await page.locator('[data-today-resume]').click();
+  await page.locator('#sessionCompanionFinish').click();
+  await page.locator('#sessionEvidenceSummary').fill('Ensaio offline seguido de explicação verificável');
+  await page.locator('#sessionFinishForm').evaluate(form => form.requestSubmit());
+  await expect(page.locator('#executionCompletionPanel')).toBeVisible();
+  expect(await page.evaluate(() => state.data.evidence[0].sessionId)).toBe(await page.evaluate(() => state.data.sessions[0].id));
+  expect(await page.evaluate((value) => JSON.stringify(state.data).includes(value), marker)).toBe(false);
+  await page.locator('[data-completion-today]').click();
+  await page.evaluate(() => CompassoInformationArchitecture.open('notes'));
+  await page.locator('#vaultManagerBtn').click();
+  const markdownEvent = page.waitForEvent('download');
+  await page.locator('[data-vault-action="export-zip"]').click();
+  const markdown = await markdownEvent;
+  // Existing vault ZIP entries are uncompressed (method 0).
+  const zip = fs.readFileSync(await markdown.path());
+  expect(zip.readUInt32LE(0)).toBe(0x04034b50);
+  expect(zip.readUInt16LE(8)).toBe(0);
+  expect(zip.toString('utf8')).toContain('.compasso/manifest.json');
+  expect(zip.toString('utf8')).not.toContain(marker);
+  await context.setOffline(false);
+});
+
 test('executing raw document with a cached worker recovers offline at most once', async ({ page, context }) => {
   await page.goto(PWA_URL);
   await coherent(page);

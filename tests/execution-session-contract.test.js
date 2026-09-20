@@ -22,3 +22,12 @@ test('companion e relatórios usam a execução canônica',()=>{
   assert.doesNotMatch(read('deep-work-feature.js'),/function completedExecutionSessions/);
   assert.match(read('history-edit-feature.js'),/executionSyncAll\(\)/);
 });
+
+test('início confirmado compartilha o default sem alterar o comando imediato',()=>{
+  const sessions=read('sessions-feature.js');
+  assert.match(sessions,/function sessionPrepareDefault/);
+  assert.match(sessions,/function sessionStartDefaultConfirmed/);
+  assert.match(sessions,/CompassoFeatures\.command\('session\.startDefault',sessionStartDefault\)/);
+  assert.match(sessions,/CompassoFeatures\.command\('session\.startDefaultConfirmed',sessionStartDefaultConfirmed\)/);
+  assert.match(sessions,/failurePresentation\s*=\s*'session-dialog'/);
+});

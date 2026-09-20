@@ -197,20 +197,28 @@ function openSessionStartCore(domain, itemId, options = {}, presentation = {}) {
 function openSessionStart(domain,itemId,options={}) { return openSessionStartCore(domain,itemId,options); }
 function openOutcomeSessionStart(itemId,options) { return openSessionStartCore('learningOutcome',itemId,options); }
 
-function sessionStartDefault(payload={}) {
+function sessionPrepareDefault(payload={}) {
   if(!openSessionStartCore(payload.domain,payload.itemId,payload.options||{},{show:false,trigger:payload.trigger}))return false;
   document.getElementById('sessionMode').value='quick';
+  return true;
+}
+function sessionStartDefault(payload={}) {
+  if(!sessionPrepareDefault(payload))return false;
   document.getElementById('sessionStartForm').requestSubmit();
   return true;
+}
+async function sessionStartDefaultConfirmed(payload={}) {
+  if(!sessionPrepareDefault(payload))return false;
+  return sessionCreateFromForm({failurePresentation:'caller'});
 }
 function sessionOpenConfiguration(payload={}) {
   return openSessionStartCore(payload.domain,payload.itemId,payload.options||{},{show:true,expanded:Boolean(payload.expanded),trigger:payload.trigger});
 }
 
-async function createSession() {
+async function createSession({failurePresentation='session-dialog'}={}) {
   if(sessionRuntime.creating)return false;
   const selected = sessionRuntime.selectedItem;
-  if (!selected || !executionCanStart()) return false;
+  if (!selected || !executionCanStart())return false;
   const draft=sessionStartDraft();
   sessionSetError('sessionStartError','');
   let target = {...selected};
@@ -285,9 +293,11 @@ async function createSession() {
   if(persisted){if(typeof ritualClearExecution==='function')ritualClearExecution('session');const dialog=document.getElementById('sessionStartDialog');if(dialog.open)dialog.close();requestAnimationFrame(()=>{const activeSurface=document.getElementById('sessionCompanionOpen')||document.getElementById('sessionBanner');activeSurface?.scrollIntoView?.({block:'nearest'});activeSurface?.focus?.()});return true}
   state.data=previous;try{await window.CompassoStorage.save(STORAGE_KEY,previous)}catch{}
   renderAll();sessionRestoreStartDraft(draft);
-  const dialog=document.getElementById('sessionStartDialog');if(!dialog.open)dialog.showModal();
-  sessionSetError('sessionStartError','Não foi possível iniciar a sessão. Revise as opções e tente novamente.');
-  requestAnimationFrame(()=>document.getElementById('sessionStartError')?.focus());
+  if(failurePresentation==='session-dialog'){
+    const dialog=document.getElementById('sessionStartDialog');if(!dialog.open)dialog.showModal();
+    sessionSetError('sessionStartError','Não foi possível iniciar a sessão. Revise as opções e tente novamente.');
+    requestAnimationFrame(()=>document.getElementById('sessionStartError')?.focus());
+  }
   return false;
 }
 
@@ -445,6 +455,7 @@ function resumeSession() {
 
 installSessionUi();
 CompassoFeatures.command('session.startDefault',sessionStartDefault);
+CompassoFeatures.command('session.startDefaultConfirmed',sessionStartDefaultConfirmed);
 CompassoFeatures.command('session.openConfiguration',sessionOpenConfiguration);
 CompassoFeatures.command('session.resume',resumeSession);
 const sessionCreateFromForm=createSession;
