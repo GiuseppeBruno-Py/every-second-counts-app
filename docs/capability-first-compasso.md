@@ -74,6 +74,7 @@ The UX Simplification delivery composes the shipped owners into one perceptible 
 
 - Today derives one primary state and uses stored plan order: resume, current planned capability attempt, another planned action, then planning fallback.
 - A capability attempt starts the existing quick Session immediately; existing optional settings remain in the same form behind native progressive disclosure.
+- Before that start, **Ensaiar tentativa** may hold four optional preparation answers only in the current DOM. Cancel, Escape, navigation, reload, stale attempt, or successful start discards them; a failed write retains the local draft only for retry. No rehearsal data enters state, Session, Evidence, backup, export, or analytics.
 - Session and Deep Work emit the completion handoff only after canonical Session/Evidence persistence succeeds.
 - The completion panel is ephemeral. When a saved Evidence resolves an active capability, **Refletir sobre esta evidência** asks **O que esta evidência demonstra que você já consegue fazer?**. The response starts empty and becomes an existing `learningSignals` insight only through explicit save, with `origin: learner` and the exact Evidence `sourceRef`.
 - Cancel, Escape, navigation, refresh before save, and persistence failure create no calibration record. The generic signal entry points remain unchanged, and execution-only completion without Evidence retains the existing generic signal action.
@@ -101,4 +102,4 @@ Notes, folders, Markdown/vault metadata, wikilinks, source links, Relations/grap
 
 ## PWA and rollback
 
-`app-manifest.js` owns the current candidate generation `compasso-pages-v82`, includes `capability-context-model.js`, and keeps the Service Worker implementation unchanged. Before publication, rollback is the complete scoped release unit. Rollback after v82 exposure must use a later forward generation that preserves `learningSignals` and nested reflection/Today fields. Never clear user storage, backups, vaults, or unrelated caches.
+`app-manifest.js` owns the current candidate generation `compasso-pages-v83`, includes `capability-context-model.js`, and keeps the Service Worker implementation unchanged. Before publication, rollback is the complete scoped release unit. Rollback after v83 exposure must use a later forward generation that preserves `learningSignals` and nested reflection/Today fields. Never clear user storage, backups, vaults, or unrelated caches.

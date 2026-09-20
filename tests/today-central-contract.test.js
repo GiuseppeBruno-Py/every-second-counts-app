@@ -37,6 +37,21 @@ test('estados de capacidade indisponíveis permanecem informativos e não execut
   assert.match(today,/unavailable\|\|archived\|\|stale/);
 });
 
+test('ensaio permanece opcional, efêmero e restrito à tentativa principal',()=>{
+  const today=read('today-feature.js');
+  assert.match(today,/data-today-primary-rehearse/);
+  assert.ok(today.indexOf('data-today-primary-start')<today.indexOf('data-today-primary-rehearse'));
+  for(const prompt of [
+    'Qual resultado você quer produzir nesta tentativa?',
+    'Qual é a primeira ação concreta?',
+    'Qual dificuldade provavelmente aparecerá?',
+    'Como você pretende responder quando ela aparecer?'
+  ])assert.match(today,new RegExp(prompt.replace(/[?]/g,'\\?')));
+  assert.match(today,/function todayCurrentRehearsalPayload/);
+  assert.match(today,/session\.startDefaultConfirmed/);
+  assert.doesNotMatch(today,/state\.data\.(?:rehearsal|attemptRehearsal|rehearsals)/);
+});
+
 test('Revisão semanal e Consistência mostram Deep Work e Normal', () => {
   const weekly = read('weekly-review-feature.js');
   const analytics = read('analytics-feature.js');

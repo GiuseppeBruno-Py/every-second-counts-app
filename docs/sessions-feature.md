@@ -49,6 +49,8 @@ Uma tentativa atual de capacidade planejada em Hoje pode iniciar imediatamente u
 
 `session.resume` retoma ou focaliza a superfície compacta de sessão já existente. O controle global **Executar** e Hoje usam esse contrato sem criar uma segunda experiência de execução.
 
+O comando aditivo `session.startDefaultConfirmed` prepara exatamente o mesmo início rápido, mas devolve ao chamador o resultado da persistência. Hoje usa esse retorno para fechar o ensaio somente quando a Session e sua projeção canônica foram gravadas. O comando não recebe nem persiste as respostas do ensaio; `session.startDefault` conserva o comportamento anterior para todos os demais chamadores.
+
 ## Limites transacionais
 
 A criação aguarda a persistência de um candidato que reúne a Session, a Execution Session canônica, o contexto/recurso escolhido e as integrações existentes de Journal, ritual, energia e Flow. A configuração só fecha e a sessão só é anunciada após sucesso. Falha restaura o estado anterior, conserva os campos e move o foco para o erro.
