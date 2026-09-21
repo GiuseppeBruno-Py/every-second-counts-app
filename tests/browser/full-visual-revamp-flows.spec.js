@@ -414,6 +414,8 @@ test('variants: weakness validation open resolved and edit states',async({page},
   await variant(page,'#weaknessDialog','weakness-required',info,issues);
   await page.locator('#errorTitle').fill('Confundi o custo estimado com o custo real da consulta.');
   await page.locator('#errorContext').fill('A comparação usou somente o primeiro plano e ignorou a cardinalidade observada.');
+  await page.locator('#errorInterpretation').fill('Concluí cedo demais que não consigo interpretar planos complexos.');
+  await page.locator('#errorHypothesis').fill('Comparei estimativa e medição como se fossem o mesmo sinal.');
   await page.locator('#errorCorrection').fill('Separar estimativa e medição, executar ambos os planos e registrar a diferença.');
   await page.locator('#errorNextAction').fill('Repetir a análise com dois conjuntos de dados.');
   await page.locator('#weaknessForm [type=submit]').click();
