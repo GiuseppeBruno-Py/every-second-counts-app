@@ -59,3 +59,16 @@ test('Revisão semanal e Consistência mostram Deep Work e Normal', () => {
   assert.match(analytics, /analyticsSessionKindModel\.label/);
   assert.match(analytics, /tipo_sessao/);
 });
+
+test('Revisão semanal positiva mantém respostas distintas e decisões explícitas', () => {
+  const weekly = read('weekly-review-feature.js');
+  assert.match(weekly, /WEEKLY_REVIEW_VERSION\s*=\s*2/);
+  assert.match(weekly, /O que funcionou esta semana e merece ser repetido\?/);
+  assert.match(weekly, /Alguma evidência mudou sua percepção sobre o que você consegue fazer\?/);
+  for (const id of ['weeklyRepeatablePractice', 'weeklyEvidenceReflection']) assert.match(weekly, new RegExp(`id="${id}"`));
+  for (const field of ['repeatablePractice', 'evidenceReflection']) assert.match(weekly, new RegExp(`${field}:`));
+  assert.match(weekly, /function weeklyOptionalText/);
+  assert.match(weekly, /review\?\.wins \|\| ''/);
+  assert.match(weekly, /review\?\.lessons \|\| ''/);
+  assert.doesNotMatch(weekly, /state\.data\.(?:positiveReviews|confidence|selfEsteem|weeklyCalibration)/);
+});

@@ -6,6 +6,17 @@ Quando existe contexto de uso futuro, a revisão separa **Uso nas execuções**,
 
 **Manter tentativa atual** preserva texto, `futureUse`, identidade e timestamps. **Revisar tentativa** permite editar o texto e escolher ou limpar o uso futuro no mesmo save atômico. `capabilityReflections` continua sem proprietário de `futureUse`, e falha de validação/persistência mantém o estado anterior e o rascunho disponível para nova tentativa.
 
+## Funcionou → KEEP
+
+O fechamento também oferece duas perguntas opcionais:
+
+- **O que funcionou esta semana e merece ser repetido?**
+- **Alguma evidência mudou sua percepção sobre o que você consegue fazer?**
+
+As respostas são texto do aprendiz. Elas não selecionam `keep` ou `revise`, não alteram uma capacidade, não criam `learningSignals` e não produzem score, traço de identidade ou mensagem motivacional. As decisões por capacidade continuam exclusivamente nos controles explícitos acima do fechamento.
+
+Revisões anteriores continuam com `wins` e `lessons` em seus significados originais. A aplicação não os reutiliza nem os apresenta como resposta às novas perguntas. Uma revisão v1 abre os dois campos novos vazios e só passa a registrar `repeatablePractice` ou `evidenceReflection` quando o aprendiz salva explicitamente.
+
 ## Objetivo
 
 Transformar sessões e evidências registradas durante a semana em interpretação, decisão e foco para a semana seguinte.
@@ -60,6 +71,8 @@ Cada leitura ou estudo trabalhado mostra:
 
 A revisão permite registrar:
 
+- uma prática ou resposta que funcionou e merece repetição, opcional;
+- uma reflexão baseada em Evidence sobre o que já consegue fazer, opcional;
 - principal avanço;
 - aprendizado mais importante;
 - bloqueios e dispersões;
@@ -80,9 +93,11 @@ As revisões são salvas em `state.data.weeklyReviews` com a seguinte estrutura:
 ```javascript
 {
   id,
-  schemaVersion,
+  schemaVersion: 2,
   weekStart,
   weekEnd,
+  repeatablePractice,
+  evidenceReflection,
   wins,
   lessons,
   blockers,
@@ -93,7 +108,9 @@ As revisões são salvas em `state.data.weeklyReviews` com a seguinte estrutura:
 }
 ```
 
-Elas são persistidas no IndexedDB, mantidas no fallback local e incluídas no backup JSON.
+`repeatablePractice` e `evidenceReflection` são strings opcionais. Valores ausentes ou malformados degradam para campos vazios apenas na apresentação; não existe migração ou escrita durante renderização. Um save v2 grava strings explícitas, inclusive vazias.
+
+As revisões são persistidas no IndexedDB, mantidas no fallback local e incluídas no backup JSON. A falha de gravação restaura o último estado durável e recompõe o rascunho completo, incluindo as duas novas respostas. Backups v1 continuam válidos, e backups v2 preservam os campos no round-trip.
 
 ## Critérios de aceite
 
@@ -112,14 +129,14 @@ Elas são persistidas no IndexedDB, mantidas no fallback local e incluídas no b
 
 1. Abra a revisão da semana atual.
 2. Confira sessões, tempo, evidências e itens trabalhados.
-3. Preencha a reflexão e selecione prioridades.
-4. Salve e confirme o status **Revisão concluída**.
-5. Abra a visão geral e confira o novo foco.
-6. Volte à revisão e atualize o conteúdo.
-7. Navegue para a semana anterior.
-8. Feche e abra o PWA.
-9. Exporte e importe um backup.
-10. Repita o acesso sem conexão.
+3. Registre opcionalmente o que funcionou e uma reflexão baseada em Evidence.
+4. Confirme que nenhum texto selecionou `keep` ou `revise`; faça a decisão explicitamente quando houver capacidade elegível.
+5. Preencha as demais reflexões e selecione prioridades.
+6. Salve e confirme o status **Revisão concluída**.
+7. Abra a visão geral e confira o novo foco.
+8. Volte à revisão e atualize o conteúdo.
+9. Abra uma revisão v1 e confirme os novos campos vazios sem perder o conteúdo antigo.
+10. Feche e abra o PWA, exporte/restaure o backup e repita o acesso sem conexão.
 
 ## Fora do escopo desta versão
 
