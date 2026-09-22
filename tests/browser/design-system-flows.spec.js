@@ -368,6 +368,48 @@ test("ensaio da tentativa preserva semântica, foco, toque e zoom", async ({ pag
   await expect(trigger).toBeFocused();
 });
 
+test("Caderno de erros preserva semântica, foco, toque e zoom", async ({ page }, testInfo) => {
+  await open(page);
+  await page.evaluate(() => CompassoInformationArchitecture.open("weakness"));
+  if (testInfo.project.name === "mobile") await page.setViewportSize({ width: 390, height: 844 });
+  const trigger = page.locator("[data-error-new]");
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.locator("#weaknessDialog");
+  await expect(dialog).toHaveAttribute("aria-labelledby", "weaknessDialogTitle");
+  await expect(dialog).toHaveAttribute("aria-describedby", "weaknessError");
+  await expect(page.locator("#errorTitle")).toBeFocused();
+  await page.locator("#errorTitle").focus();
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#errorContext")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#errorInterpretation")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#errorHypothesis")).toBeFocused();
+  for (const width of [360, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    const geometry = await dialog.evaluate(element => ({
+      page: document.documentElement.scrollWidth,
+      viewport: document.documentElement.clientWidth,
+      rect: element.getBoundingClientRect()
+    }));
+    expect(geometry.page).toBeLessThanOrEqual(geometry.viewport + 1);
+    expect(geometry.rect.left).toBeGreaterThanOrEqual(0);
+    expect(geometry.rect.right).toBeLessThanOrEqual(geometry.viewport + 1);
+  }
+  await page.evaluate(() => { document.documentElement.style.zoom = "2"; });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1)).toBe(true);
+  await page.evaluate(() => { document.documentElement.style.zoom = ""; });
+  if (testInfo.project.name === "mobile") {
+    const box = await page.locator("#weaknessSaveButton").boundingBox();
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  }
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
 test("checkpoint E1 preserva semântica, foco, toque, zoom e redução de movimento", async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   if (testInfo.project.name === "mobile") await page.setViewportSize({ width: 390, height: 844 });

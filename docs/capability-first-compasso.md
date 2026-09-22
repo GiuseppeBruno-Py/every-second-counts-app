@@ -80,6 +80,7 @@ The UX Simplification delivery composes the shipped owners into one perceptible 
 - Cancel, Escape, navigation, refresh before save, and persistence failure create no calibration record. The generic signal entry points remain unchanged, and execution-only completion without Evidence retains the existing generic signal action.
 - Before a current planned attempt, Today may recall the most recent valid Evidence from the same capability. The card is omitted when canonical provenance is absent; **Ver evidência** revalidates and focuses the exact record without changing state.
 - Weekly Review puts capability reflection and keep/revise decisions before closure and collapsed supporting summaries. The closure distinguishes what worked from what needs revision without coupling free text to a decision. Only an explicit successful revise changes the next attempt; historical `wins` and `lessons` are never reclassified as the new positive reflections.
+- Caderno de Erros separates an observed fact from the learner's optional interpretation and testable hypothesis before correction and next attempt. These are additive fields on the existing `errorNotebook` record, saved only through explicit action. They never classify the learner, infer confidence, create a learning signal, or mutate a Capability/next attempt automatically.
 - Focus transitions, native keyboard behavior, coarse-pointer targets, reduced motion, 360–390 px layouts and 200% zoom are part of the same UI contract.
 
 Results, Consistency, book synthesis, Notes, Relations and Contextual AI routes remain separate and unchanged in this delivery.
@@ -102,4 +103,4 @@ Notes, folders, Markdown/vault metadata, wikilinks, source links, Relations/grap
 
 ## PWA and rollback
 
-`app-manifest.js` owns the current candidate generation `compasso-pages-v84`, includes `capability-context-model.js`, and keeps the Service Worker implementation unchanged. Before publication, rollback is the complete scoped release unit. Rollback after v84 exposure must use a later forward generation that preserves `learningSignals`, the additive Weekly Review reflections, and nested reflection/Today fields. Never clear user storage, backups, vaults, or unrelated caches.
+`app-manifest.js` owns the current candidate generation `compasso-pages-v85`, includes `capability-context-model.js`, and keeps the Service Worker implementation unchanged. Before publication, rollback is the complete scoped release unit. Rollback after v85 exposure must use a later forward generation that preserves `learningSignals`, additive Weekly Review reflections, nested reflection/Today fields, and the optional `errorNotebook.interpretation`/`hypothesis` properties. Never clear user storage, backups, vaults, or unrelated caches.

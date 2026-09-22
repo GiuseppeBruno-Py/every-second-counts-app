@@ -200,6 +200,15 @@ test('controlled complete cache reopens offline with composition and local state
   await page.locator('#weeklyRepeatablePractice').fill('Repetir a validação completa do shell offline');
   await page.locator('#weeklyEvidenceReflection').fill('A Evidence demonstrou que o ciclo offline já é executável');
   await page.locator('#weeklyReviewForm').evaluate(form=>form.requestSubmit());
+  await page.evaluate(() => CompassoInformationArchitecture.open('weakness'));
+  await page.locator('[data-error-new]').click();
+  await page.locator('#errorTitle').fill('Falha observada no ciclo offline');
+  await page.locator('#errorContext').fill('A primeira tentativa perdeu a transição entre duas etapas.');
+  await page.locator('#errorInterpretation').fill('Interpretei a falha como incapacidade geral.');
+  await page.locator('#errorHypothesis').fill('A transição não havia sido ensaiada.');
+  await page.locator('#errorCorrection').fill('A transição deve ser explicitada antes de executar.');
+  await page.locator('#errorNextAction').fill('Ensaiar a transição e repetir offline.');
+  await page.locator('#weaknessForm').evaluate(form=>form.requestSubmit());
   await page.evaluate(async () => { const index=state.data.ritualTemplates.findIndex(item=>item.actionType==='study'&&!item.archived),ritual=CompassoRitualModel.update(state.data.ritualTemplates[index],{encodingCheckpoint:true});state.data.ritualTemplates[index]=ritual;state.data.study.find(item=>item.id==='example-study').ritualId=ritual.id;await CompassoStorage.save('compasso.app.v1',state.data);CompassoInformationArchitecture.open('study');renderAll(); });
   await page.locator('#studyGrid .ux-execute').first().click();
   await page.locator('[data-ux-run="ideal"]').click();
@@ -249,6 +258,9 @@ test('controlled complete cache reopens offline with composition and local state
   expect(await page.evaluate(() => state.data.learningSignals.some(item => item.kind === 'insight' && item.origin === 'learner' && item.sourceRef?.type === 'evidence' && item.text.includes('preservar a evidência sem rede')))).toBe(true);
   expect(await page.evaluate(() => state.data.weeklyReviews.some(review => review.capabilityReflections?.some(item => item.decision === 'keep')))).toBe(true);
   expect(await page.evaluate(() => state.data.weeklyReviews.some(review => review.repeatablePractice === 'Repetir a validação completa do shell offline' && review.evidenceReflection === 'A Evidence demonstrou que o ciclo offline já é executável'))).toBe(true);
+  expect(await page.evaluate(() => state.data.errorNotebook.some(item => item.schemaVersion === 2 && item.hypothesis === 'A transição não havia sido ensaiada.'))).toBe(true);
+  await page.evaluate(() => CompassoInformationArchitecture.open('weakness'));
+  await expect(page.locator('#errorNotebookList')).toContainText('A transição não havia sido ensaiada.');
   expect(await page.evaluate(() => state.data.evidence.some(item => item.summary === 'Encoding e Evidence preservados offline'))).toBe(true);
   await expect(page.locator('link[href="./design-system.css"]')).toHaveCount(1);
   await context.setOffline(false);
