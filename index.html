@@ -666,6 +666,7 @@
       captures: [],
       learningOutcomes: [],
       learningSignals: [],
+      behavioralExperiments: [],
       folders: [
         { id:'f-inbox', name:'00 · Inbox', parent:null, domain:'inbox' },
         { id:'f-reading', name:'01 · Leituras', parent:null, domain:'reading' },
@@ -943,6 +944,9 @@ Este é um exemplo público. Seus dados reais ficam somente no armazenamento loc
       normalized.learningSignals = globalThis.CompassoCapabilityContextModel
         ? globalThis.CompassoCapabilityContextModel.normalizeSignalCollection(normalized.learningSignals)
         : (Array.isArray(normalized.learningSignals) ? normalized.learningSignals : []);
+      normalized.behavioralExperiments = globalThis.CompassoBehavioralExperimentModel
+        ? globalThis.CompassoBehavioralExperimentModel.normalizeCollection(normalized.behavioralExperiments)
+        : (Array.isArray(normalized.behavioralExperiments) ? normalized.behavioralExperiments : []);
       return normalized;
     }
 

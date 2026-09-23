@@ -1705,6 +1705,29 @@ html[data-visual-system="notebook"] :is(.ia-grid,.items-grid) {grid-template-col
 html[data-visual-system="notebook"] dialog {color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:1rem;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;box-shadow:0 8px 24px rgb(25 35 29 / 12%)}
 html[data-visual-system="notebook"] dialog :is(form,.field,.field-row) {min-width:0}
 html[data-visual-system="notebook"] dialog :is(.modal-foot,.session-dialog-foot,.learning-outcome-dialog-foot) {flex-wrap:wrap;gap:.75rem}
+
+/* Behavioral experiments remain a secondary surface inside Capacidades. */
+.behavioral-experiment-section { margin-top: 1.5rem; padding: 1.1rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface-strong); }
+.behavioral-experiment-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.behavioral-experiment-heading h3 { margin: 0; font: 700 1.25rem/1.35 Georgia, serif; }
+.behavioral-experiment-heading p { margin: .35rem 0 0; color: var(--muted); font-size: .875rem; }
+.behavioral-experiment-list { display: grid; gap: .75rem; margin-top: 1rem; }
+.behavioral-experiment-card { padding: .85rem; border: 1px solid var(--line); border-radius: .8rem; }
+.behavioral-experiment-card-head,.behavioral-experiment-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .55rem; }
+.behavioral-experiment-card-head span,.behavioral-experiment-period { color: var(--muted); font-size: .875rem; }
+.behavioral-experiment-card p { margin: .45rem 0; overflow-wrap: anywhere; font-size: .875rem; line-height: 1.5; }
+.behavioral-experiment-card details { margin: .55rem 0; }
+.behavioral-experiment-card summary { cursor: pointer; font-size: .875rem; font-weight: 700; }
+.behavioral-experiment-actions { justify-content: flex-start; margin-top: .75rem; }
+.behavioral-experiment-dialog .learning-outcome-form[hidden] { display: none; }
+.behavioral-experiment-dialog .learning-outcome-form input[type="date"] { width: 100%; min-height: 2.75rem; padding: .6rem; border: 1px solid var(--line); border-radius: .7rem; background: #fff; color: var(--ink); }
+.behavioral-experiment-dialog .learning-outcome-form input[type="date"]:focus-visible { outline: 3px solid var(--violet); outline-offset: 2px; }
+.behavioral-experiment-error { margin: 0 1.25rem .5rem; }
+@media(max-width: 600px) {
+  .behavioral-experiment-heading { flex-direction: column; }
+  .behavioral-experiment-heading button { width: 100%; }
+  .behavioral-experiment-dialog { width: calc(100vw - 1rem); max-height: calc(100dvh - 1rem); }
+}
 html[data-visual-system="notebook"] #settingsMenu {width:min(24rem,calc(100vw - 24px));max-height:calc(100dvh - 100px);overflow:auto}
 html[data-visual-system="notebook"] :is(.markdown-input,.markdown-preview) {font-size:1.0625rem;line-height:1.65;color:var(--ink);background:var(--surface);padding:1.5rem;min-width:0}
 html[data-visual-system="notebook"] .markdown-input {font-family:ui-monospace,monospace;font-size:1rem}
