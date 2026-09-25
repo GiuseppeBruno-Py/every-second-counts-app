@@ -2076,3 +2076,15 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
     transition: none;
   }
 }
+
+/* A simulação é orientação opcional no editor existente de Capacidades. */
+.learning-outcome-attempt strong { white-space: pre-line; }
+.outcome-pressure-trigger { display: inline-flex; align-items: center; margin-top: .65rem; min-height: 44px; }
+.outcome-pressure-panel { min-width: 0; margin-top: .8rem; padding: .8rem; border: 1px solid var(--line); border-radius: .75rem; }
+.outcome-pressure-panel > summary { min-height: 44px; cursor: pointer; font-weight: 700; }
+.outcome-pressure-panel > p { margin: .45rem 0 .7rem; }
+.outcome-pressure-panel > label { display: block; margin: .5rem 0; font-weight: 700; }
+.outcome-pressure-panel textarea { display: block; width: 100%; min-height: 5.25rem; padding: .75rem; border: 1px solid var(--line); border-radius: .7rem; background: var(--surface-strong); color: var(--ink); resize: vertical; }
+.outcome-pressure-panel textarea:focus-visible,.outcome-pressure-panel > summary:focus-visible { outline: 3px solid var(--ds-color-focus,var(--violet)); outline-offset: 3px; }
+.outcome-pressure-panel button { min-height: 44px; white-space: normal; }
+@media (max-width: 600px) { .outcome-pressure-panel button { width: 100%; } }

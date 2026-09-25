@@ -18,7 +18,8 @@ const learningOutcomeRuntime = {
   signalSourceRef:null,
   signalOrigin:'learner',
   signalPresentation:'default',
-  focusEvidenceId:null
+  focusEvidenceId:null,
+  pressureAppliedCondition:''
 };
 
 function outcomeElement(id) { return document.getElementById(id); }
@@ -96,6 +97,14 @@ function outcomeInstallShell() {
             <label for="learningOutcomeAttempt">O que você vai tentar agora? <span aria-hidden="true">*</span></label>
             <textarea id="learningOutcomeAttempt" name="nextAttempt" maxlength="1000" required></textarea>
             <p class="learning-outcome-hint">Pode ser uma prática, exercício ou outra ação concreta.</p>
+            <details class="outcome-pressure-panel" id="outcomePressurePanel">
+              <summary>Simulação deliberada <span>Opcional</span></summary>
+              <p class="learning-outcome-hint" id="outcomePressureHint">Torne esta tentativa mais parecida com a situação real. Você pode começar sozinho e, em tentativas futuras, incluir tempo, perguntas, observadores ou uma simulação completa. Escolha apenas uma condição concreta agora.</p>
+              <label for="outcomePressureCondition">Que condição realista você quer acrescentar?</label>
+              <textarea id="outcomePressureCondition" name="pressureCondition" maxlength="300" aria-describedby="outcomePressureHint"></textarea>
+              <button class="secondary-btn" type="button" data-outcome-pressure-apply>Adicionar à próxima tentativa</button>
+              <p class="learning-outcome-hint">Confira e edite o texto da próxima tentativa antes de salvar. Nada é registrado só por preencher este campo.</p>
+            </details>
             <p class="learning-outcome-error" id="learningOutcomeError" role="alert" hidden></p>
           </div>
           <div class="learning-outcome-dialog-foot">
@@ -189,7 +198,7 @@ function outcomeCard(outcome, indexes) {
       <button class="secondary-btn" type="button" data-outcome-edit="${escapeHtml(outcome.id)}">Editar</button>
     </div>
     ${outcome.proofCriterion ? `<div class="learning-outcome-proof"><span>Como vou saber</span><p>${escapeHtml(outcome.proofCriterion)}</p></div>` : ''}
-    <div class="learning-outcome-attempt"><span>Próxima tentativa</span><strong>${escapeHtml(outcome.nextAttempt.text)}</strong>${outcome.nextAttempt.futureUse?`<small class="future-use-context">${escapeHtml(outcomeFutureUseText(outcome.nextAttempt.futureUse))}</small>`:''}</div>
+    <div class="learning-outcome-attempt"><span>Próxima tentativa</span><strong>${escapeHtml(outcome.nextAttempt.text)}</strong>${outcome.nextAttempt.futureUse?`<small class="future-use-context">${escapeHtml(outcomeFutureUseText(outcome.nextAttempt.futureUse))}</small>`:''}${archived?'':`<button class="quiet-btn outcome-pressure-trigger" type="button" data-outcome-pressure="${escapeHtml(outcome.id)}">Preparar simulação</button>`}</div>
     ${outcomeContextSummary(outcome,indexes)}
     ${resources.length ? `<div class="learning-outcome-chips" aria-label="Recursos vinculados">${resources.map(ref => `<span class="learning-outcome-chip${ref.available ? '' : ' unavailable'}">${escapeHtml(outcomeResourceLabel(ref))}<button type="button" data-outcome-unlink="${escapeHtml(outcome.id)}" data-resource-type="${ref.type}" data-resource-id="${escapeHtml(ref.id)}" aria-label="Desvincular ${escapeHtml(outcomeResourceLabel(ref))}">×</button></span>`).join('')}</div>` : ''}
     <div class="learning-outcome-card-foot"><span>Atualizada em ${outcomeDate(outcome.updatedAt)}</span><div>${archived ? '' : `<button class="secondary-btn" type="button" data-outcome-today="${escapeHtml(outcome.id)}">${capabilityContextModel.capabilitySummary(outcome.id,state.data,indexes).today.some(entry=>entry.plan?.date===todayDateKey())?'Abrir em Hoje':'Adicionar a Hoje'}</button><button class="secondary-btn" type="button" data-signal-new="${escapeHtml(outcome.id)}">Registrar sinal</button><button class="primary-btn" type="button" data-outcome-execute="${escapeHtml(outcome.id)}">Executar tentativa</button>`}<button class="quiet-btn" type="button" data-outcome-status="${escapeHtml(outcome.id)}">${archived ? 'Reativar' : 'Arquivar'}</button></div></div>
@@ -232,10 +241,12 @@ function outcomeDraftSignature() {
     proofCriterion:form.elements.proofCriterion.value,
     futureUse:form.elements.futureUse.value,
     nextAttempt:form.elements.nextAttempt.value,
+    pressureCondition:form.elements.pressureCondition.value,
     refs:[...form.querySelectorAll('[name="outcomeResource"]:checked')].map(input => `${input.dataset.resourceType}:${input.dataset.resourceId}`).sort()
   });
 }
-function outcomeOpen(outcome, trigger) {
+function outcomeOpen(outcome, trigger, options = {}) {
+  if (options.pressure && outcome?.status !== 'active') return;
   const dialog = outcomeElement('learningOutcomeDialog');
   const form = outcomeElement('learningOutcomeForm');
   if (!dialog || !form) return;
@@ -246,6 +257,9 @@ function outcomeOpen(outcome, trigger) {
   form.elements.proofCriterion.value = outcome?.proofCriterion || '';
   form.elements.futureUse.value = outcome?.nextAttempt?.futureUse || '';
   form.elements.nextAttempt.value = outcome?.nextAttempt?.text || '';
+  form.elements.pressureCondition.value = '';
+  learningOutcomeRuntime.pressureAppliedCondition = '';
+  outcomeElement('outcomePressurePanel').open = Boolean(options.pressure);
   outcomeUpdateFutureUseHint();
   form.querySelectorAll('[aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
   outcomeElement('learningOutcomeResourceOptions').innerHTML = outcomeResourceOptions(outcome?.resourceRefs || []);
@@ -254,16 +268,52 @@ function outcomeOpen(outcome, trigger) {
   outcomeSetBusy(false);
   learningOutcomeRuntime.initialDraft = outcomeDraftSignature();
   dialog.showModal();
-  queueMicrotask(() => form.elements.capability.focus());
+  queueMicrotask(() => (options.pressure ? form.elements.pressureCondition : form.elements.capability).focus());
 }
 function outcomeClose(force = false) {
   const dialog = outcomeElement('learningOutcomeDialog');
   if (!dialog?.open) return true;
+  if (!force && learningOutcomeRuntime.busy) return false;
   if (!force && outcomeDraftSignature() !== learningOutcomeRuntime.initialDraft && !confirm('Descartar alterações não salvas?')) return false;
   dialog.close();
-  learningOutcomeRuntime.returnFocus?.focus?.();
+  if (learningOutcomeRuntime.returnFocus?.isConnected) learningOutcomeRuntime.returnFocus.focus();
+  else {
+    const id=learningOutcomeRuntime.editingId;
+    const next=id?document.querySelector(`[data-outcome-pressure="${CSS.escape(id)}"]`):null;
+    (next||document.querySelector('[data-outcome-new]'))?.focus?.();
+  }
   learningOutcomeRuntime.editingId = null;
+  learningOutcomeRuntime.pressureAppliedCondition = '';
   return true;
+}
+function outcomePressureApply() {
+  if (learningOutcomeRuntime.busy) return;
+  const form = outcomeElement('learningOutcomeForm');
+  const outcome = outcomeFind(learningOutcomeRuntime.editingId);
+  if (!form || !outcome || outcome.status !== 'active') return;
+  const condition = form.elements.pressureCondition.value.trim();
+  if (!condition) {
+    outcomeSetError('Descreva uma condição concreta antes de adicioná-la à tentativa.');
+    form.elements.pressureCondition.focus();
+    return;
+  }
+  const current = form.elements.nextAttempt.value.trim();
+  const previousSuffix = learningOutcomeRuntime.pressureAppliedCondition
+    ? `\nCondição de simulação: ${learningOutcomeRuntime.pressureAppliedCondition}` : '';
+  const base = previousSuffix && current.endsWith(previousSuffix)
+    ? current.slice(0, -previousSuffix.length).trim() : current;
+  const composed = `${base}\nCondição de simulação: ${condition}`;
+  if (!base || composed.length > 1000) {
+    outcomeSetError(!base ? 'Descreva primeiro a ação concreta da tentativa.' : 'A tentativa completa deve ter até 1000 caracteres. Encurte o texto antes de adicionar a condição.');
+    form.elements.nextAttempt.focus();
+    return;
+  }
+  form.elements.nextAttempt.value = composed;
+  form.elements.futureUse.value = 'simulate';
+  learningOutcomeRuntime.pressureAppliedCondition = condition;
+  outcomeUpdateFutureUseHint();
+  outcomeSetError('');
+  form.elements.nextAttempt.focus();
 }
 function outcomeFormRefs() {
   return [...outcomeElement('learningOutcomeForm').querySelectorAll('[name="outcomeResource"]:checked')]
@@ -290,8 +340,14 @@ async function outcomePersist(candidate, successMessage, failureMessage = 'Não 
 }
 async function outcomeSubmit(event) {
   event.preventDefault();
+  if (learningOutcomeRuntime.busy) return;
   const form = event.currentTarget;
   form.querySelectorAll('[aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
+  if (form.elements.pressureCondition.value.trim() && form.elements.pressureCondition.value.trim() !== learningOutcomeRuntime.pressureAppliedCondition) {
+    outcomeSetError('Adicione a condição à próxima tentativa antes de salvar, ou limpe esse campo.');
+    form.elements.pressureCondition.focus();
+    return;
+  }
   const input = {
     capability:form.elements.capability.value,
     proofCriterion:form.elements.proofCriterion.value,
@@ -480,6 +536,8 @@ CompassoFeatures.register('learning-outcomes', {
 });
 CompassoFeatures.action('[data-outcome-new]', ({ target }) => outcomeOpen(null, target));
 CompassoFeatures.action('[data-outcome-edit]', ({ target }) => outcomeOpen(outcomeFind(target.dataset.outcomeEdit), target));
+CompassoFeatures.action('[data-outcome-pressure]', ({ target }) => outcomeOpen(outcomeFind(target.dataset.outcomePressure), target, { pressure:true }));
+CompassoFeatures.action('[data-outcome-pressure-apply]', () => outcomePressureApply());
 CompassoFeatures.action('[data-outcome-execute]', ({ target }) => outcomeStartExecution(target.dataset.outcomeExecute,target));
 CompassoFeatures.action('[data-outcome-today]', ({ target }) => outcomeAddToToday(target.dataset.outcomeToday));
 CompassoFeatures.action('[data-outcome-open-today]', ({ target }) => outcomeOpenInToday(target.dataset.outcomeOpenToday));
