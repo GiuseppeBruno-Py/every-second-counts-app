@@ -22,7 +22,7 @@ function buildWeeklyPlanModel(candidate={}){
 }
 const weeklyPlanModel=buildWeeklyPlanModel(window.CompassoWeeklyPlanModel);window.CompassoWeeklyPlanModel=weeklyPlanModel;
 state.data.weeklyPlans=weeklyPlanModel.normalizeCollection(state.data.weeklyPlans);
-const weeklyPlanRuntime={plan:null,step:1};
+const weeklyPlanRuntime={plan:null,step:1,saveRevision:0,saveState:'idle',confirming:false};
 
 function weeklyPlanTimezone(){return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}
 function weeklyPlanTargetKey(){return weeklyPlanModel.nextWeekKey(new Date(),weeklyPlanTimezone());}
@@ -33,7 +33,14 @@ function weeklyPlanCurrent(){
 }
 function weeklyPlanAllActions(){return ['reading','study','goal'].flatMap(domain=>(state.data[domain]||[]).filter(item=>item&&typeof item==='object'&&['active','planned'].includes(item.status)).map(item=>({item,domain,key:`${domain}:${item.id}`})));}
 function weeklyPlanSelectedActions(){const refs=new Set(weeklyPlanRuntime.plan.actionRefs);return weeklyPlanAllActions().filter(entry=>refs.has(entry.key));}
-function weeklyPlanSave(message='Rascunho salvo'){const plan=weeklyPlanRuntime.plan;plan.step=weeklyPlanRuntime.step;plan.updatedAt=new Date().toISOString();saveData(message);renderWeeklyPlanProgress();}
+async function weeklyPlanSave(message='Rascunho salvo'){
+ const plan=weeklyPlanRuntime.plan,revision=++weeklyPlanRuntime.saveRevision;
+ plan.step=weeklyPlanRuntime.step;plan.updatedAt=new Date().toISOString();
+ weeklyPlanRuntime.saveState='saving';renderWeeklyPlanProgress();
+ const saved=await saveData(message);
+ if(revision===weeklyPlanRuntime.saveRevision&&!weeklyPlanRuntime.confirming){weeklyPlanRuntime.saveState=saved?'saved':'failed';renderWeeklyPlanProgress();}
+ return saved;
+}
 function weeklyPlanEscape(value){return escapeHtml(value||'');}
 
 function installWeeklyPlanStyles(){
@@ -47,10 +54,25 @@ function installWeeklyPlanStyles(){
 function installWeeklyPlanUi(){
  const navigation=document.querySelector('.weekly-navigation');if(navigation&&!document.getElementById('weeklyPlanLaunch'))navigation.insertAdjacentHTML('beforeend',`<button type="button" class="weekly-plan-launch" id="weeklyPlanLaunch">Planejar próxima semana</button>`);
  if(document.getElementById('weeklyPlanDialog'))return;
- document.body.insertAdjacentHTML('beforeend',`<dialog class="weekly-plan-dialog" id="weeklyPlanDialog"><div class="weekly-plan-head"><div><div class="eyebrow" id="weeklyPlanEyebrow"></div><h2>Planejamento por resultados</h2></div><button class="close-btn" type="button" data-weekly-plan-close>${icon('x')}</button></div><div class="weekly-plan-progress"><span id="weeklyPlanProgress"></span></div><div class="weekly-plan-body"><div class="weekly-plan-step" id="weeklyPlanStep"></div></div><div class="weekly-plan-foot"><span class="weekly-plan-status" id="weeklyPlanStatus">Rascunho salvo automaticamente</span><div><button type="button" class="quiet-btn" id="weeklyPlanBack">Anterior</button><button type="button" class="primary-btn" id="weeklyPlanNext">Próximo</button></div></div></dialog>`);
+ document.body.insertAdjacentHTML('beforeend',`<dialog class="weekly-plan-dialog" id="weeklyPlanDialog"><div class="weekly-plan-head"><div><div class="eyebrow" id="weeklyPlanEyebrow"></div><h2>Planejamento por resultados</h2></div><button class="close-btn" type="button" data-weekly-plan-close>${icon('x')}</button></div><div class="weekly-plan-progress"><span id="weeklyPlanProgress"></span></div><div class="weekly-plan-body"><div class="weekly-plan-step" id="weeklyPlanStep"></div></div><div class="weekly-plan-foot"><span class="weekly-plan-status" id="weeklyPlanStatus">Rascunho aberto</span><div><button type="button" class="quiet-btn" id="weeklyPlanBack">Anterior</button><button type="button" class="primary-btn" id="weeklyPlanNext">Próximo</button></div></div></dialog>`);
+ document.getElementById('weeklyPlanDialog').addEventListener('cancel',event=>{if(weeklyPlanRuntime.confirming)event.preventDefault();});
 }
 
-function renderWeeklyPlanProgress(){const plan=weeklyPlanRuntime.plan;if(!plan)return;document.getElementById('weeklyPlanProgress').style.width=`${weeklyPlanRuntime.step*10}%`;document.getElementById('weeklyPlanEyebrow').textContent=`Etapa ${weeklyPlanRuntime.step} de 10 · semana de ${plan.weekStart}`;document.getElementById('weeklyPlanBack').disabled=weeklyPlanRuntime.step===1;document.getElementById('weeklyPlanNext').textContent=weeklyPlanRuntime.step===10?(plan.status==='confirmed'?'Atualizar plano':'Confirmar plano'):'Próximo';document.getElementById('weeklyPlanStatus').textContent=plan.status==='confirmed'?'Plano confirmado · edição permitida':'Rascunho salvo automaticamente';}
+function renderWeeklyPlanProgress(){
+ const plan=weeklyPlanRuntime.plan;if(!plan)return;
+ document.getElementById('weeklyPlanProgress').style.width=`${weeklyPlanRuntime.step*10}%`;
+ document.getElementById('weeklyPlanEyebrow').textContent=`Etapa ${weeklyPlanRuntime.step} de 10 · semana de ${plan.weekStart}`;
+ document.getElementById('weeklyPlanBack').disabled=weeklyPlanRuntime.step===1;
+ document.getElementById('weeklyPlanNext').textContent=weeklyPlanRuntime.step===10?(plan.status==='confirmed'?'Atualizar plano':'Confirmar plano'):'Próximo';
+ document.getElementById('weeklyPlanStatus').textContent=weeklyPlanRuntime.confirming?'Confirmando plano...':weeklyPlanRuntime.saveState==='saving'?'Salvando rascunho...':weeklyPlanRuntime.saveState==='failed'?'Não foi possível salvar. Tente novamente.':weeklyPlanRuntime.saveState==='saved'?'Rascunho salvo automaticamente':plan.status==='confirmed'?'Plano confirmado · edição permitida':'Rascunho aberto';
+}
+function weeklyPlanSetConfirming(busy){
+ const dialog=document.getElementById('weeklyPlanDialog');dialog.setAttribute('aria-busy',String(busy));
+ dialog.querySelectorAll('button,input,select,textarea').forEach(control=>{
+  if(busy){control.dataset.weeklyPlanWasDisabled=control.disabled?'1':'0';control.disabled=true;}
+  else if('weeklyPlanWasDisabled' in control.dataset){control.disabled=control.dataset.weeklyPlanWasDisabled==='1';delete control.dataset.weeklyPlanWasDisabled;}
+ });
+}
 
 function weeklyPlanStepHtml(){
  const plan=weeklyPlanRuntime.plan,actions=weeklyPlanAllActions(),selected=weeklyPlanSelectedActions();
@@ -67,16 +89,29 @@ function weeklyPlanStepHtml(){
 }
 
 function renderWeeklyPlan(){document.getElementById('weeklyPlanStep').innerHTML=weeklyPlanStepHtml();renderWeeklyPlanProgress();}
-function openWeeklyPlan(){weeklyPlanRuntime.plan=weeklyPlanCurrent();weeklyPlanRuntime.step=weeklyPlanRuntime.plan.step||1;renderWeeklyPlan();document.getElementById('weeklyPlanDialog').showModal();}
-function weeklyPlanConfirm(){
- const plan=weeklyPlanRuntime.plan;if(!weeklyPlanModel.canConfirm(plan)){showToast('Selecione uma meta, 2 resultados e ao menos 1 ação');return;}
- const selected=weeklyPlanSelectedActions();plan.snapshots=selected.map(entry=>({actionId:entry.item.id,domain:entry.domain,title:entry.item.title,workType:entry.item.workType||null,requiredEnergy:entry.item.requiredEnergy||null,estimatedMinutes:entry.item.estimatedMinutes||null,capturedAt:new Date().toISOString()}));plan.status='confirmed';plan.confirmedAt=new Date().toISOString();plan.updatedAt=plan.confirmedAt;state.data.focus=selected.slice(0,3).map(entry=>entry.item.title);saveData('Plano semanal confirmado');document.getElementById('weeklyPlanDialog').close();
+function openWeeklyPlan(){weeklyPlanRuntime.plan=weeklyPlanCurrent();weeklyPlanRuntime.step=weeklyPlanRuntime.plan.step||1;weeklyPlanRuntime.saveRevision++;weeklyPlanRuntime.saveState='idle';renderWeeklyPlan();document.getElementById('weeklyPlanDialog').showModal();}
+async function weeklyPlanConfirm(){
+ if(weeklyPlanRuntime.confirming)return false;
+ const plan=weeklyPlanRuntime.plan;if(!weeklyPlanModel.canConfirm(plan)){showToast('Selecione uma meta, 2 resultados e ao menos 1 ação');return false;}
+ const previous=state.data,candidate=structuredClone(previous),candidatePlan=candidate.weeklyPlans.find(item=>item.id===plan.id);
+ if(!candidatePlan){showToast('Não foi possível encontrar o rascunho. Abra o plano novamente.');return false;}
+ const selected=weeklyPlanSelectedActions(),now=new Date().toISOString();
+ candidatePlan.snapshots=selected.map(entry=>({actionId:entry.item.id,domain:entry.domain,title:entry.item.title,workType:entry.item.workType||null,requiredEnergy:entry.item.requiredEnergy||null,estimatedMinutes:entry.item.estimatedMinutes||null,capturedAt:now}));
+ candidatePlan.status='confirmed';candidatePlan.confirmedAt=now;candidatePlan.updatedAt=now;
+ candidate.focus=selected.slice(0,3).map(entry=>entry.item.title);
+ weeklyPlanRuntime.confirming=true;weeklyPlanRuntime.saveRevision++;renderWeeklyPlanProgress();weeklyPlanSetConfirming(true);
+ state.data=candidate;
+ let saved=false;try{saved=await saveData('Plano semanal confirmado');}catch(error){console.error('[Compasso] Falha ao confirmar plano semanal.',error);}
+ if(saved){weeklyPlanRuntime.plan=candidatePlan;weeklyPlanRuntime.confirming=false;weeklyPlanSetConfirming(false);document.getElementById('weeklyPlanDialog').close();return true;}
+ state.data=previous;try{await window.CompassoStorage.save(STORAGE_KEY,previous)}catch{}
+ renderAll();weeklyPlanRuntime.confirming=false;weeklyPlanRuntime.saveState='failed';weeklyPlanSetConfirming(false);renderWeeklyPlanProgress();
+ showToast('Não foi possível confirmar o plano. Seu rascunho continua aberto.');document.getElementById('weeklyPlanNext').focus();return false;
 }
 
 installWeeklyPlanStyles();installWeeklyPlanUi();
 document.addEventListener('click',event=>{
  if(event.target.closest('#weeklyPlanLaunch')){try{openWeeklyPlan();}catch(error){globalThis.CompassoBootstrapDiagnostic?.fail?.('weekly-plan-feature.js',error);showToast('Não foi possível abrir o planejamento · atualize o aplicativo');}}
- if(event.target.closest('[data-weekly-plan-close]'))document.getElementById('weeklyPlanDialog').close();
+ if(event.target.closest('[data-weekly-plan-close]')&&!weeklyPlanRuntime.confirming)document.getElementById('weeklyPlanDialog').close();
  if(event.target.closest('#weeklyPlanBack')){weeklyPlanRuntime.step=Math.max(1,weeklyPlanRuntime.step-1);weeklyPlanSave();renderWeeklyPlan();}
  if(event.target.closest('#weeklyPlanNext')){if(weeklyPlanRuntime.step===10){weeklyPlanConfirm();return;}weeklyPlanRuntime.step=Math.min(10,weeklyPlanRuntime.step+1);weeklyPlanSave();renderWeeklyPlan();}
  const goal=event.target.closest('[data-plan-goal]');if(goal){const ids=new Set(weeklyPlanRuntime.plan.goalRefs);goal.checked?ids.add(goal.dataset.planGoal):ids.delete(goal.dataset.planGoal);weeklyPlanRuntime.plan.goalRefs=[...ids];weeklyPlanSave();}
