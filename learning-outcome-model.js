@@ -38,6 +38,15 @@
 
   function normalizeProof(value){const normalized=cleanText(value);return normalized||null}
 
+  function composeExecutableAttempt({start,cue}={}){
+    const action=cleanText(start).replace(/[.!?]+$/,'').trim();
+    if(!action)throw error('small-start-required','Descreva o menor começo útil antes de aplicar.');
+    const trigger=cleanText(cue).replace(/[,.!?]+$/,'').trim();
+    const text=trigger?`Depois de ${trigger}, vou ${action}.`:`${action}.`;
+    if(text.length>1000)throw error('attempt-too-long','A próxima tentativa deve ter até 1000 caracteres. Encurte o começo ou o contexto.');
+    return text;
+  }
+
   function normalizeRefs(value){
     if(!Array.isArray(value))return[];
     const seen=new Set(),refs=[];
@@ -190,7 +199,7 @@
   }
 
   return Object.freeze({
-    EPOCH,STATUSES,RESOURCE_TYPES,FUTURE_USES,FUTURE_USE_PRESENTATIONS,normalizeFutureUse,futureUsePresentation,normalizeProof,normalizeRefs,normalizeAttempt,normalizeExecutionContext,createExecutionContext,normalizeOutcome,normalizeCollection,
+    EPOCH,STATUSES,RESOURCE_TYPES,FUTURE_USES,FUTURE_USE_PRESENTATIONS,normalizeFutureUse,futureUsePresentation,normalizeProof,composeExecutableAttempt,normalizeRefs,normalizeAttempt,normalizeExecutionContext,createExecutionContext,normalizeOutcome,normalizeCollection,
     createOutcome,updateOutcome,archiveOutcome,reactivateOutcome,deleteOutcome,sortOutcomes,resolveRefs
   });
 });

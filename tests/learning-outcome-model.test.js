@@ -23,6 +23,19 @@ test('capacidade e tentativa são obrigatórias sem policiamento semântico',()=
   assert.equal(model.createOutcome({capability:'x',nextAttempt:'Assistir aula 3'},{now:T1,idFactory:ids(['o','a'])}).nextAttempt.text,'Assistir aula 3');
 });
 
+test('ajuda opcional compõe uma tentativa pequena sem criar metadados',()=>{
+  assert.equal(model.composeExecutableAttempt({start:'  ler 5 páginas.  ',cue:' tomar café da manhã, '}),'Depois de tomar café da manhã, vou ler 5 páginas.');
+  assert.equal(model.composeExecutableAttempt({start:'  resolver 1 exercício!  '}),'resolver 1 exercício.');
+  const text=model.composeExecutableAttempt({start:'revisar primeiro slide',cue:'abrir a apresentação'});
+  assert.equal(model.composeExecutableAttempt({start:'revisar primeiro slide',cue:'abrir a apresentação'}),text);
+  assert.deepEqual(Object.keys(model.createOutcome({capability:'Apresentar com clareza',nextAttempt:text},{now:T1,idFactory:ids(['o','a'])}).nextAttempt),['id','text','createdAt','updatedAt']);
+});
+
+test('ajuda recusa começo ausente e frase maior que o limite existente',()=>{
+  assert.throws(()=>model.composeExecutableAttempt({start:' .?! ',cue:'café'}),error=>error.code==='small-start-required');
+  assert.throws(()=>model.composeExecutableAttempt({start:'a'.repeat(1000)}),error=>error.code==='attempt-too-long');
+});
+
 test('futureUse centraliza os sete valores, rótulos e ausência canônica',()=>{
   assert.deepEqual(model.FUTURE_USES,['remember','explain','solve','build','decide','simulate','integrate']);
   assert.equal(model.futureUsePresentation('remember').label,'Lembrar com precisão');

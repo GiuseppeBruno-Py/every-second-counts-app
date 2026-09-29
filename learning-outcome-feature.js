@@ -19,7 +19,8 @@ const learningOutcomeRuntime = {
   signalOrigin:'learner',
   signalPresentation:'default',
   focusEvidenceId:null,
-  pressureAppliedCondition:''
+  pressureAppliedCondition:'',
+  executableAppliedSignature:''
 };
 
 function outcomeElement(id) { return document.getElementById(id); }
@@ -97,6 +98,15 @@ function outcomeInstallShell() {
             <label for="learningOutcomeAttempt">O que você vai tentar agora? <span aria-hidden="true">*</span></label>
             <textarea id="learningOutcomeAttempt" name="nextAttempt" maxlength="1000" required></textarea>
             <p class="learning-outcome-hint">Pode ser uma prática, exercício ou outra ação concreta.</p>
+            <details class="outcome-executable-panel" id="outcomeExecutablePanel">
+              <summary>Tornar mais fácil de começar <span>Opcional</span></summary>
+              <label for="outcomeSmallStart">Qual é o menor começo que ainda conta?</label>
+              <input id="outcomeSmallStart" name="smallStart" type="text" maxlength="280" placeholder="Ex.: ler 5 páginas">
+              <label for="outcomeStartCue">Depois de qual evento você vai começar? <span class="learning-outcome-optional">Opcional</span></label>
+              <input id="outcomeStartCue" name="startCue" type="text" maxlength="160" placeholder="Ex.: tomar café da manhã">
+              <p class="learning-outcome-hint">Confira o texto da próxima tentativa após aplicar. Você pode editá-lo antes de salvar.</p>
+              <button class="secondary-btn" type="button" data-outcome-executable-apply>Usar como próxima tentativa</button>
+            </details>
             <details class="outcome-pressure-panel" id="outcomePressurePanel">
               <summary>Simulação deliberada <span>Opcional</span></summary>
               <p class="learning-outcome-hint" id="outcomePressureHint">Torne esta tentativa mais parecida com a situação real. Você pode começar sozinho e, em tentativas futuras, incluir tempo, perguntas, observadores ou uma simulação completa. Escolha apenas uma condição concreta agora.</p>
@@ -241,6 +251,8 @@ function outcomeDraftSignature() {
     proofCriterion:form.elements.proofCriterion.value,
     futureUse:form.elements.futureUse.value,
     nextAttempt:form.elements.nextAttempt.value,
+    smallStart:form.elements.smallStart.value,
+    startCue:form.elements.startCue.value,
     pressureCondition:form.elements.pressureCondition.value,
     refs:[...form.querySelectorAll('[name="outcomeResource"]:checked')].map(input => `${input.dataset.resourceType}:${input.dataset.resourceId}`).sort()
   });
@@ -257,8 +269,13 @@ function outcomeOpen(outcome, trigger, options = {}) {
   form.elements.proofCriterion.value = outcome?.proofCriterion || '';
   form.elements.futureUse.value = outcome?.nextAttempt?.futureUse || '';
   form.elements.nextAttempt.value = outcome?.nextAttempt?.text || '';
+  form.elements.smallStart.value = '';
+  form.elements.startCue.value = '';
   form.elements.pressureCondition.value = '';
   learningOutcomeRuntime.pressureAppliedCondition = '';
+  learningOutcomeRuntime.executableAppliedSignature = '';
+  outcomeElement('outcomeExecutablePanel').hidden = outcome?.status === 'archived';
+  outcomeElement('outcomeExecutablePanel').open = false;
   outcomeElement('outcomePressurePanel').open = Boolean(options.pressure);
   outcomeUpdateFutureUseHint();
   form.querySelectorAll('[aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
@@ -284,7 +301,36 @@ function outcomeClose(force = false) {
   }
   learningOutcomeRuntime.editingId = null;
   learningOutcomeRuntime.pressureAppliedCondition = '';
+  learningOutcomeRuntime.executableAppliedSignature = '';
   return true;
+}
+function outcomeExecutableSignature(form){
+  return JSON.stringify([form.elements.smallStart.value,form.elements.startCue.value]);
+}
+function outcomeExecutableApply(){
+  if(learningOutcomeRuntime.busy)return;
+  const form=outcomeElement('learningOutcomeForm');
+  if(!form||outcomeElement('outcomeExecutablePanel').hidden)return;
+  const start=form.elements.smallStart,cue=form.elements.startCue;
+  start.removeAttribute('aria-invalid');cue.removeAttribute('aria-invalid');
+  try{
+    const base=learningOutcomeModel.composeExecutableAttempt({start:start.value,cue:cue.value});
+    const condition=learningOutcomeRuntime.pressureAppliedCondition;
+    const suffix=condition?`\nCondição de simulação: ${condition}`:'';
+    const keepSuffix=Boolean(suffix&&form.elements.nextAttempt.value.trim().endsWith(suffix));
+    const composed=base+(keepSuffix?suffix:'');
+    if(composed.length>1000){const problem=new TypeError('A próxima tentativa completa deve ter até 1000 caracteres. Encurte o começo ou a condição.');problem.code='attempt-too-long';throw problem}
+    form.elements.nextAttempt.value=composed;
+    if(condition&&!keepSuffix)learningOutcomeRuntime.pressureAppliedCondition='';
+    learningOutcomeRuntime.executableAppliedSignature=outcomeExecutableSignature(form);
+    outcomeSetError('');
+    form.elements.nextAttempt.focus();
+  }catch(problem){
+    const field=problem.code==='small-start-required'?start:problem.code==='attempt-too-long'?cue:start;
+    field.setAttribute('aria-invalid','true');
+    outcomeSetError(problem.message||'Revise o menor começo e o contexto.');
+    field.focus();
+  }
 }
 function outcomePressureApply() {
   if (learningOutcomeRuntime.busy) return;
@@ -346,6 +392,14 @@ async function outcomeSubmit(event) {
   if (form.elements.pressureCondition.value.trim() && form.elements.pressureCondition.value.trim() !== learningOutcomeRuntime.pressureAppliedCondition) {
     outcomeSetError('Adicione a condição à próxima tentativa antes de salvar, ou limpe esse campo.');
     form.elements.pressureCondition.focus();
+    return;
+  }
+  const helperFilled=form.elements.smallStart.value.trim()||form.elements.startCue.value.trim();
+  if(helperFilled&&outcomeExecutableSignature(form)!==learningOutcomeRuntime.executableAppliedSignature){
+    outcomeElement('outcomeExecutablePanel').open=true;
+    outcomeSetError('Use o começo como próxima tentativa ou limpe os campos auxiliares antes de salvar.');
+    const field=form.elements.smallStart.value.trim()?form.elements.smallStart:form.elements.startCue;
+    field.setAttribute('aria-invalid','true');field.focus();
     return;
   }
   const input = {
@@ -538,6 +592,7 @@ CompassoFeatures.action('[data-outcome-new]', ({ target }) => outcomeOpen(null, 
 CompassoFeatures.action('[data-outcome-edit]', ({ target }) => outcomeOpen(outcomeFind(target.dataset.outcomeEdit), target));
 CompassoFeatures.action('[data-outcome-pressure]', ({ target }) => outcomeOpen(outcomeFind(target.dataset.outcomePressure), target, { pressure:true }));
 CompassoFeatures.action('[data-outcome-pressure-apply]', () => outcomePressureApply());
+CompassoFeatures.action('[data-outcome-executable-apply]', () => outcomeExecutableApply());
 CompassoFeatures.action('[data-outcome-execute]', ({ target }) => outcomeStartExecution(target.dataset.outcomeExecute,target));
 CompassoFeatures.action('[data-outcome-today]', ({ target }) => outcomeAddToToday(target.dataset.outcomeToday));
 CompassoFeatures.action('[data-outcome-open-today]', ({ target }) => outcomeOpenInToday(target.dataset.outcomeOpenToday));

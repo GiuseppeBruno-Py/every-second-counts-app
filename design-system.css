@@ -2079,6 +2079,16 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
 
 /* A simulação é orientação opcional no editor existente de Capacidades. */
 .learning-outcome-attempt strong { white-space: pre-line; }
+.outcome-executable-panel { min-width: 0; margin-top: .8rem; padding: .8rem; border: 1px solid var(--line); border-radius: .75rem; }
+.outcome-executable-panel[hidden] { display: none; }
+.outcome-executable-panel > summary { min-height: 44px; cursor: pointer; font-weight: 700; }
+.outcome-executable-panel > summary span { font-size: .7rem; font-weight: 500; color: var(--muted); }
+.outcome-executable-panel > label { display: block; margin: .6rem 0 .35rem; font-size: .72rem; font-weight: 700; }
+.outcome-executable-panel input { display: block; width: 100%; min-height: 44px; padding: .7rem; border: 1px solid var(--line); border-radius: .7rem; background: var(--surface-strong); color: var(--ink); }
+.outcome-executable-panel > p { margin: .65rem 0; }
+.outcome-executable-panel input[aria-invalid="true"] { border-color: var(--red); }
+.outcome-executable-panel input:focus-visible,.outcome-executable-panel > summary:focus-visible { outline: 3px solid var(--ds-color-focus,var(--violet)); outline-offset: 3px; }
+.outcome-executable-panel button { min-height: 44px; white-space: normal; }
 .outcome-pressure-trigger { display: inline-flex; align-items: center; margin-top: .65rem; min-height: 44px; }
 .outcome-pressure-panel { min-width: 0; margin-top: .8rem; padding: .8rem; border: 1px solid var(--line); border-radius: .75rem; }
 .outcome-pressure-panel > summary { min-height: 44px; cursor: pointer; font-weight: 700; }
@@ -2087,4 +2097,4 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
 .outcome-pressure-panel textarea { display: block; width: 100%; min-height: 5.25rem; padding: .75rem; border: 1px solid var(--line); border-radius: .7rem; background: var(--surface-strong); color: var(--ink); resize: vertical; }
 .outcome-pressure-panel textarea:focus-visible,.outcome-pressure-panel > summary:focus-visible { outline: 3px solid var(--ds-color-focus,var(--violet)); outline-offset: 3px; }
 .outcome-pressure-panel button { min-height: 44px; white-space: normal; }
-@media (max-width: 600px) { .outcome-pressure-panel button { width: 100%; } }
+@media (max-width: 600px) { .outcome-pressure-panel button,.outcome-executable-panel button { width: 100%; } }
