@@ -32,6 +32,17 @@ test('impede novo início enquanto qualquer modo estiver ativo',()=>{
   assert.equal(model.canStart([{...running,status:'completed'}]),true);
 });
 
+test('compromisso curto usa a projeção canônica existente sem mudar sessões legadas',()=>{
+  const short={...regular,id:'short',schemaVersion:2,executionVariant:{kind:'ideal',contingencyId:null},startSmall:{minutes:5,choice:null,decidedAt:null}};
+  const projected=model.fromRegular(short);
+  assert.equal(projected.plannedMinutes,5);
+  assert.equal(projected.mode,'quick');
+  assert.equal(projected.source.id,'short');
+  assert.equal(model.fromRegular(regular).plannedMinutes,0);
+  assert.equal(model.fromRegular({...short,startSmall:{minutes:7}}).plannedMinutes,0);
+  assert.deepEqual(model.migrate({sessions:[short],executionSessions:[projected]}),[projected]);
+});
+
 test('máquina central rejeita transições inválidas e restaura pausa por timestamp',()=>{
   const idle=model.normalize({id:'s3',source:{collection:'sessions',id:'s3'},status:'idle'});
   assert.throws(()=>model.transition(idle,'complete'),/invalid transition/);

@@ -356,6 +356,18 @@ dialog[data-ds-component] form {
 .session-companion-actions button[hidden] {
   display: none;
 }
+.session-companion.start-small-due { width: min(420px, calc(100vw - 24px)); }
+.session-companion.start-small-due .session-companion-main { touch-action: auto; cursor: default; }
+.session-start-small-decision { grid-column: 1 / -1; min-width: 0; max-height: 45dvh; overflow-y: auto; padding: 10px 4px 2px; border-top: 1px solid #5b5952; }
+.session-start-small-decision[hidden] { display: none; }
+.session-start-small-decision strong { display: block; font-size: 14px; line-height: 1.4; }
+.session-start-small-decision p { margin: 6px 0 10px; color: #e7e4da; font-size: 12px; line-height: 1.4; }
+.session-start-small-decision > div { display: flex; gap: 7px; flex-wrap: wrap; }
+.session-start-small-decision button { flex: 1 1 130px; min-height: 44px; padding: 8px; border: 1px solid #aba89f; border-radius: 8px; background: #34342f; color: #fff; font: 700 12px/1.35 Manrope,sans-serif; cursor: pointer; }
+.session-start-small-decision button:hover { background: #42413b; }
+.session-start-small-decision button:focus-visible { outline: 3px solid var(--ds-color-focus,#8e82ff); outline-offset: 2px; }
+.session-start-small-decision button:disabled { opacity: .65; cursor: wait; }
+.session-start-small-decision [role="alert"] { color: #fff1d6; }
 .ux-mode-row {
   padding: 10px 12px;
   border-top: 1px solid var(--line);

@@ -6,6 +6,7 @@
 const TODAY_FEATURE_VERSION = 2;
 state.data.dailyPlans = Array.isArray(state.data.dailyPlans) ? state.data.dailyPlans : [];
 let todayRestorePrimaryFocusAfterRender = false;
+let todayStartSmallBusy = false;
 const todayRehearsalRuntime = { outcomeId:null, attemptId:null, refKey:null, trigger:null, starting:false, abandoned:false };
 const todayRehearsalFieldIds = ['todayRehearsalResult','todayRehearsalFirstAction','todayRehearsalDifficulty','todayRehearsalResponse'];
 labels.today = { title: 'Hoje', kicker: 'Próximas ações' };
@@ -183,7 +184,8 @@ function renderTodayPrimary(primary) {
     delete content.dataset.todayCapability;
     const active = primary.active;
     const finishing = active.session.state === 'finishing' || active.session.status === 'finishing';
-    activeCard.innerHTML = `<div class="today-session-copy"><span>${active.type === 'deep' ? 'Deep Work' : 'Sessão normal'} ${finishing ? 'em encerramento' : 'em andamento'}</span><h3 id="todayPrimaryHeading">${escapeHtml(active.item?.title || 'Item removido')}</h3><small>${finishing ? 'Continue o encerramento antes de escolher outra ação.' : active.session.state === 'paused' || active.session.status === 'paused' ? 'Pausada e pronta para retomar.' : 'Retome de onde parou.'}</small></div><button type="button" data-today-resume="${active.type}">${finishing ? 'Continuar encerramento' : 'Retomar sessão'}</button>`;
+    const small=active.type==='normal'&&sessionTimerModel.normalizeStartSmall(active.session.startSmall);
+    activeCard.innerHTML = `<div class="today-session-copy"><span>${active.type === 'deep' ? 'Deep Work' : small ? 'Sessão normal · começo de 5 min' : 'Sessão normal'} ${finishing ? 'em encerramento' : 'em andamento'}</span><h3 id="todayPrimaryHeading">${escapeHtml(active.item?.title || 'Item removido')}</h3><small>${finishing ? 'Continue o encerramento antes de escolher outra ação.' : small&&sessionTimerModel.startSmallDue(active.session) ? 'Cinco minutos concluídos. Escolha como seguir no companheiro.' : active.session.state === 'paused' || active.session.status === 'paused' ? 'Pausada e pronta para retomar.' : 'Retome de onde parou.'}</small></div><button type="button" data-today-resume="${active.type}">${finishing ? 'Continuar encerramento' : 'Retomar sessão'}</button>`;
     return;
   }
   if (primary.kind === 'capability') {
@@ -191,7 +193,7 @@ function renderTodayPrimary(primary) {
     const futureUse=learningOutcomeModel.futureUsePresentation(primary.resolved.outcome.nextAttempt?.futureUse);
     const recall=capabilityContextModel.selectRecentEvidence(primary.resolved.outcome.id,state.data);
     const recallHtml=recall?`<aside class="today-evidence-recall" aria-label="Uma evidência relacionada"><div><span>Uma evidência relacionada</span><small>${escapeHtml(todayEvidenceAge(recall.createdAt))}</small></div><blockquote>${escapeHtml(recall.summary)}</blockquote><button class="quiet-btn" type="button" data-today-open-evidence="${escapeHtml(recall.evidenceId)}" data-today-evidence-outcome="${escapeHtml(recall.outcomeId)}">Ver evidência</button></aside>`:'';
-    content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima tentativa</div><h3 id="todayPrimaryHeading">${escapeHtml(primary.resolved.attemptText)}</h3><p>${escapeHtml(primary.resolved.outcome.capability)} · atual no seu plano</p>${futureUse?`<p class="today-future-use">Uso pretendido: ${escapeHtml(futureUse.label)}</p>`:''}</div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-primary-start="${escapeHtml(primary.resolved.outcome.id)}">Iniciar agora</button><button class="secondary-btn" type="button" data-today-primary-rehearse="${escapeHtml(primary.resolved.outcome.id)}">Ensaiar tentativa</button><button class="quiet-btn" type="button" data-today-primary-configure="${escapeHtml(primary.resolved.outcome.id)}">Ajustar sessão</button><button class="quiet-btn" type="button" data-today-open-capability="${escapeHtml(primary.resolved.outcome.id)}">Abrir capacidade</button><button class="quiet-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button><button class="quiet-btn remove" type="button" data-today-remove="${escapeHtml(primary.refKey)}">Remover do plano</button></div>${recallHtml}`;
+    content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima tentativa</div><h3 id="todayPrimaryHeading">${escapeHtml(primary.resolved.attemptText)}</h3><p>${escapeHtml(primary.resolved.outcome.capability)} · atual no seu plano</p>${futureUse?`<p class="today-future-use">Uso pretendido: ${escapeHtml(futureUse.label)}</p>`:''}</div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-primary-start="${escapeHtml(primary.resolved.outcome.id)}">Iniciar agora</button><button class="secondary-btn" type="button" data-today-primary-small="${escapeHtml(primary.resolved.outcome.id)}" data-today-small-attempt="${escapeHtml(primary.resolved.outcome.nextAttempt.id)}">Começar por 5 min</button><button class="secondary-btn" type="button" data-today-primary-rehearse="${escapeHtml(primary.resolved.outcome.id)}">Ensaiar tentativa</button><button class="quiet-btn" type="button" data-today-primary-configure="${escapeHtml(primary.resolved.outcome.id)}">Ajustar sessão</button><button class="quiet-btn" type="button" data-today-open-capability="${escapeHtml(primary.resolved.outcome.id)}">Abrir capacidade</button><button class="quiet-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button><button class="quiet-btn remove" type="button" data-today-remove="${escapeHtml(primary.refKey)}">Remover do plano</button></div><p class="session-error" id="todayStartSmallError" role="alert" tabindex="-1" hidden></p>${recallHtml}`;
     return;
   }
   delete content.dataset.todayCapability;
@@ -282,6 +284,23 @@ function todayStartCapability(outcomeId,{immediate=false,trigger=null,expanded=f
   if(!ref){showToast('A capacidade ou tentativa atual não está disponível');return}
   const payload={domain:'learningOutcome',itemId:outcome.id,options:{learningContext:ref,resources:learningOutcomeModel.resolveRefs(outcome,{study:state.data.study||[],reading:state.data.reading||[]})},trigger};
   return CompassoFeatures.execute(immediate?'session.startDefault':'session.openConfiguration',{...payload,expanded});
+}
+
+async function todayStartSmall(outcomeId,attemptId,trigger){
+  if(todayStartSmallBusy)return false;
+  const primary=todayPrimaryState();
+  if(primary.kind!=='capability'||primary.resolved.outcome.id!==outcomeId||primary.resolved.outcome.nextAttempt.id!==attemptId){renderToday();showToast('A tentativa mudou ou não está mais disponível.');return false}
+  const options=todayCapabilitySessionOptions(primary.resolved.outcome);
+  if(!options)return false;
+  const error=document.getElementById('todayStartSmallError');if(error){error.hidden=true;error.textContent=''}
+  todayStartSmallBusy=true;if(trigger)trigger.disabled=true;
+  const persisted=await Promise.resolve(CompassoFeatures.execute('session.startSmallConfirmed',{domain:'learningOutcome',itemId:outcomeId,options,trigger}));
+  todayStartSmallBusy=false;if(trigger?.isConnected)trigger.disabled=false;
+  if(persisted===true)return true;
+  if(state.view==='today'){
+    const target=document.getElementById('todayStartSmallError');if(target){target.textContent='Não foi possível iniciar os cinco minutos. Tente novamente.';target.hidden=false;target.focus()}
+  }
+  return false;
 }
 
 function todaySetRehearsalError(message=''){
@@ -415,6 +434,7 @@ document.addEventListener('click', event => {
   }
   const startCapability=event.target.closest('[data-today-start-capability]');if(startCapability)todayStartCapability(startCapability.dataset.todayStartCapability,{trigger:startCapability});
   const primaryStart=event.target.closest('[data-today-primary-start]');if(primaryStart)todayStartCapability(primaryStart.dataset.todayPrimaryStart,{immediate:true,trigger:primaryStart});
+  const primarySmall=event.target.closest('[data-today-primary-small]');if(primarySmall)void todayStartSmall(primarySmall.dataset.todayPrimarySmall,primarySmall.dataset.todaySmallAttempt,primarySmall);
   const primaryRehearse=event.target.closest('[data-today-primary-rehearse]');if(primaryRehearse)todayOpenRehearsal(primaryRehearse.dataset.todayPrimaryRehearse,primaryRehearse);
   const primaryConfigure=event.target.closest('[data-today-primary-configure]');if(primaryConfigure)todayStartCapability(primaryConfigure.dataset.todayPrimaryConfigure,{trigger:primaryConfigure,expanded:true});
   const rehearsalCancel=event.target.closest('[data-today-rehearsal-cancel]');if(rehearsalCancel&&!todayRehearsalRuntime.starting)todayDiscardRehearsal();

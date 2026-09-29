@@ -53,6 +53,8 @@ Hoje deriva uma única ação principal, sem persistir ranking ou estado de jorn
 
 A tentativa principal oferece **Iniciar agora** com os padrões existentes, **Ensaiar tentativa** como preparação opcional, **Ajustar sessão** para revelar a configuração opcional e acesso à capacidade. Ela é projetada uma vez no bloco principal e omitida da lista inferior. Referências concluídas, históricas, arquivadas ou ausentes continuam legíveis, nunca se tornam executáveis e não provocam inferência ou recriação.
 
+**Começar por 5 min** é uma escolha secundária somente dessa tentativa principal atual. Ela inicia a mesma Session normal com compromisso curto e revalida a referência no clique. A decisão ao atingir cinco minutos aparece no companheiro de sessão; a ação não altera o plano, o ensaio nem a próxima tentativa sem salvamento explícito. Ver [Start Small](start-small.md).
+
 O comando `today.executePrimary` aplica a mesma precedência ao controle global **Executar**. Em ações comuns e no plano vazio, ele abre ou mantém Hoje e move o foco para a ação/planejamento sem iniciar nada. `today.openPrimary` faz a continuação segura de volta para Hoje. A pendência semanal usa `weekly.openDecision`, que abre a revisão diretamente no primeiro contexto de decisão disponível.
 
 Concluir, reabrir ou remover uma referência de capacidade altera somente `dailyPlans`; não altera a capacidade, sua tentativa atual ou seu ciclo de vida.

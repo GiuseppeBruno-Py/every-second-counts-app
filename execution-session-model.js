@@ -2,10 +2,11 @@
 (function(root,factory){
   const outcomeModel=root.CompassoLearningOutcomeModel||(typeof module==='object'&&module.exports?require('./learning-outcome-model.js'):null);
   const ritualModel=root.CompassoRitualModel||(typeof module==='object'&&module.exports?require('./ritual-model.js'):null);
-  const api=factory(outcomeModel,ritualModel);
+  const timerModel=root.CompassoSessionTimerModel||(typeof module==='object'&&module.exports?require('./session-timer-model.js'):null);
+  const api=factory(outcomeModel,ritualModel,timerModel);
   if(typeof module==='object'&&module.exports)module.exports=api;
   root.CompassoExecutionSessionModel=api;
-})(typeof globalThis!=='undefined'?globalThis:this,function(outcomeModel,ritualModel){
+})(typeof globalThis!=='undefined'?globalThis:this,function(outcomeModel,ritualModel,timerModel){
   const MODES=new Set(['quick','deep','minimum','contingency']);
   const ACTIVE=new Set(['running','paused','finishing']);
   const FINAL=new Set(['completed','interrupted']);
@@ -51,7 +52,7 @@
   function statusFromRegular(status){return status==='active'?'running':status;}
   function fromRegular(session,now){
     if(!session?.id)return null;
-    return normalize({...session,id:session.id,source:{collection:'sessions',id:session.id},mode:modeFromRegular(session),status:statusFromRegular(session.status),expectedOutcome:session.intent,result:session.reflection},now);
+    return normalize({...session,id:session.id,source:{collection:'sessions',id:session.id},mode:modeFromRegular(session),status:statusFromRegular(session.status),expectedOutcome:session.intent,result:session.reflection,plannedMinutes:timerModel?.normalizeStartSmall(session.startSmall)?.minutes||session.plannedMinutes},now);
   }
   function fromDeep(session,now){
     if(!session?.id)return null;
