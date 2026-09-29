@@ -52,7 +52,7 @@ test('início direto continua primário e não abre o ensaio', async ({ page }) 
   await expect(start).toHaveClass(/primary-btn/);
   await expect(rehearse).toHaveClass(/secondary-btn/);
   expect(await primary.locator('.today-primary-actions button').allTextContents()).toEqual([
-    'Iniciar agora', 'Ensaiar tentativa', 'Ajustar sessão', 'Abrir capacidade', 'Concluir no plano', 'Remover do plano'
+    'Iniciar agora', 'Começar por 5 min', 'Ensaiar tentativa', 'Ajustar sessão', 'Abrir capacidade', 'Concluir no plano', 'Remover do plano'
   ]);
   await start.click();
   await expect(page.locator('#todayRehearsalDialog')).toBeHidden();

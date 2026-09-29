@@ -9,6 +9,7 @@
     drag: null,
     position: null,
     suppressOpen: false,
+    startSmallBusy: false,
     encoding: { executionId: null, stage: "closed", operation: null, surface: null, originId: null },
   };
 
@@ -37,12 +38,14 @@
       typeof sessionItem === "function" ? sessionItem(session) : null;
     return {
       id: `session:${session.id}`,
+      sourceId: session.id,
       kind: "session",
       label:
         session.status === "finishing" ? "Sessão · tempo congelado" : session.status === "paused" ? "Sessão pausada" : "Sessão em andamento",
       title: item?.title || "Item removido",
       status: session.status,
       elapsedMs: sessionElapsedMs(session),
+      startSmallDue: sessionTimerModel.startSmallDue(session),
       domain: session.domain,
       learningContext: session.learningContext || null,
       ritualSnapshot: session.ritualSnapshot || null,
@@ -137,7 +140,7 @@
     if (document.getElementById("sessionCompanion")) return;
     document.body.insertAdjacentHTML(
       "beforeend",
-      `<aside id="sessionCompanion" class="session-companion" hidden aria-live="polite"><button type="button" class="session-companion-main" id="sessionCompanionOpen" title="Toque para abrir; arraste para mover" aria-description="No celular, arraste para reposicionar sem cobrir a navegação"><span class="session-companion-dot"></span><span class="session-companion-copy"><small id="sessionCompanionLabel">Sessão em andamento</small><strong id="sessionCompanionTitle"></strong><small class="session-companion-future-use" id="sessionCompanionFutureUse" hidden></small></span><time id="sessionCompanionTime">00:00</time></button><div class="session-companion-actions"><button type="button" id="sessionCompanionPause" aria-label="Pausar sessão" title="Pausar ou retomar">Ⅱ</button><button type="button" id="sessionCompanionFinish" aria-label="Concluir sessão" title="Concluir sessão">✓</button><button type="button" id="sessionCompanionFloat" aria-label="Abrir janela flutuante" title="Manter sobre outras janelas">▣</button></div><div id="sessionCompanionEncodingMount" class="session-companion-encoding"></div></aside>`,
+      `<aside id="sessionCompanion" class="session-companion" hidden aria-live="polite"><button type="button" class="session-companion-main" id="sessionCompanionOpen" title="Toque para abrir; arraste para mover" aria-description="No celular, arraste para reposicionar sem cobrir a navegação"><span class="session-companion-dot"></span><span class="session-companion-copy"><small id="sessionCompanionLabel">Sessão em andamento</small><strong id="sessionCompanionTitle"></strong><small class="session-companion-future-use" id="sessionCompanionFutureUse" hidden></small></span><time id="sessionCompanionTime">00:00</time></button><div class="session-companion-actions"><button type="button" id="sessionCompanionPause" aria-label="Pausar sessão" title="Pausar ou retomar">Ⅱ</button><button type="button" id="sessionCompanionFinish" aria-label="Concluir sessão" title="Concluir sessão">✓</button><button type="button" id="sessionCompanionFloat" aria-label="Abrir janela flutuante" title="Manter sobre outras janelas">▣</button></div><section class="session-start-small-decision" id="sessionStartSmallDecision" aria-label="Decisão após cinco minutos" hidden><strong>Você começou: 5 min concluídos.</strong><p>O tempo ficou em cinco minutos. Escolha como seguir.</p><div><button type="button" data-session-small-choice="continue">Continuar sessão</button><button type="button" data-session-small-choice="end">Encerrar e registrar</button><button type="button" data-session-small-choice="adjust">Ajustar tentativa</button></div><p id="sessionStartSmallError" role="alert" tabindex="-1" hidden></p></section><div id="sessionCompanionEncodingMount" class="session-companion-encoding"></div></aside>`,
     );
     sessionCompanionOpen.addEventListener("click", (event) => {
       if (runtime.suppressOpen) {
@@ -152,7 +155,18 @@
     sessionCompanionFinish.addEventListener("click", finishActivity);
     sessionCompanionFloat.addEventListener("click", openPictureInPicture);
     sessionCompanionFloat.hidden = !("documentPictureInPicture" in window);
+    document.querySelectorAll('[data-session-small-choice]').forEach(button=>button.addEventListener('click',()=>{void chooseStartSmall(button.dataset.sessionSmallChoice)}));
     installEncodingUi();
+  }
+  async function chooseStartSmall(choice){
+    const current=activity();if(runtime.startSmallBusy||current?.kind!=='session'||!current.startSmallDue)return;
+    const error=document.getElementById('sessionStartSmallError');if(error){error.hidden=true;error.textContent=''}
+    runtime.startSmallBusy=true;render();
+    const result=await Promise.resolve(CompassoFeatures.execute('session.startSmallDecide',{sessionId:current.sourceId,choice}));
+    runtime.startSmallBusy=false;render();
+    if(result?.ok){if(choice==='continue')requestAnimationFrame(()=>document.getElementById('sessionCompanionOpen')?.focus());return}
+    const message=result?.reason==='capability-unavailable'?'A tentativa atual não está disponível para ajuste. Você pode continuar ou encerrar.':result?.reason==='save-failed'?'Não foi possível salvar sua escolha. Tente novamente.':'Esta decisão não está mais disponível.';
+    if(error&&!error.parentElement?.hidden){error.textContent=message;error.hidden=false;error.focus()}
   }
   function dragBounds(companion) {
     const viewportWidth = document.documentElement.clientWidth;
@@ -370,6 +384,8 @@
       companion = document.getElementById("sessionCompanion");
     companion.hidden = !current;
     if (!current) {
+      companion.classList.remove('start-small-due');
+      document.getElementById('sessionStartSmallDecision').hidden=true;
       renderEncoding(null);
       document.title = originalTitle;
       clearInterval(runtime.timer);
@@ -381,6 +397,10 @@
     }
     companion.classList.toggle("paused", current.status === "paused");
     companion.classList.toggle("deep", current.kind === "deep");
+    const smallDue=current.kind==='session'&&current.startSmallDue;
+    companion.classList.toggle('start-small-due',smallDue);
+    document.getElementById('sessionStartSmallDecision').hidden=!smallDue;
+    document.querySelectorAll('[data-session-small-choice]').forEach(button=>{button.disabled=runtime.startSmallBusy});
     sessionCompanionLabel.textContent = current.label;
     sessionCompanionTitle.textContent = current.title;
     const futureUse=globalThis.CompassoLearningOutcomeModel?.futureUsePresentation?.(current.learningContext?.futureUse);

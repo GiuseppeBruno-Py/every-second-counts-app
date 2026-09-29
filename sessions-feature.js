@@ -3,11 +3,17 @@
  * portanto usa diretamente state, saveData, metricConfig e renderGrid.
  */
 
-const SESSIONS_FEATURE_VERSION = 1;
+const SESSIONS_FEATURE_VERSION = 2;
 const sessionTimerModel = globalThis.CompassoSessionTimerModel;
 state.data.sessions = Array.isArray(state.data.sessions) ? state.data.sessions.map(session=>{
-  if(!session||typeof session!=='object'||!Object.prototype.hasOwnProperty.call(session,'ritualSnapshot'))return session;
-  return {...session,ritualSnapshot:globalThis.CompassoRitualModel?.normalizeSnapshot?.(session.ritualSnapshot)||null};
+  if(!session||typeof session!=='object')return session;
+  const hasRitual=Object.prototype.hasOwnProperty.call(session,'ritualSnapshot');
+  const hasSmall=Object.prototype.hasOwnProperty.call(session,'startSmall');
+  if(!hasRitual&&!hasSmall)return session;
+  const normalized={...session};
+  if(hasRitual)normalized.ritualSnapshot=globalThis.CompassoRitualModel?.normalizeSnapshot?.(session.ritualSnapshot)||null;
+  if(hasSmall){const small=sessionTimerModel.normalizeStartSmall(session.startSmall);if(small)normalized.startSmall=small;else delete normalized.startSmall}
+  return normalized;
 }).filter(Boolean) : [];
 
 const sessionRuntime = {
@@ -16,6 +22,7 @@ const sessionRuntime = {
   historyItem: null,
   returnFocus: null,
   creating: false,
+  decidingSmall: false,
   finishing: false,
   finish: null
 };
@@ -211,11 +218,15 @@ async function sessionStartDefaultConfirmed(payload={}) {
   if(!sessionPrepareDefault(payload))return false;
   return sessionCreateFromForm({failurePresentation:'caller'});
 }
+async function sessionStartSmallConfirmed(payload={}) {
+  if(!sessionPrepareDefault(payload))return false;
+  return sessionCreateFromForm({failurePresentation:'caller',startSmall:true});
+}
 function sessionOpenConfiguration(payload={}) {
   return openSessionStartCore(payload.domain,payload.itemId,payload.options||{},{show:true,expanded:Boolean(payload.expanded),trigger:payload.trigger});
 }
 
-async function createSession({failurePresentation='session-dialog'}={}) {
+async function createSession({failurePresentation='session-dialog',startSmall=false}={}) {
   if(sessionRuntime.creating)return false;
   const selected = sessionRuntime.selectedItem;
   if (!selected || !executionCanStart())return false;
@@ -279,6 +290,7 @@ async function createSession({failurePresentation='session-dialog'}={}) {
     durationMs: null,
     status: 'active'
   };
+  if(startSmall)session.startSmall={minutes:5,choice:null,decidedAt:null};
   const previous=state.data,candidate=sessionClone(state.data);
   candidate.sessions=Array.isArray(candidate.sessions)?candidate.sessions:[];
   candidate.sessions.unshift(session);
@@ -299,6 +311,30 @@ async function createSession({failurePresentation='session-dialog'}={}) {
     requestAnimationFrame(()=>document.getElementById('sessionStartError')?.focus());
   }
   return false;
+}
+
+async function sessionStartSmallDecide({sessionId,choice}={}){
+  if(sessionRuntime.decidingSmall)return{ok:false,reason:'busy'};
+  const current=sessionActive();
+  if(!current||current.id!==sessionId||!sessionTimerModel.startSmallDue(current))return{ok:false,reason:'unavailable'};
+  if(choice==='end'){openSessionFinish();return{ok:true}}
+  if(!['continue','adjust'].includes(choice))return{ok:false,reason:'unavailable'};
+  const outcome=choice==='adjust'?(state.data.learningOutcomes||[]).find(item=>item.id===current.learningContext?.outcomeId):null;
+  if(choice==='adjust'&&(!outcome||outcome.status!=='active'||outcome.nextAttempt?.id!==current.learningContext?.attemptId))return{ok:false,reason:'capability-unavailable'};
+  const previous=state.data,candidate=sessionClone(state.data),session=candidate.sessions.find(item=>item.id===sessionId);
+  if(!session)return{ok:false,reason:'unavailable'};
+  Object.assign(session,sessionTimerModel.resolveStartSmall(session,choice,sessionNow()));
+  state.data=candidate;executionSyncRegular(session);
+  sessionRuntime.decidingSmall=true;
+  const persisted=await saveData(choice==='adjust'?'Sessão pausada para ajustar a tentativa':'Sessão continuada');
+  sessionRuntime.decidingSmall=false;
+  if(!persisted){state.data=previous;try{await window.CompassoStorage.save(STORAGE_KEY,previous)}catch{}renderAll();return{ok:false,reason:'save-failed'}}
+  if(choice==='adjust'){
+    switchView('capabilities');
+    const currentOutcome=(state.data.learningOutcomes||[]).find(item=>item.id===outcome.id);
+    if(currentOutcome)requestAnimationFrame(()=>{const opener=document.querySelector(`[data-outcome-edit="${CSS.escape(outcome.id)}"]`);outcomeOpen(currentOutcome,opener)});
+  }
+  return{ok:true};
 }
 
 function toggleSessionPause() {
@@ -456,6 +492,8 @@ function resumeSession() {
 installSessionUi();
 CompassoFeatures.command('session.startDefault',sessionStartDefault);
 CompassoFeatures.command('session.startDefaultConfirmed',sessionStartDefaultConfirmed);
+CompassoFeatures.command('session.startSmallConfirmed',sessionStartSmallConfirmed);
+CompassoFeatures.command('session.startSmallDecide',sessionStartSmallDecide);
 CompassoFeatures.command('session.openConfiguration',sessionOpenConfiguration);
 CompassoFeatures.command('session.resume',resumeSession);
 const sessionCreateFromForm=createSession;

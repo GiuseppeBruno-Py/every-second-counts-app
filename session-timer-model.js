@@ -7,6 +7,7 @@
   'use strict';
 
   const CURRENT=new Set(['active','paused','finishing']);
+  const START_SMALL_MS=5*60000;
   const iso=value=>{
     const date=value instanceof Date?value:new Date(value);
     if(Number.isNaN(date.getTime()))throw new TypeError('Instante inválido.');
@@ -15,12 +16,44 @@
   const time=value=>new Date(value).getTime();
   const number=value=>Math.max(0,Number(value)||0);
 
-  function elapsed(session,at=Date.now()){
+  function normalizeStartSmall(value){
+    if(!value||typeof value!=='object'||Number(value.minutes)!==5)return null;
+    const choice=['continue','adjust'].includes(value.choice)?value.choice:null;
+    const decidedAt=choice&&typeof value.decidedAt==='string'&&!Number.isNaN(Date.parse(value.decidedAt))?new Date(value.decidedAt).toISOString():null;
+    return {minutes:5,choice:decidedAt?choice:null,decidedAt};
+  }
+
+  function rawElapsed(session,at=Date.now()){
     if(!session?.startedAt)return 0;
     if(session.status==='finishing'&&Number.isFinite(Number(session.frozenDurationMs)))return number(session.frozenDurationMs);
     const end=session.endedAt?time(session.endedAt):Number(at);
     const pausedNow=session.status==='paused'&&session.pauseStartedAt?Math.max(0,end-time(session.pauseStartedAt)):0;
     return Math.max(0,end-time(session.startedAt)-number(session.pausedMs)-pausedNow);
+  }
+
+  function elapsed(session,at=Date.now()){
+    const duration=rawElapsed(session,at),small=normalizeStartSmall(session?.startSmall);
+    return small&&!small.choice&&['active','paused'].includes(session?.status)?Math.min(duration,START_SMALL_MS):duration;
+  }
+
+  function startSmallDue(session,at=Date.now()){
+    const small=normalizeStartSmall(session?.startSmall);
+    return Boolean(small&&!small.choice&&['active','paused'].includes(session?.status)&&rawElapsed(session,at)>=START_SMALL_MS);
+  }
+
+  function resolveStartSmall(session,choice,at=Date.now()){
+    const timestamp=iso(at),now=time(timestamp);
+    if(!['continue','adjust'].includes(choice)||!startSmallDue(session,now))throw new TypeError('A decisão de cinco minutos não está disponível.');
+    const overrun=Math.max(0,rawElapsed(session,now)-START_SMALL_MS);
+    const pausedNow=session.status==='paused'&&session.pauseStartedAt?Math.max(0,now-time(session.pauseStartedAt))||0:0;
+    return {
+      ...session,
+      pausedMs:number(session.pausedMs)+overrun+(choice==='continue'?pausedNow:0),
+      pauseStartedAt:choice==='adjust'?(session.status==='paused'?session.pauseStartedAt:timestamp):null,
+      status:choice==='adjust'?'paused':'active',
+      startSmall:{minutes:5,choice,decidedAt:timestamp},
+      updatedAt:timestamp
+    };
   }
 
   function begin(session,at=Date.now()){
@@ -62,5 +95,5 @@
     };
   }
 
-  return Object.freeze({elapsed,begin,cancel,finish,isCurrent:session=>CURRENT.has(session?.status)});
+  return Object.freeze({elapsed,begin,cancel,finish,normalizeStartSmall,startSmallDue,resolveStartSmall,isCurrent:session=>CURRENT.has(session?.status)});
 });
