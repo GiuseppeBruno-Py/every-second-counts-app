@@ -6,6 +6,18 @@ Capability-first Compasso carries an optional capability and its current next at
 
 The feature is local-first, works from the existing complete PWA cache, and has no dependency on the `context` route, Contextual AI modules, platform detection, external AI, a backend, or remote processing.
 
+## Delivery 4: o que isso destrava?
+
+Capability agora tem `schemaVersion: 1` e uma única frase opcional `benefit`: o resultado pessoal ou profissional que conseguir fazer isso ajuda a alcançar. O editor existente oferece **O que isso destrava?** recolhido em criação; ao editar uma frase existente, a seção abre. A frase usa até 240 caracteres, pode ser limpa e não tem preenchimento automático.
+
+`proofCriterion` continua descrevendo a prova observável e `nextAttempt.futureUse` continua classificando a forma de uso da tentativa. O benefício não altera esses campos, a próxima tentativa, a identidade ou o lifecycle. Cards de Capability e somente a tentativa principal atual de Hoje exibem **Isso ajuda a:** como contexto secundário seguro, sem novo botão ou ranking.
+
+O formato legado não versionado migra aditivamente para v1 na normalização existente, sem mudar IDs/timestamps nem inferir benefício. Ausência/vazio/malformação omitem a propriedade. Texto válido importado acima do limite é preservado integralmente; salvar uma edição explícita do benefício exige encurtá-lo. Atualizações que omitem o campo preservam seu conteúdo. A migração é idempotente; schema global continua v3.
+
+JSON backup/restore, IndexedDB/fallback e merge carregam o registro inteiro. Benefício não é copiado para Today refs, Session, Evidence, learningSignals ou snapshots. updatedAt e tombstones continuam no proprietário Capability; conflitos conservam as versões inteiras. A geração do manifesto avança para v92. Rollback após exposição exige geração posterior e leitor que conserve benefit/schemaVersion, sem limpar dados. Um cliente anterior pode descartar o campo ao editar: atualizar clientes e conservar backup antes de usar a opção entre versões.
+
+Gate 1 está registrado em .sdd/reports/anti-procrastination/GATE_1.md. A continuação foi solicitada pelo usuário após a PR #92. Esta entrega verifica funcionamento e compatibilidade; não há evidência de que a frase aumentou motivação ou valor percebido.
+
 ## Retrieval R1: uso futuro opcional
 
 A tentativa atual pode registrar opcionalmente `nextAttempt.futureUse` com um dos valores estáveis `remember`, `explain`, `solve`, `build`, `decide`, `simulate` ou `integrate`. A ausência é representada pela propriedade omitida, nunca por um valor padrão persistido. O valor orienta o contexto da tentativa; ele não é progresso, domínio, rota, modo de execução, nível de domínio ou recomendação automática.
@@ -103,4 +115,4 @@ Notes, folders, Markdown/vault metadata, wikilinks, source links, Relations/grap
 
 ## PWA and rollback
 
-`app-manifest.js` owns the current candidate generation `compasso-pages-v85`, includes `capability-context-model.js`, and keeps the Service Worker implementation unchanged. Before publication, rollback is the complete scoped release unit. Rollback after v85 exposure must use a later forward generation that preserves `learningSignals`, additive Weekly Review reflections, nested reflection/Today fields, and the optional `errorNotebook.interpretation`/`hypothesis` properties. Never clear user storage, backups, vaults, or unrelated caches.
+`app-manifest.js` owns the current candidate generation `compasso-pages-v92`, includes the existing capability modules, and keeps the Service Worker implementation unchanged. Before publication, rollback is the complete scoped release unit. Rollback after exposure must use a later forward generation that preserves Capability `schemaVersion`/`benefit`, `learningSignals`, additive Weekly Review reflections, nested reflection/Today fields, and the optional `errorNotebook.interpretation`/`hypothesis` properties. Never clear user storage, backups, vaults, or unrelated caches.

@@ -2101,6 +2101,14 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
 
 /* A simulação é orientação opcional no editor existente de Capacidades. */
 .learning-outcome-attempt strong { white-space: pre-line; }
+.capability-benefit { margin: .65rem 0 0; color: var(--muted); font-size: .78rem; line-height: 1.55; overflow-wrap: anywhere; white-space: pre-line; }
+.outcome-benefit-panel { min-width: 0; margin-top: .8rem; padding: .8rem; border: 1px solid var(--line); border-radius: .75rem; }
+.outcome-benefit-panel > summary { min-height: 44px; cursor: pointer; font-weight: 700; }
+.outcome-benefit-panel > summary span { font-size: .7rem; font-weight: 500; color: var(--muted); }
+.outcome-benefit-panel > label { display: block; margin: .6rem 0 .35rem; font-size: .72rem; font-weight: 700; }
+.outcome-benefit-panel textarea { min-height: 4rem; }
+.outcome-benefit-panel > p { margin: .65rem 0 0; }
+.outcome-benefit-panel > summary:focus-visible { outline: 3px solid var(--ds-color-focus,var(--violet)); outline-offset: 3px; }
 .outcome-executable-panel { min-width: 0; margin-top: .8rem; padding: .8rem; border: 1px solid var(--line); border-radius: .75rem; }
 .outcome-executable-panel[hidden] { display: none; }
 .outcome-executable-panel > summary { min-height: 44px; cursor: pointer; font-weight: 700; }

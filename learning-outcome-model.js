@@ -6,6 +6,8 @@
   if(typeof state!=='undefined'&&state?.data)state.data.learningOutcomes=api.normalizeCollection(state.data.learningOutcomes);
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   const EPOCH='1970-01-01T00:00:00.000Z';
+  const SCHEMA_VERSION=1;
+  const BENEFIT_MAX_LENGTH=240;
   const STATUSES=Object.freeze(['active','archived']);
   const RESOURCE_TYPES=Object.freeze(['study','reading']);
   const FUTURE_USE_PRESENTATIONS=Object.freeze({
@@ -37,6 +39,13 @@
   }
 
   function normalizeProof(value){const normalized=cleanText(value);return normalized||null}
+
+  function normalizeBenefit(value){const normalized=cleanText(value);return normalized||null}
+  function explicitBenefit(value){
+    const normalized=normalizeBenefit(value);
+    if(normalized&&normalized.length>BENEFIT_MAX_LENGTH)throw error('benefit-too-long',`Use até ${BENEFIT_MAX_LENGTH} caracteres para descrever o que isso destrava.`);
+    return normalized;
+  }
 
   function composeExecutableAttempt({start,cue}={}){
     const action=cleanText(start).replace(/[.!?]+$/,'').trim();
@@ -96,10 +105,13 @@
     const nextAttempt=normalizeAttempt(value.nextAttempt,{outcomeId:id,createdAt,updatedAt});
     if(!nextAttempt)return null;
     const status=STATUSES.includes(value.status)?value.status:'active';
+    const benefit=normalizeBenefit(value.benefit);
     return{
       id,
+      schemaVersion:SCHEMA_VERSION,
       capability,
       proofCriterion:normalizeProof(value.proofCriterion),
+      ...(benefit?{benefit}:{}),
       resourceRefs:normalizeRefs(value.resourceRefs),
       nextAttempt,
       status,
@@ -126,10 +138,13 @@
     const attemptInput=typeof input.nextAttempt==='object'&&input.nextAttempt!==null&&!Array.isArray(input.nextAttempt)?input.nextAttempt:null;
     const attemptText=required(attemptInput?attemptInput.text:input.nextAttempt,'attempt-required','Informe o que você vai tentar agora.');
     const futureUse=attemptInput&&Object.prototype.hasOwnProperty.call(attemptInput,'futureUse')?explicitFutureUse(attemptInput.futureUse):null;
+    const benefit=explicitBenefit(input.benefit);
     return{
       id,
+      schemaVersion:SCHEMA_VERSION,
       capability,
       proofCriterion:normalizeProof(input.proofCriterion),
+      ...(benefit?{benefit}:{}),
       resourceRefs:normalizeRefs(input.resourceRefs),
       nextAttempt:{id:idFrom(options,'attempt'),text:attemptText,...(futureUse?{futureUse}:{}),createdAt:timestamp,updatedAt:timestamp},
       status:'active',
@@ -151,8 +166,12 @@
       ? explicitFutureUse(attemptObject.futureUse)
       : current.nextAttempt.futureUse||null;
     const attemptChanged=hasNextAttempt&&(attemptText!==current.nextAttempt.text||futureUse!==(current.nextAttempt.futureUse||null));
+    const benefit=has('benefit')?explicitBenefit(input.benefit):current.benefit;
+    const withoutBenefit={...current};
+    delete withoutBenefit.benefit;
     return{
-      ...current,
+      ...withoutBenefit,
+      ...(benefit?{benefit}:{}),
       capability:required(has('capability')?input.capability:current.capability,'capability-required','Informe o que você quer conseguir fazer.'),
       proofCriterion:has('proofCriterion')?normalizeProof(input.proofCriterion):current.proofCriterion,
       resourceRefs:has('resourceRefs')?normalizeRefs(input.resourceRefs):current.resourceRefs.map(ref=>({...ref})),
@@ -199,7 +218,7 @@
   }
 
   return Object.freeze({
-    EPOCH,STATUSES,RESOURCE_TYPES,FUTURE_USES,FUTURE_USE_PRESENTATIONS,normalizeFutureUse,futureUsePresentation,normalizeProof,composeExecutableAttempt,normalizeRefs,normalizeAttempt,normalizeExecutionContext,createExecutionContext,normalizeOutcome,normalizeCollection,
+    EPOCH,SCHEMA_VERSION,BENEFIT_MAX_LENGTH,STATUSES,RESOURCE_TYPES,FUTURE_USES,FUTURE_USE_PRESENTATIONS,normalizeFutureUse,futureUsePresentation,normalizeProof,normalizeBenefit,composeExecutableAttempt,normalizeRefs,normalizeAttempt,normalizeExecutionContext,createExecutionContext,normalizeOutcome,normalizeCollection,
     createOutcome,updateOutcome,archiveOutcome,reactivateOutcome,deleteOutcome,sortOutcomes,resolveRefs
   });
 });

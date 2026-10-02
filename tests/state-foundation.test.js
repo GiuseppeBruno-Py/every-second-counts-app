@@ -1,5 +1,27 @@
 const test=require('node:test');const assert=require('node:assert/strict');require('../learning-outcome-model.js');const capabilityModel=require('../capability-context-model.js');const foundation=require('../state-foundation.js');
 const experimentModel=require('../behavioral-experiment-model.js');
+test('benefício migra e segue registro vencedor, remoção, conflito e tombstone sem duplicar dono',()=>{
+  const model=globalThis.CompassoLearningOutcomeModel;
+  const t1='2026-10-02T10:00:00Z',t2='2026-10-02T11:00:00Z',now='2026-10-02T12:00:00Z';
+  const legacy={id:'o1',capability:'Diagnosticar',nextAttempt:{id:'a1',text:'Analisar'},createdAt:t1,updatedAt:t1};
+  const migrated=foundation.migrate({learningOutcomes:[legacy],notes:[{id:'n1',content:'Preservar'}],legacy:{keep:true}});
+  assert.equal(migrated.learningOutcomes[0].schemaVersion,1);assert.equal('benefit' in migrated.learningOutcomes[0],false);
+  const snapshot=structuredClone(migrated);assert.deepEqual(foundation.migrate(migrated),snapshot);
+  const old=model.updateOutcome(legacy,{benefit:'Resolver incidentes'},{now:t1});
+  const newer=model.updateOutcome(old,{benefit:'Trabalhar com autonomia'},{now:t2});
+  const winner=foundation.merge({...migrated,learningOutcomes:[newer]},{learningOutcomes:[old]},{now});
+  assert.equal(winner.learningOutcomes[0].benefit,newer.benefit);assert.deepEqual(winner.notes,migrated.notes);assert.deepEqual(winner.legacy,migrated.legacy);
+  assert.deepEqual(foundation.merge(winner,{learningOutcomes:[old]},{now}),winner);
+  const cleared=model.updateOutcome(newer,{benefit:null},{now});
+  const removal=foundation.merge({learningOutcomes:[cleared]},{learningOutcomes:[newer]},{now});
+  assert.equal('benefit' in removal.learningOutcomes[0],false);
+  const conflict=foundation.merge({learningOutcomes:[newer]},{learningOutcomes:[{...newer,benefit:'Comunicar decisões'}]},{now});
+  assert.equal(conflict.learningOutcomes.length,2);assert.deepEqual(conflict.learningOutcomes.map(item=>item.benefit).sort(),['Comunicar decisões','Trabalhar com autonomia']);
+  assert.ok(conflict._sync.conflicts.some(item=>item.collection==='learningOutcomes'));
+  const deleted=model.deleteOutcome({learningOutcomes:[newer]},'o1',{now});
+  assert.deepEqual(foundation.merge(deleted,{learningOutcomes:[newer]},{now}).learningOutcomes,[]);
+  assert.equal(winner._schema.version,3);
+});
 test('migração central v3 é idempotente e preserva campos legados',()=>{const value={reading:[{id:'r1'}],legacy:{keep:true},_schema:{version:2}};const once=foundation.migrate(value),snapshot=JSON.parse(JSON.stringify(once)),twice=foundation.migrate(once);assert.strictEqual(once,twice);assert.deepEqual(twice,snapshot);assert.equal(twice._schema.version,3);assert.deepEqual(twice.learningOutcomes,[]);assert.deepEqual(twice.legacy,{keep:true});assert.equal(twice.journalEntries,undefined);assert.equal(twice.dailyJournals,undefined)});
 test('merge por coleção respeita atualização e tombstone',()=>{const merged=foundation.merge({reading:[{id:'a',title:'local',updatedAt:'2026-01-01'}],_sync:{tombstones:{'reading:b':'2026-02-01'}}},{reading:[{id:'a',title:'remote',updatedAt:'2026-03-01'},{id:'b',title:'deleted',updatedAt:'2026-01-01'}],_sync:{}},{now:'2026-04-01'});assert.equal(merged.reading.length,1);assert.equal(merged.reading[0].title,'remote')});
 test('merge de mapa por data preserva conflito auditável',()=>{const merged=foundation.merge({dailyJournals:{'2026-07-13':{text:'local',updatedAt:'2026-07-13T10:00:00Z'}}},{dailyJournals:{'2026-07-13':{text:'remoto',updatedAt:'2026-07-13T10:00:00Z'}}},{now:'2026-07-13T11:00:00Z'});const conflict=merged._sync.conflicts.find(x=>x.collection==='dailyJournals');assert.equal(merged.dailyJournals['2026-07-13'].text,'local');assert.equal(conflict.remote.text,'remoto');assert.equal(conflict.local.text,'local')});

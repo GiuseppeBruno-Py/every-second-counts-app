@@ -98,6 +98,12 @@ function outcomeInstallShell() {
             <label for="learningOutcomeAttempt">O que você vai tentar agora? <span aria-hidden="true">*</span></label>
             <textarea id="learningOutcomeAttempt" name="nextAttempt" maxlength="1000" required></textarea>
             <p class="learning-outcome-hint">Pode ser uma prática, exercício ou outra ação concreta.</p>
+            <details class="outcome-benefit-panel" id="outcomeBenefitPanel">
+              <summary>O que isso destrava? <span>Opcional</span></summary>
+              <label for="learningOutcomeBenefit">O que conseguir fazer isso destrava?</label>
+              <textarea id="learningOutcomeBenefit" name="benefit" rows="2" maxlength="${learningOutcomeModel.BENEFIT_MAX_LENGTH}" aria-describedby="learningOutcomeBenefitHint"></textarea>
+              <p class="learning-outcome-hint" id="learningOutcomeBenefitHint">Em até ${learningOutcomeModel.BENEFIT_MAX_LENGTH} caracteres, descreva um benefício pessoal ou profissional. Ex.: resolver incidentes com mais autonomia.</p>
+            </details>
             <details class="outcome-executable-panel" id="outcomeExecutablePanel">
               <summary>Tornar mais fácil de começar <span>Opcional</span></summary>
               <label for="outcomeSmallStart">Qual é o menor começo que ainda conta?</label>
@@ -209,6 +215,7 @@ function outcomeCard(outcome, indexes) {
     </div>
     ${outcome.proofCriterion ? `<div class="learning-outcome-proof"><span>Como vou saber</span><p>${escapeHtml(outcome.proofCriterion)}</p></div>` : ''}
     <div class="learning-outcome-attempt"><span>Próxima tentativa</span><strong>${escapeHtml(outcome.nextAttempt.text)}</strong>${outcome.nextAttempt.futureUse?`<small class="future-use-context">${escapeHtml(outcomeFutureUseText(outcome.nextAttempt.futureUse))}</small>`:''}${archived?'':`<button class="quiet-btn outcome-pressure-trigger" type="button" data-outcome-pressure="${escapeHtml(outcome.id)}">Preparar simulação</button>`}</div>
+    ${outcome.benefit ? `<p class="capability-benefit">Isso ajuda a: ${escapeHtml(outcome.benefit)}</p>` : ''}
     ${outcomeContextSummary(outcome,indexes)}
     ${resources.length ? `<div class="learning-outcome-chips" aria-label="Recursos vinculados">${resources.map(ref => `<span class="learning-outcome-chip${ref.available ? '' : ' unavailable'}">${escapeHtml(outcomeResourceLabel(ref))}<button type="button" data-outcome-unlink="${escapeHtml(outcome.id)}" data-resource-type="${ref.type}" data-resource-id="${escapeHtml(ref.id)}" aria-label="Desvincular ${escapeHtml(outcomeResourceLabel(ref))}">×</button></span>`).join('')}</div>` : ''}
     <div class="learning-outcome-card-foot"><span>Atualizada em ${outcomeDate(outcome.updatedAt)}</span><div>${archived ? '' : `<button class="secondary-btn" type="button" data-outcome-today="${escapeHtml(outcome.id)}">${capabilityContextModel.capabilitySummary(outcome.id,state.data,indexes).today.some(entry=>entry.plan?.date===todayDateKey())?'Abrir em Hoje':'Adicionar a Hoje'}</button><button class="secondary-btn" type="button" data-signal-new="${escapeHtml(outcome.id)}">Registrar sinal</button><button class="primary-btn" type="button" data-outcome-execute="${escapeHtml(outcome.id)}">Executar tentativa</button>`}<button class="quiet-btn" type="button" data-outcome-status="${escapeHtml(outcome.id)}">${archived ? 'Reativar' : 'Arquivar'}</button></div></div>
@@ -249,6 +256,7 @@ function outcomeDraftSignature() {
   return JSON.stringify({
     capability:form.elements.capability.value,
     proofCriterion:form.elements.proofCriterion.value,
+    benefit:form.elements.benefit.value,
     futureUse:form.elements.futureUse.value,
     nextAttempt:form.elements.nextAttempt.value,
     smallStart:form.elements.smallStart.value,
@@ -267,6 +275,8 @@ function outcomeOpen(outcome, trigger, options = {}) {
   outcomeElement('learningOutcomeDialogTitle').textContent = outcome ? 'Editar capacidade' : 'Nova capacidade';
   form.elements.capability.value = outcome?.capability || '';
   form.elements.proofCriterion.value = outcome?.proofCriterion || '';
+  form.elements.benefit.value = outcome?.benefit || '';
+  outcomeElement('outcomeBenefitPanel').open = Boolean(outcome?.benefit);
   form.elements.futureUse.value = outcome?.nextAttempt?.futureUse || '';
   form.elements.nextAttempt.value = outcome?.nextAttempt?.text || '';
   form.elements.smallStart.value = '';
@@ -405,6 +415,7 @@ async function outcomeSubmit(event) {
   const input = {
     capability:form.elements.capability.value,
     proofCriterion:form.elements.proofCriterion.value,
+    benefit:form.elements.benefit.value,
     resourceRefs:outcomeFormRefs(),
     nextAttempt:{text:form.elements.nextAttempt.value,futureUse:form.elements.futureUse.value||null}
   };
@@ -416,7 +427,8 @@ async function outcomeSubmit(event) {
       : [outcome, ...(state.data.learningOutcomes || [])];
     if (await outcomePersist(outcomeCandidate(outcomes), current ? 'Capacidade atualizada' : 'Capacidade criada')) outcomeClose(true);
   } catch (error) {
-    const field = error.code === 'capability-required' ? form.elements.capability : error.code === 'future-use-invalid' ? form.elements.futureUse : form.elements.nextAttempt;
+    const field = error.code === 'benefit-too-long' ? form.elements.benefit : error.code === 'capability-required' ? form.elements.capability : error.code === 'future-use-invalid' ? form.elements.futureUse : form.elements.nextAttempt;
+    if(error.code === 'benefit-too-long') outcomeElement('outcomeBenefitPanel').open = true;
     field?.focus();
     field?.setAttribute('aria-invalid','true');
     outcomeSetError(error.message || 'Revise os campos obrigatórios.');

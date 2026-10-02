@@ -118,7 +118,8 @@ test('Session, Evidence e backup usam o snapshot normal sem novo schema',async({
   await page.locator('#sessionFinishForm').evaluate(form=>form.requestSubmit());
   expect(await page.evaluate(()=>state.data.evidence[0].summary)).toBe('Respondi duas perguntas dentro do tempo');
   expect(await page.evaluate(()=>state.data.executionSessions.find(item=>item.learningContext?.outcomeId===state.data.learningOutcomes[0].id)?.learningContext)).toEqual(started);
-  expect(await page.evaluate(()=>Object.keys(state.data.learningOutcomes[0]).sort())).toEqual(['archivedAt','capability','createdAt','id','nextAttempt','proofCriterion','resourceRefs','status','updatedAt']);
+  expect(await page.evaluate(()=>Object.keys(state.data.learningOutcomes[0]).sort())).toEqual(['archivedAt','capability','createdAt','id','nextAttempt','proofCriterion','resourceRefs','schemaVersion','status','updatedAt']);
+  expect(await page.evaluate(()=>state.data.learningOutcomes[0].schemaVersion)).toBe(1);
   page.once('dialog',dialog=>dialog.accept());
   const [download]=await Promise.all([page.waitForEvent('download'),page.evaluate(()=>document.getElementById('exportBtn').click())]);
   const exported=JSON.parse(fs.readFileSync(await download.path(),'utf8'));

@@ -43,7 +43,8 @@ test('cria a forma mínima, valida obrigatórios e persiste após reload', async
   await expect(page.locator('.learning-outcome-card')).toContainText('Explicar uma closure');
 
   const shape = await page.evaluate(() => state.data.learningOutcomes[0]);
-  expect(Object.keys(shape).sort()).toEqual(['archivedAt','capability','createdAt','id','nextAttempt','proofCriterion','resourceRefs','status','updatedAt']);
+  expect(Object.keys(shape).sort()).toEqual(['archivedAt','capability','createdAt','id','nextAttempt','proofCriterion','resourceRefs','schemaVersion','status','updatedAt']);
+  expect(shape.schemaVersion).toBe(1);
   expect(shape.proofCriterion).toBeNull();
   expect(shape.resourceRefs).toEqual([]);
   expect(shape.status).toBe('active');

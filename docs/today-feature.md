@@ -44,6 +44,8 @@ Rotas antigas para `overview` são redirecionadas para `today`. A Visão geral l
 
 ## Continuidade e ação principal
 
+Quando a tentativa principal atual de Capability tem uma frase opcional `benefit`, Hoje mostra **Isso ajuda a:** abaixo do contexto da capacidade, em texto secundário. A próxima tentativa permanece o título e as sete ações existentes permanecem iguais. O trecho é omitido sem frase e não aparece em referências históricas/arquivadas/ausentes, ações comuns ou sessão ativa. A projeção lê a capacidade atual; não grava cópia no plano ou na execução. A edição e remoção ficam no editor existente de Capacidades.
+
 Hoje deriva uma única ação principal, sem persistir ranking ou estado de jornada. A precedência é:
 
 1. execução normal ou Deep Work ativa/pausada, com **Retomar sessão**;
