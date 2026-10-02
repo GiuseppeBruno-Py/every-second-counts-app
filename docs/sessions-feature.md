@@ -53,6 +53,8 @@ O comando aditivo `session.startDefaultConfirmed` prepara exatamente o mesmo in�
 
 `session.startSmallConfirmed` reutiliza a mesma criação rápida para a tentativa principal de Hoje. Sessions novas usam fonte v2; somente a escolha curta recebe `startSmall: {minutes:5,choice:null,decidedAt:null}`. O tempo efetivo limita-se a cinco minutos até **Continuar sessão**, **Encerrar e registrar** ou **Ajustar tentativa** no companheiro. A escolha de continuar desconta a espera sem reiniciar o ID; ajustar pausa antes de abrir o editor. O encerramento e a Evidence seguem o caminho normal. Fontes v1 sem marcador continuam ilimitadas; backup/restore e fallback usam as coleções existentes. Ver [Start Small](start-small.md).
 
+O seletor atual de Ritual oferece **Começar sem fuga** por escolha explícita, sem inserir dados na coleção salva. **Preparar condições (opcional)** aparece em disclosure próprio após Ajustar sessão. As marcas rápidas são transitórias e não impedem o início; **Pular e começar** dispensa o Ritual naquela execução, inclusive ao transferir para Deep Work, sem alterar vínculos. O snapshot usa o formato existente e o checklist rápido continua vazio. Ver [Preparação do ambiente](environment-ritual.md).
+
 ## Limites transacionais
 
 A criação aguarda a persistência de um candidato que reúne a Session, a Execution Session canônica, o contexto/recurso escolhido e as integrações existentes de Journal, ritual, energia e Flow. A configuração só fecha e a sessão só é anunciada após sucesso. Falha restaura o estado anterior, conserva os campos e move o foco para o erro.

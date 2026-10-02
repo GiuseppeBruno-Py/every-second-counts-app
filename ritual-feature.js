@@ -9,8 +9,9 @@ function ritualLines(v){return ritualModel.items(String(v||'').split('\n').map((
 function ritualContextKey(domain,itemId){return`${domain}:${itemId}`}
 function ritualSourceItem(domain,itemId){return domain==='learningOutcome'?state.data.learningOutcomes?.find(item=>item.id===itemId):state.data[domain]?.find(item=>item.id===itemId)}
 function ritualActiveTemplates(){return(state.data.ritualTemplates||[]).filter(candidate=>!candidate.archived)}
+function ritualExecutionTemplates(){return ritualModel.executionTemplates(state.data.ritualTemplates)}
 function ritualSelection(surface){return ritualRuntime.executionSelections[surface]||null}
-function ritualSelectionElements(surface){return surface==='deep'?{select:document.getElementById('ritualSessionSelect'),reason:document.getElementById('ritualSessionReason'),checks:document.getElementById('ritualSessionChecks')}:{select:document.getElementById('ritualQuickSelect'),reason:document.getElementById('ritualQuickReason'),checks:null}}
+function ritualSelectionElements(surface){return surface==='deep'?{select:document.getElementById('ritualSessionSelect'),reason:document.getElementById('ritualSessionReason'),checks:document.getElementById('ritualSessionChecks')}:{select:document.getElementById('ritualQuickSelect'),reason:document.getElementById('ritualQuickReason'),checks:document.getElementById('ritualQuickChecks')}}
 function ritualSelectionReason(choice,ritual){
   if(choice?.provenance==='linked')return'Ritual vinculado à ação; você pode dispensá-lo nesta execução.';
   if(choice?.provenance==='explicit')return'Ritual escolhido para esta execução.';
@@ -18,35 +19,38 @@ function ritualSelectionReason(choice,ritual){
   return'Nenhum ritual selecionado.';
 }
 function ritualRenderExecutionChoice(surface){
-  const choice=ritualSelection(surface),elements=ritualSelectionElements(surface),ritual=state.data.ritualTemplates.find(item=>item.id===choice?.ritualId);
+  const choice=ritualSelection(surface),elements=ritualSelectionElements(surface),ritual=ritualExecutionTemplates().find(item=>item.id===choice?.ritualId);
   if(elements.reason)elements.reason.textContent=ritualSelectionReason(choice,ritual);
   if(elements.checks){
     const list=ritual?[...ritual.preparation,...ritual.resources,...ritual.cues,...ritual.distractions]:[];
-    elements.checks.innerHTML=list.map(item=>`<label><input type="checkbox" data-ritual-check="${escapeHtml(item.id)}"> ${escapeHtml(item.text)}${item.required?' *':''}</label>`).join('');
+    elements.checks.innerHTML=list.map(item=>`<label><input type="checkbox" data-ritual-check="${escapeHtml(item.id)}"> <span>${escapeHtml(item.text)}${surface==='deep'&&item.required?' *':''}</span></label>`).join('');
   }
+  if(surface==='session'){const preparation=document.getElementById('ritualQuickPreparation');if(preparation){preparation.hidden=!ritual;preparation.open=false}}
 }
 function ritualSetExecutionChoice(surface,controlValue){
   const current=ritualSelection(surface);if(!current)return null;
-  const templates=ritualActiveTemplates();let ritualId='',provenance='none';
+  const templates=ritualExecutionTemplates();let ritualId='',provenance='none';
   if(String(controlValue||'').startsWith('suggested:')){
     const suggestedId=String(controlValue).slice('suggested:'.length);
     if(templates.some(item=>item.id===suggestedId)){ritualId=suggestedId;provenance='suggested'}
   }else if(templates.some(item=>item.id===controlValue)){ritualId=controlValue;provenance='explicit'}
-  const next={...current,ritualId,provenance};ritualRuntime.executionSelections[surface]=next;ritualRenderExecutionChoice(surface);return next;
+  const next={...current,ritualId,provenance,dismissed:provenance==='none'};ritualRuntime.executionSelections[surface]=next;ritualRenderExecutionChoice(surface);return next;
 }
 function ritualPrepareExecution(surface,domain,itemId,requestedChoice=null){
   if(!['session','deep'].includes(surface))return null;
-  const item=ritualSourceItem(domain,itemId),templates=ritualActiveTemplates(),contextKey=ritualContextKey(domain,itemId),linkedId=templates.some(candidate=>candidate.id===item?.ritualId)?item.ritualId:'';
+  const item=ritualSourceItem(domain,itemId),templates=ritualExecutionTemplates(),contextKey=ritualContextKey(domain,itemId),linkedId=ritualActiveTemplates().some(candidate=>candidate.id===item?.ritualId)?item.ritualId:'';
   const requestedId=templates.some(candidate=>candidate.id===requestedChoice?.ritualId)?requestedChoice.ritualId:'';
   const requestedProvenance=RITUAL_PROVENANCE.has(requestedChoice?.provenance)?requestedChoice.provenance:null;
-  const suggestion=ritualModel.suggest(templates,{...item,domain});
+  const suggestion=ritualModel.suggest(ritualActiveTemplates(),{...item,domain});
   let ritualId='',provenance='none';
-  if(requestedId&&requestedProvenance==='explicit'){ritualId=requestedId;provenance='explicit'}
+  const dismissed=requestedProvenance==='none'&&requestedChoice?.dismissed===true;
+  if(dismissed){ritualId='';provenance='none'}
+  else if(requestedId&&requestedProvenance==='explicit'){ritualId=requestedId;provenance='explicit'}
   else if(requestedId&&requestedProvenance==='linked'&&requestedId===linkedId){ritualId=requestedId;provenance='linked'}
   else if(requestedId&&requestedProvenance==='suggested'){ritualId=requestedId;provenance='suggested'}
   else if(linkedId){ritualId=linkedId;provenance='linked'}
   else if(suggestion?.ritual?.id){ritualId=suggestion.ritual.id;provenance='suggested'}
-  const choice={contextKey,ritualId,provenance};ritualRuntime.executionSelections[surface]=choice;
+  const choice={contextKey,ritualId,provenance,...(dismissed?{dismissed:true}:{})};ritualRuntime.executionSelections[surface]=choice;
   const elements=ritualSelectionElements(surface);
   if(elements.select){
     const sentinel=provenance==='suggested'&&ritualId?`suggested:${ritualId}`:'';
@@ -58,21 +62,28 @@ function ritualPrepareExecution(surface,domain,itemId,requestedChoice=null){
   ritualRenderExecutionChoice(surface);return choice;
 }
 function ritualExecutionSnapshot(surface){
-  const choice=ritualSelection(surface),ritual=state.data.ritualTemplates.find(item=>item.id===choice?.ritualId&&!item.archived);
+  const choice=ritualSelection(surface),ritual=ritualExecutionTemplates().find(item=>item.id===choice?.ritualId);
   if(!choice||!ritual)return{ritualSnapshot:null,ritualChecklist:[]};
   const includeEncodingCheckpoint=['linked','explicit'].includes(choice.provenance);
   const ritualSnapshot=ritualModel.snapshot(ritual,{includeEncodingCheckpoint});
   const ritualChecklist=surface==='deep'?Array.from(document.querySelectorAll('#ritualSessionChecks [data-ritual-check]')).map(control=>({itemId:control.dataset.ritualCheck,completed:control.checked})):[];
   return{ritualSnapshot,ritualChecklist};
 }
-function ritualClearExecution(surface){if(['session','deep'].includes(surface))ritualRuntime.executionSelections[surface]=null}
+function ritualClearExecution(surface){if(['session','deep'].includes(surface)){ritualRuntime.executionSelections[surface]=null;if(surface==='session')ritualRenderExecutionChoice(surface)}}
 function ritualSessionRender(domain,itemId,requestedChoice=null){return ritualPrepareExecution('deep',domain,itemId,requestedChoice)}
 
 function ritualInstall(){
   const style=document.createElement('style');style.textContent=`.ritual-dialog{width:min(860px,calc(100vw - 24px));border:0;border-radius:20px;padding:0}.ritual-dialog::backdrop{background:#1f1e1b99}.ritual-body{padding:18px;display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;max-height:75vh;overflow:auto}.ritual-list{display:grid;gap:7px;align-content:start}.ritual-list button{border:1px solid var(--line);border-radius:9px;background:#fff;padding:10px;text-align:left}.ritual-list button.active{border-color:var(--violet);background:var(--violet-soft)}.ritual-list span{display:block;font-size:9px;color:var(--muted);margin-top:3px}.ritual-editor{display:grid;gap:10px}.ritual-editor input,.ritual-editor textarea,.ritual-editor select{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff}.ritual-pair{display:grid;grid-template-columns:1fr 1fr;gap:9px}.ritual-actions{display:flex;gap:7px;flex-wrap:wrap}.ritual-actions button{min-height:35px}.ritual-session{border:1px solid #55544c;border-radius:11px;padding:11px;display:grid;gap:8px}.ritual-session label{display:flex!important;align-items:center;gap:7px!important;font-weight:500!important}.ritual-session input{width:auto!important}.ritual-suggestion{font-size:9px;color:#bbb8b0}@media(max-width:650px){.ritual-body{grid-template-columns:1fr}.ritual-pair{grid-template-columns:1fr}.ritual-list{max-height:180px;overflow:auto}.ritual-actions button{flex:1}}`;document.head.appendChild(style);
   document.body.insertAdjacentHTML('beforeend',`<dialog id="ritualDialog" class="ritual-dialog"><form method="dialog"><div class="today-dialog-head"><div><div class="eyebrow">Arquitetura de ação</div><h2>Rituais</h2></div><button class="quiet-btn" value="cancel">Fechar</button></div><div class="ritual-body"><aside><button id="ritualNew" type="button" class="secondary-btn">Novo ritual</button><div id="ritualList" class="ritual-list"></div></aside><section class="ritual-editor"><div class="ritual-pair"><label>Nome<input id="ritualName"></label><label>Tipo<select id="ritualType"><option value="study">Estudo</option><option value="programming">Programação</option><option value="reading">Leitura</option><option value="writing">Escrita</option><option value="planning">Planejamento</option></select></label></div><label>Contexto<input id="ritualContext"></label><label class="ritual-encoding-option"><input id="ritualEncodingCheckpoint" type="checkbox"><span><strong>Pausa para processar</strong><small>Permite uma pausa manual para reconstruir e relacionar o que foi consumido.</small></span></label><div class="ritual-pair"><label>Preparação, um por linha<textarea id="ritualPreparation"></textarea></label><label>Recursos necessários<textarea id="ritualResources"></textarea></label><label>Sinais positivos para iniciar<textarea id="ritualCues"></textarea></label><label>Distrações a remover<textarea id="ritualDistractions"></textarea></label></div><label>Encerramento opcional<textarea id="ritualClosing"></textarea></label><p id="ritualError" class="ritual-error" role="alert" tabindex="-1" hidden></p><div class="ritual-actions"><button id="ritualSave" type="button" class="primary-btn">Salvar</button><button id="ritualLink" type="button">Vincular à ação</button><button id="ritualUnlink" type="button">Desvincular</button><button id="ritualDuplicate" type="button">Duplicar</button><button id="ritualArchive" type="button">Arquivar</button><button id="ritualDelete" type="button">Excluir</button></div><small id="ritualHelp"></small></section></div></form></dialog>`);
   const checks=document.querySelector('.deep-checks');checks?.insertAdjacentHTML('afterend',`<section id="ritualSession" class="ritual-session"><strong>Ritual da sessão</strong><select id="ritualSessionSelect"><option value="">Sem ritual</option></select><div id="ritualSessionReason" class="ritual-suggestion"></div><div id="ritualSessionChecks"></div></section>`);
-  document.getElementById('sessionIntent')?.closest('.field')?.insertAdjacentHTML('beforebegin','<div class="field"><label for="ritualQuickSelect">Ritual opcional</label><select id="ritualQuickSelect"><option value="">Sem ritual</option></select><small id="ritualQuickReason">Nenhum ritual selecionado.</small></div>');
+  document.getElementById('sessionIntent')?.closest('.field')?.insertAdjacentHTML('beforebegin','<div class="field"><label for="ritualQuickSelect">Ritual opcional</label><select id="ritualQuickSelect" aria-describedby="ritualQuickReason"><option value="">Sem ritual</option></select><small id="ritualQuickReason">Nenhum ritual selecionado.</small></div>');
+  document.getElementById('sessionOptionalConfig').insertAdjacentHTML('afterend','<details id="ritualQuickPreparation" class="ritual-quick-preparation" hidden><summary>Preparar condições (opcional)</summary><p>Prepare o ambiente antes de começar. Marque apenas o que for útil; estas marcações não são salvas.</p><div id="ritualQuickChecks"></div><button type="button" id="ritualQuickSkip" class="quiet-btn">Pular e começar</button></details>');
+  document.getElementById('ritualQuickSkip').addEventListener('click',()=>{
+    if(sessionRuntime.creating)return;
+    ritualSetExecutionChoice('session','');document.getElementById('ritualQuickSelect').value='';
+    document.getElementById('sessionStartForm').requestSubmit();
+  });
+  document.getElementById('sessionStartDialog').addEventListener('close',()=>ritualClearExecution('session'));
 }
 function ritualSetError(message=''){const target=document.getElementById('ritualError');if(!target)return;target.textContent=message;target.hidden=!message}
 function ritualRender(){

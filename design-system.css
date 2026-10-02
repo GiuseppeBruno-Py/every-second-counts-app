@@ -1241,6 +1241,16 @@ dialog[data-ds-component] form {
   line-height: 1.5;
 }
 .ritual-error[hidden] { display: none; }
+.ritual-quick-preparation { min-width: 0; padding: .65rem; border: 1px solid var(--line); border-radius: .65rem; background: var(--canvas); }
+.ritual-quick-preparation[hidden] { display: none; }
+.ritual-quick-preparation summary { display: flex; align-items: center; min-height: 44px; font-weight: 700; cursor: pointer; }
+.ritual-quick-preparation p { margin: .5rem 0; color: var(--muted); font-size: .75rem; line-height: 1.5; }
+.ritual-quick-preparation label { display: grid !important; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: .65rem; min-height: 44px; margin: 0; font-weight: 500; line-height: 1.5; cursor: pointer; }
+.ritual-quick-preparation input[type="checkbox"] { width: 20px; height: 20px; min-width: 20px; margin: 0; accent-color: var(--violet); }
+.ritual-quick-preparation span { min-width: 0; overflow-wrap: anywhere; }
+.ritual-quick-preparation button { min-height: 44px; margin-top: .65rem; }
+.ritual-quick-preparation summary:focus-visible,
+.ritual-quick-preparation label:focus-within { outline: 3px solid var(--ds-color-focus); outline-offset: 2px; border-radius: .25rem; }
 
 .session-companion.encoding-open { width: min(440px, calc(100vw - 24px)); }
 .session-companion-encoding { grid-column: 1 / -1; min-width: 0; }

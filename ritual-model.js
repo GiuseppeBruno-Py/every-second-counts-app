@@ -47,6 +47,16 @@
     return normalize(candidate,now);
   }
   function suggest(templates,item){const type=item?.ritualType||({reading:'reading',study:'study',goal:'planning'})[item?.domain]||null;const ritual=(Array.isArray(templates)?templates:[]).map(normalize).find(x=>x&&!x.archived&&x.actionType===type);return ritual?{ritual,reason:`Sugerido porque o tipo da ação é ${type}. Aplicação opcional.`}:null;}
+  function environmentTemplate(){
+    const now='2026-10-02T00:00:00.000Z';
+    const preparation=[['phone','Celular fora do alcance'],['tabs','Fechar abas que não serão usadas'],['notifications','Silenciar notificações'],['material','Abrir apenas o material necessário'],['tools','Preparar água/caderno/ferramenta'],['movement','Confirmar o primeiro movimento']].map(([id,text],order)=>({id:`environment-${id}`,text,order,required:false}));
+    return normalize({id:'ritual-preset-environment',version:1,name:'Começar sem fuga',actionType:'study',context:'Preparar as condições para começar. Cada item é opcional.',preparation,isDefault:true,createdAt:now,updatedAt:now},now);
+  }
+  function executionTemplates(saved){
+    const source=Array.isArray(saved)?saved:[],templates=source.map(value=>normalize(value)).filter(value=>value&&!value.archived),preset=environmentTemplate();
+    if(!source.some(value=>value?.id===preset.id))templates.push(preset);
+    return templates;
+  }
   function defaults(now='2026-01-01T00:00:00.000Z'){const data={study:['Estudo','Abrir material|Definir pergunta central','Livro ou notas','Sentar no local de estudo','Silenciar notificações','Registrar próxima revisão'],programming:['Programação','Abrir projeto|Definir entrega verificável','Editor e documentação','Executar ambiente local','Fechar abas não relacionadas','Registrar commit ou próximo passo'],reading:['Leitura','Separar livro|Definir trecho','Livro e marcador','Sentar no local de leitura','Afastar notificações','Anotar ideia principal'],writing:['Escrita','Abrir rascunho|Definir seção','Notas de referência','Escrever a primeira frase','Fechar fontes não essenciais','Registrar ponto de retomada'],planning:['Planejamento','Abrir revisão|Listar decisões','Agenda e dados da semana','Começar pelo resultado desejado','Fechar entradas paralelas','Confirmar próximas ações']};return Object.entries(data).map(([type,x])=>normalize({id:`ritual-default-${type}`,name:x[0],actionType:type,context:`Template inicial editável de ${x[0].toLowerCase()}`,preparation:x[1].split('|'),resources:[x[2]],cues:[x[3]],distractions:[x[4]],closing:[x[5]],isDefault:true,createdAt:now,updatedAt:now},now));}
-  return{TYPES,items,normalize,create,snapshot,normalizeSnapshot,isEncodingCheckpointSnapshot,duplicate,update,suggest,defaults};
+  return{TYPES,items,normalize,create,snapshot,normalizeSnapshot,isEncodingCheckpointSnapshot,duplicate,update,suggest,defaults,environmentTemplate,executionTemplates};
 });
