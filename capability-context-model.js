@@ -77,6 +77,57 @@
     return SOURCE_TYPES.includes(type)&&id?{type,id}:null;
   }
 
+  // Saved returns are evidence of planning, never of motivation or work outside the app.
+  function selectAttemptReturnContext(outcomeId,data={},options={}){
+    const dayNumber=value=>{
+      if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return NaN;
+      const time=Date.parse(`${value}T00:00:00.000Z`);
+      return Number.isFinite(time)&&new Date(time).toISOString().slice(0,10)===value?time/86400000:NaN;
+    };
+    const today=dayNumber(options.today);if(!Number.isFinite(today))return null;
+    const raw=(Array.isArray(data.learningOutcomes)?data.learningOutcomes:[]).filter(item=>item?.id===clean(outcomeId));
+    if(raw.length!==1||raw[0].metadata?.conflictOf)return null;
+    const outcome=learningOutcomeModel?.normalizeOutcome?.(raw[0]),ref=createCapabilityRef(outcome);
+    const edited=Date.parse(validIso(raw[0].nextAttempt?.updatedAt));
+    if(!ref||!Number.isFinite(edited)||edited<=Date.parse(EPOCH))return null;
+    const sameIdentity=value=>value?.outcomeId===ref.outcomeId&&value?.attemptId===ref.attemptId;
+    // Interrupted/active executions also prove that an attempt was started.
+    for(const name of ['executionSessions','sessions','deepWorkSessions']){
+      if((Array.isArray(data[name])?data[name]:[]).some(item=>sameIdentity(item?.learningContext)))return null;
+    }
+    const dates=new Set(),itemIds=new Set(),planIds=new Set(),occasions=[];
+    let plannedToday=false;
+    for(const plan of Array.isArray(data.dailyPlans)?data.dailyPlans:[]){
+      const items=(Array.isArray(plan?.items)?plan.items:[]).filter(item=>item?.type==='capability-attempt'&&sameIdentity(item.capabilityRef));
+      if(items.some(item=>typeof item.completedAt==='string'&&item.completedAt.trim()))return null;
+      const day=dayNumber(plan?.date);
+      if(!items.length)continue;
+      if(!Number.isFinite(day))return null;
+      if(day<today-14||day>today)continue;
+      const matching=items.filter(item=>normalizeCapabilityRef(item.capabilityRef)?.attemptText===ref.attemptText);
+      if(!matching.length)continue;
+      const planId=clean(plan.id);
+      if(!planId||plan.metadata?.conflictOf||planIds.has(planId)||dates.has(plan.date))return null;
+      planIds.add(planId);dates.add(plan.date);
+      for(const item of matching){
+        const id=clean(item.id),created=Date.parse(validIso(item.createdAt));
+        if(!id||item.completedAt!==null||!Number.isFinite(created)||item.metadata?.conflictOf||itemIds.has(id))return null;
+        const local=new Date(created),localDay=`${local.getFullYear()}-${String(local.getMonth()+1).padStart(2,'0')}-${String(local.getDate()).padStart(2,'0')}`;
+        if(localDay!==plan.date)return null;
+        itemIds.add(id);
+        if(created<edited)continue;
+        if(day===today)plannedToday=true;
+        else occasions.push({date:plan.date,planId,id});
+      }
+    }
+    const conflicts=Array.isArray(data._sync?.conflicts)?data._sync.conflicts:[];
+    if(conflicts.some(item=>(item?.collection==='learningOutcomes'&&item.key===ref.outcomeId)||(item?.collection==='dailyPlans'&&(planIds.has(item.key)||planIds.has(item.preservedAs)))))return null;
+    const pastDays=[...new Set(occasions.map(item=>item.date))].sort();
+    if(!plannedToday||pastDays.length<3)return null;
+    occasions.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
+    return{capabilityRef:ref,dates:pastDays,signature:JSON.stringify([ref,raw[0].nextAttempt.updatedAt,occasions,[...itemIds].sort()])};
+  }
+
   function normalizeSignal(value){
     if(!value||typeof value!=='object'||Array.isArray(value))return null;
     const id=clean(value.id),capabilityRef=normalizeCapabilityRef(value.capabilityRef),kind=clean(value.kind),text=clean(value.text);
@@ -225,7 +276,7 @@
   return Object.freeze({
     EPOCH,SIGNAL_KINDS,SIGNAL_ORIGINS,SOURCE_TYPES,DECISIONS,
     normalizeCapabilityRef,createCapabilityRef,resolveCapabilityRef,refKey,
-    normalizeTodayItem,createTodayItem,addTodayItem,
+    normalizeTodayItem,createTodayItem,addTodayItem,selectAttemptReturnContext,
     normalizeSourceRef,normalizeSignal,normalizeSignalCollection,createSignal,updateSignal,deleteSignal,
     normalizeReflection,createReflection,normalizeReflections,upsertReflection,
     executionContext,evidenceContext,buildIndexes,selectRecentEvidence,capabilitySummary,capabilitiesForResource,filterExecutionsByCapability

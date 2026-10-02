@@ -2128,3 +2128,16 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
 .outcome-pressure-panel textarea:focus-visible,.outcome-pressure-panel > summary:focus-visible { outline: 3px solid var(--ds-color-focus,var(--violet)); outline-offset: 3px; }
 .outcome-pressure-panel button { min-height: 44px; white-space: normal; }
 @media (max-width: 600px) { .outcome-pressure-panel button,.outcome-executable-panel button { width: 100%; } }
+
+/* Optional context from explicitly saved returns to the daily plan. */
+.today-attempt-return { grid-column: 1 / -1; min-width: 0; margin-top: 1rem; padding: .8rem; border: 1px solid var(--line); border-radius: .75rem; }
+.today-attempt-return > summary { min-height: 44px; cursor: pointer; color: var(--text); font-weight: 700; overflow-wrap: anywhere; }
+.today-attempt-return > p { color: var(--text); font-size: .85rem; line-height: 1.6; overflow-wrap: anywhere; margin: .5rem 0 .8rem; }
+.today-attempt-return-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.today-attempt-return-actions button { min-height: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.today-attempt-return > summary:focus-visible, .today-attempt-return-actions button:focus-visible { outline: 3px solid var(--ds-color-focus,var(--violet)); outline-offset: 3px; }
+@media (max-width: 480px) {
+  html[data-visual-system="notebook"] #todayView .today-primary:has(.today-attempt-return) { padding: .5rem; }
+  .today-attempt-return { padding: .5rem 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+  .today-attempt-return-actions button { width: 100%; padding-inline: .25rem; }
+}
