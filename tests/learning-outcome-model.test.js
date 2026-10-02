@@ -10,7 +10,7 @@ const minimal=()=>model.createOutcome({capability:'  Explicar shuffle  ',nextAtt
 test('cria capacidade mínima canônica sem progresso ou semântica futura',()=>{
   const outcome=minimal();
   assert.deepEqual(outcome,{
-    id:'o1',capability:'Explicar shuffle',proofCriterion:null,resourceRefs:[],
+    id:'o1',schemaVersion:1,capability:'Explicar shuffle',proofCriterion:null,resourceRefs:[],
     nextAttempt:{id:'a1',text:'Analisar um plano',createdAt:T1,updatedAt:T1},
     status:'active',archivedAt:null,createdAt:T1,updatedAt:T1
   });
@@ -81,6 +81,45 @@ test('critério opcional normaliza para string ou null e pode ser removido',()=>
   assert.equal(added.proofCriterion,'Resolver sem consulta');
   const removed=model.updateOutcome(added,{proofCriterion:'   '},{now:'2026-08-08T12:00:00.000Z'});
   assert.equal(removed.proofCriterion,null);
+});
+
+test('benefício opcional cria, edita, limpa e preserva prova, uso e identidade',()=>{
+  const base=model.createOutcome({capability:'Diagnosticar',proofCriterion:'Propor um índice',benefit:'  Resolver incidentes com autonomia  ',nextAttempt:{text:'Analisar plano',futureUse:'solve'},resourceRefs:[{type:'study',id:'s1'}]},{now:T1,idFactory:ids(['o1','a1'])});
+  assert.equal(base.schemaVersion,1);assert.equal(base.benefit,'Resolver incidentes com autonomia');
+  const edited=model.updateOutcome(base,{benefit:'Atuar em problemas de produção'},{now:T2});
+  assert.equal(edited.benefit,'Atuar em problemas de produção');
+  assert.deepEqual(edited.nextAttempt,base.nextAttempt);assert.equal(edited.id,base.id);assert.equal(edited.createdAt,T1);
+  assert.equal(edited.proofCriterion,base.proofCriterion);assert.deepEqual(edited.resourceRefs,base.resourceRefs);
+  assert.equal(model.updateOutcome(edited,{nextAttempt:'Outro plano'},{now:T2}).benefit,edited.benefit);
+  assert.equal(model.archiveOutcome(edited,{now:T2}).benefit,edited.benefit);
+  assert.equal(model.reactivateOutcome(model.archiveOutcome(edited,{now:T2}),{now:T2}).benefit,edited.benefit);
+  assert.equal('benefit' in model.updateOutcome(edited,{benefit:'   '},{now:T2}),false);
+  assert.equal('benefit' in model.createExecutionContext(edited),false);
+});
+
+test('benefício valida o limite antes de mutar, mas não corta texto importado',()=>{
+  const base=minimal(),snapshot=structuredClone(base);
+  const limit=model.BENEFIT_MAX_LENGTH;
+  assert.equal(model.updateOutcome(base,{benefit:'x'.repeat(limit)},{now:T2}).benefit.length,limit);
+  assert.throws(()=>model.updateOutcome(base,{benefit:'x'.repeat(limit+1),nextAttempt:'Mudaria'},{now:T2}),error=>error.code==='benefit-too-long');
+  assert.throws(()=>model.createOutcome({capability:'C',nextAttempt:'T',benefit:'x'.repeat(limit+1)}),error=>error.code==='benefit-too-long');
+  assert.deepEqual(base,snapshot);
+  const imported=model.normalizeOutcome({...base,benefit:'x'.repeat(limit+1)});
+  assert.equal(imported.benefit.length,limit+1);
+  assert.equal(model.updateOutcome(imported,{nextAttempt:'Outra tentativa'},{now:T2}).benefit,imported.benefit);
+  assert.deepEqual(model.normalizeOutcome(imported),imported);
+});
+
+test('capacidade legada migra para v1 idempotentemente sem inferir benefício',()=>{
+  const original={id:'o1',capability:' C ',proofCriterion:'P',nextAttempt:{id:'a1',text:'T',futureUse:'explain',createdAt:T1,updatedAt:T1},createdAt:T1,updatedAt:T2};
+  const before=structuredClone(original),once=model.normalizeOutcome(original);
+  assert.equal(once.schemaVersion,model.SCHEMA_VERSION);assert.equal('benefit' in once,false);
+  assert.equal(once.id,original.id);assert.equal(once.nextAttempt.id,'a1');assert.equal(once.createdAt,T1);assert.equal(once.updatedAt,T2);
+  assert.deepEqual(model.normalizeOutcome(once),once);assert.deepEqual(original,before);
+  for(const invalid of [null,undefined,42,{},[],true,'  ']){
+    const result=model.normalizeOutcome({...original,benefit:invalid});
+    assert.equal(result.id,'o1');assert.equal('benefit' in result,false);
+  }
 });
 
 test('referências tipadas deduplicam sem alterar recursos',()=>{
