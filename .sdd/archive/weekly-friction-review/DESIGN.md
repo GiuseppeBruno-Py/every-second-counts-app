@@ -1,7 +1,7 @@
 # Revisão semanal de fricção — Design
 
 **Status:** Shipped
-**Revisão:** 2
+**Revisão:** 3
 **Data:** 2026-10-03
 **Define:** DEFINE.md validado15/15
 **Branch/base:** codex/weekly-friction-review / origin/main@e842fe2
@@ -64,3 +64,7 @@ DEFINE e arquivos previstos intactos. Testes R1 locais parciais não fecham AC-0
 Ao apagar a resposta inicial, limpar também as respostas auxiliares ocultas; conservar textos já aplicados no fechamento. Isso permite novamente o fluxo opcional vazio sem bloquear foco em campo escondido. Cobrir no caso progressivo existente.
 
 Correção final de acessibilidade R2: limpar aria-invalid também nos campos gerais de bloqueios/decisão ao resolver/descartar erro da ajuda. Validar foco/erro no browser após a correção; evidência de regressão dos demais fluxos permanece aplicável. CI canônico validará o head completo publicado.
+
+## Iteração R3 — prontidão do fixture revelada pelo CI
+
+2026-10-03, Refining de evidência AC08, sem mudança de requisitos, produção, manifesto ou cache. CI37152295244 no head5592c69: Node262 pass; browser448 pass,24 skips,1 flaky desktop e1 fail mobile no Enter inicial. Artefatos mostram app-shell hidden/inert após focus; CompassoFeatures.installed não garante shell interativo. O fixture deve aguardar CompassoPwaLifecycle.snapshot().coherent antes de preparar os dados e afirmar foco no summary antes das teclas nativas. Não definir open para substituir teste de teclado, não aumentar timeout/retries nem remover asserções. Evidência anterior de teclado não fecha Linux; manter os demais contratos verificados. Revalidar focused sem retries e CI canônico no novo head. Build/Ship local revalidado pelo focused38 pass/0 fail, sem retries (55.2s). CI canônico do novo head permanece gate obrigatório do handoff da PR, conforme ordem original Ship local -> commit/PR -> CI. Não alegar Linux verde antes desse resultado. Histórico R2 permanece no commit5592c69.

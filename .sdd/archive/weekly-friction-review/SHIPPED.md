@@ -9,7 +9,7 @@
 
 ## Aceitação e Design
 
-AC01–10 aceitos conforme matriz e evidência do BUILD_REPORT. Manifesto15/15 arquivos, sem desvio externo; DESIGN R2 registra proteção de rascunhos/reentrada/referência atual e correção final de acessibilidade. Fontes mantidas, arquivo copy-only com DEFINE/DESIGN/BUILD_REPORT legíveis. Nenhuma limpeza de outras features/worktrees.
+AC01–10 aceitos conforme matriz e evidência do BUILD_REPORT. Manifesto15/15 arquivos, sem desvio externo; DESIGN R3 registra proteção de rascunhos/reentrada/referência atual e correção final de acessibilidade. Fontes mantidas, arquivo copy-only com DEFINE/DESIGN/BUILD_REPORT legíveis. Nenhuma limpeza de outras features/worktrees.
 
 Regressão local `npm run test:all`: Node262 pass, browser450 pass,24 skips existentes,0 fail,exit0 (16.7m). Após correção estreita de aria-invalid, fixture recomposto e focused38 pass/0 fail, sem retries (59.2s). Demais evidências permanecem aplicáveis. Codex executou testes e inspecionou capturas desktop/mobile/zoom; nenhuma instalação física PWA nem eficácia pessoal é alegada.
 
@@ -25,3 +25,9 @@ Gate2 recomenda observar utilidade e complexidade em uso real antes de Delivery7
 2. Uma capacidade pode aparecer por tentativa histórica; seleção explícita deve usar identidade atual sem reescrever o evento antigo.
 3. Em zoom, scrollWidth com clip não prova legibilidade: testar palavras com fonte larga e inspecionar capturas nos dois projetos.
 4. Após interromper Playwright, um servidor órfão pode continuar como listener sem responder. Validar o erro de navegação e encerrar somente o processo identificado antes de repetir a suite.
+
+## Revalidação R3
+
+CI37152295244 de5592c69: Node262 pass, browser448 pass,24 skips,1 flaky desktop e1 fail mobile; não é gate remoto verde. Trace prova que o shell ainda hidden/inert recebeu tentativa de foco antes do estado coerente. Corrigido somente fixture: aguardar lifecycle coherent e afirmar foco real no summary antes das teclas. Sem mudança de produção, cache, retries, timeouts ou asserções de ativação. Focused local fresco38 pass/0 fail, sem retries (55.2s). Ship local revalidado, com CI canônico do novo head obrigatório para encerrar handoff da PR; seu resultado ficará na PR. Nenhuma alegação antecipada de Linux verde.
+
+5. Módulos instalados não significam shell interativo: testes de foco precisam aguardar o estado coerente do lifecycle, além de confirmar document.activeElement pelo locator.

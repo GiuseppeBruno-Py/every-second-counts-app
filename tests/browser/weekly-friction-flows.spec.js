@@ -3,7 +3,7 @@ const fs=require('node:fs/promises');
 async function open(page,{fallback=false}={}){
  await page.route(/^https?:\/(?!\/127\.0\.0\.1)/,route=>route.abort());
  await page.addInitScript(({fallback})=>{localStorage.setItem('compasso.ux.mode.v1','advanced');if(fallback)Object.defineProperty(window,'indexedDB',{value:undefined,configurable:true});globalThis.CompassoDriveSync||={prepareLocalState(input){return{data:structuredClone(input),baseline:new Map()}},activateLocalState(){}}},{fallback});
- await page.goto('/?view=weekly',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>globalThis.CompassoFeatures?.installed&&globalThis.CompassoWeeklyFrictionModel);
+ await page.goto('/?view=weekly',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>globalThis.CompassoFeatures?.installed&&globalThis.CompassoWeeklyFrictionModel&&globalThis.CompassoPwaLifecycle?.snapshot().coherent);
  await page.evaluate(async()=>{state.data.weeklyReviews=[];state.data.learningOutcomes=[];state.data.learningSignals=[];state.data.executionSessions=[];state.data.evidence=[];await CompassoStorage.save('compasso.app.v1',state.data);renderAll()});
 }
 async function createCapability(page,title='Comparar estratégias'){
@@ -66,7 +66,7 @@ for(const fallback of [false,true])test(`backup/restore e offline preservam os c
  await page.evaluate(()=>navigator.serviceWorker.ready);await expect.poll(()=>page.evaluate(()=>Boolean(navigator.serviceWorker.controller))).toBe(true);await context.setOffline(true);await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>CompassoFeatures?.installed&&CompassoWeeklyFrictionModel);expect(await data(page)).toEqual(before);await expect(page.locator('#weeklyDecision')).toHaveValue(before.reviews[0].decision);
 });
 test('teclado, foco, alvos, 360px e zoom200% mantêm a ajuda utilizável',async({page},info)=>{
- await open(page);await page.emulateMedia({reducedMotion:'reduce'});const summary=page.locator('#weeklyFriction summary');await summary.focus();await page.keyboard.press('Enter');await expect(page.locator('#weeklyFriction')).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(page.locator('#weeklyFriction')).not.toHaveAttribute('open','');await page.keyboard.press('Enter');await answer(page);
+ await open(page);await page.emulateMedia({reducedMotion:'reduce'});const summary=page.locator('#weeklyFriction summary');await summary.scrollIntoViewIfNeeded();await summary.focus();await expect(summary).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('#weeklyFriction')).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(page.locator('#weeklyFriction')).not.toHaveAttribute('open','');await page.keyboard.press('Enter');await answer(page);
  for(const selector of ['#weeklyFrictionApply','#weeklyFrictionClear','#weeklyFrictionReason','#weeklyFrictionTarget'])expect((await page.locator(selector).boundingBox()).height).toBeGreaterThanOrEqual(44);
  await summary.focus();expect(await contrast(summary)).toBeGreaterThanOrEqual(4.5);expect(await contrast(summary,'outlineColor')).toBeGreaterThanOrEqual(3);for(const button of await page.locator('#weeklyFriction button').all())expect(await contrast(button)).toBeGreaterThanOrEqual(4.5);
  expect(await summary.evaluate(e=>parseFloat(getComputedStyle(e).outlineWidth))).toBeGreaterThanOrEqual(3);

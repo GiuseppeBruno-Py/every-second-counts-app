@@ -5,7 +5,7 @@
 **Base:** origin/main@e842fe2dfb493b0b01051d5d2b42af1d68977626, após merge da PR #94
 **Branch:** codex/weekly-friction-review
 **Worktree:** C:/Users/Giuse/.codex/worktrees/anti-procrastination-discovery/every-second-counts-app
-**Fonte:** roadmap anexado pelo usuário, Delivery 6; DEFINE 15/15 e DESIGN R2. Autorização: iterar até a próxima PR. Brainstorm dispensado por escopo claro.
+**Fonte:** roadmap anexado pelo usuário, Delivery 6; DEFINE 15/15 e DESIGN R3. Autorização: iterar até a próxima PR. Brainstorm dispensado por escopo claro.
 
 ## Resultado e impacto
 
@@ -49,4 +49,10 @@ Capturas mostram helper legível e botões que acomodam palavras em fonte larga/
 
 ## Git e próximo passo
 
-Gate local aprovado e SDD encerrado em modo copy-only. Autorização atual cobre commit/push nesta branch e nova PR. A publicação e o resultado do CI canônico Ubuntu/Node22 no head final serão registrados no handoff da PR, pois este relatório é produzido antes do commit. Sem merge/deploy. Próximo passo de produto: revisão da PR e observação de uso descrita no Gate2.
+Gate local aprovado e SDD encerrado em modo copy-only, com R3 e CI do head final ainda obrigatório no handoff. Autorização atual cobre commit/push nesta branch e nova PR. A publicação e o resultado do CI canônico Ubuntu/Node22 no head final serão registrados no handoff da PR, pois este relatório é produzido antes do commit. Sem merge/deploy. Próximo passo de produto: revisão da PR e observação de uso descrita no Gate2.
+
+## R3 — correção do fixture após CI
+
+CI37152295244 em5592c69 falhou: Node262 pass/0 fail; browser448 pass,24 skips,1 flaky desktop,1 fail mobile. Falha no Enter inicial do teste de teclado; trace confirma app-shell hidden/inert após focus. Esperar somente installed foi insuficiente: foco não entrou no summary. Aguardar lifecycle coherent e verificar foco antes das teclas. Produção e cache intactos; mesmos15 arquivos do manifesto. Gate2 e evidência dos demais fluxos permanecem; aceite de teclado Linux reaberto para CI novo; Ship local revalidado após focused fresco. Nenhuma asserção removida, retry/timeout aumentado ou snapshot substituído.
+
+R3 local: fixture recomposto; `npx playwright test tests/browser/weekly-friction-flows.spec.js tests/browser/weekly-review-positive-flows.spec.js --retries=0`:38 pass/0 fail (55.2s), exit0. Produção/Node/outras specs não mudaram; regressão anterior permanece aplicável a elas. A nova rodada completa Ubuntu confirmará o fixture e todo o head publicado.
