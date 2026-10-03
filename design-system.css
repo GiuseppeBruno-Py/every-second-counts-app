@@ -2141,3 +2141,18 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
   .today-attempt-return { padding: .5rem 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
   #todayView .today-attempt-return-actions button { width: 100%; padding-inline: .25rem; }
 }
+
+/* Optional reflection uses the existing weekly decision and save controls. */
+#weeklyView .weekly-friction { min-width: 0; border: 1px solid var(--line); border-radius: .75rem; }
+#weeklyView .weekly-friction > summary { min-height: 44px; padding: .75rem; color: var(--text); font-weight: 700; cursor: pointer; overflow-wrap: anywhere; }
+#weeklyView .weekly-friction-body { display: grid; gap: .75rem; min-width: 0; padding: .75rem; }
+#weeklyView .weekly-friction-body p { margin: 0; color: var(--text); font-size: .85rem; line-height: 1.6; overflow-wrap: anywhere; }
+#weeklyView .weekly-friction :is(.field,textarea,select) { min-width: 0; max-width: 100%; }
+#weeklyView .weekly-friction :is(textarea,select,button) { min-height: 44px; }
+#weeklyView #weeklyFrictionFollowup:not([hidden]) { display: grid; gap: .75rem; }
+#weeklyView .weekly-friction button { width: 100%; padding: .5rem .25rem; white-space: normal; overflow-wrap: anywhere; }
+#weeklyView .weekly-friction :focus-visible { outline: 3px solid var(--ds-color-focus,var(--violet)); outline-offset: 3px; }
+@media (max-width: 480px) {
+  #weeklyView .weekly-closure:has(.weekly-friction) { padding-inline: .25rem; }
+  #weeklyView .weekly-friction-body, #weeklyView .weekly-friction > summary { padding-inline: .25rem; }
+}

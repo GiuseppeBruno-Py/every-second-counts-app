@@ -4,10 +4,11 @@
 
 const WEEKLY_REVIEW_VERSION = 2;
 const weeklySessionKindModel = globalThis.CompassoSessionKindModel;
+const weeklyFrictionModel = globalThis.CompassoWeeklyFrictionModel;
 state.data.weeklyReviews = Array.isArray(state.data.weeklyReviews) ? state.data.weeklyReviews : [];
 labels.weekly = { title: 'Revisão semanal', kicker: 'Evidências e direção' };
 
-const weeklyReviewRuntime = { offset: 0, renderedRange:null };
+const weeklyReviewRuntime = { offset: 0, renderedRange:null, saving:false, friction:{range:null,refs:[],targets:new Map(),applied:''} };
 
 function weeklyOptionalText(value) {
   return typeof value === 'string' ? value : '';
@@ -177,6 +178,22 @@ function installWeeklyReviewUi() {
                   <div class="field"><label for="weeklyEvidenceReflection">Alguma evidência mudou sua percepção sobre o que você consegue fazer?</label><textarea id="weeklyEvidenceReflection" maxlength="1000" placeholder="Se sim, registre a evidência e o que ela demonstrou."></textarea></div>
                 </div>
               </section>
+              <details class="weekly-friction" id="weeklyFriction">
+                <summary>Rever uma dificuldade de início <span>(opcional)</span></summary>
+                <div class="weekly-friction-body">
+                  <p>Parta do que você percebeu na semana. Use o ajuste para preencher a revisão e confira os textos antes de concluir.</p>
+                  <div class="field"><label for="weeklyFrictionTask">Qual tarefa ou tentativa você mais evitou ou adiou esta semana?</label><textarea id="weeklyFrictionTask" maxlength="240" aria-describedby="weeklyFrictionError"></textarea></div>
+                  <div id="weeklyFrictionFollowup" hidden>
+                    <div class="field"><label for="weeklyFrictionReason">O que tornou difícil começar?</label><select id="weeklyFrictionReason"><option value="">Não especificado</option>${Object.entries(weeklyFrictionModel.REASONS).map(([value,label])=>`<option value="${value}">${escapeHtml(label)}</option>`).join('')}</select></div>
+                    <div class="field"><label for="weeklyFrictionAdjustment">Qual ajuste você quer testar?</label><textarea id="weeklyFrictionAdjustment" maxlength="600" aria-describedby="weeklyFrictionError"></textarea></div>
+                    <div class="field"><label for="weeklyFrictionTarget">Revisar também a tentativa de uma capacidade? <span>(opcional)</span></label><select id="weeklyFrictionTarget" aria-describedby="weeklyFrictionTargetHint weeklyFrictionError"></select><p id="weeklyFrictionTargetHint">Se escolher uma capacidade, o ajuste preencherá sua nova tentativa. Confira a decisão antes de concluir a revisão.</p></div>
+                    <button type="button" class="secondary-btn" id="weeklyFrictionApply">Usar ajuste na revisão</button>
+                  </div>
+                  <button type="button" class="quiet-btn" id="weeklyFrictionClear">Limpar campos da ajuda</button>
+                  <p id="weeklyFrictionError" role="alert" tabindex="-1" hidden></p>
+                  <p id="weeklyFrictionStatus" role="status" aria-live="polite"></p>
+                </div>
+              </details>
               <div class="weekly-form-grid">
                 <div class="field"><label for="weeklyWins">Principal avanço</label><textarea id="weeklyWins" maxlength="600" placeholder="O que avançou de forma concreta?"></textarea></div>
                 <div class="field"><label for="weeklyLessons">Aprendizado mais importante</label><textarea id="weeklyLessons" maxlength="600" placeholder="O que esta semana ensinou sobre o conteúdo ou sobre sua forma de executar?"></textarea></div>
@@ -258,6 +275,7 @@ function weeklyCapabilityGroups(range,review){
   for(const group of byId.values()){const ids=new Set(group.executions.map(item=>item.id));group.evidence=(state.data.evidence||[]).filter(item=>ids.has(item.sessionId))}
   for(const signal of capabilityContextModel.normalizeSignalCollection(state.data.learningSignals)){if(weeklyDateInRange(signal.createdAt,range))ensure(signal.capabilityRef).signals.push(signal)}
   for(const reflection of capabilityContextModel.normalizeReflections(review?.capabilityReflections)){if(!byId.has(reflection.capabilityRef.outcomeId))byId.set(reflection.capabilityRef.outcomeId,{capabilityRef:reflection.capabilityRef,executions:[],evidence:[],signals:[]})}
+  for(const ref of weeklyReviewRuntime.friction.refs){const group=ensure(ref);group.capabilityRef=ref;group.selectedInReview=true}
   return[...byId.values()].sort((a,b)=>a.capabilityRef.attemptText.localeCompare(b.capabilityRef.attemptText,'pt-BR'));
 }
 function weeklyFutureUseOptions(selected=''){return `<option value="">Não especificado</option>${learningOutcomeModel.FUTURE_USES.map(value=>{const presentation=learningOutcomeModel.futureUsePresentation(value);return `<option value="${value}" ${selected===value?'selected':''}>${escapeHtml(presentation.label)}</option>`}).join('')}`}
@@ -270,7 +288,7 @@ function renderWeeklyCapabilities(range,review){
     const revise=reflection?.decision==='revise';
     const currentFutureUse=editable?(resolved.outcome?.nextAttempt?.futureUse||''):'';
     const historicalUses=[...new Set(group.executions.map(execution=>capabilityContextModel.executionContext(execution)?.futureUse).filter(Boolean))].map(value=>learningOutcomeModel.futureUsePresentation(value)?.label).filter(Boolean);
-    return `<article class="weekly-capability-card${editable?'':' unavailable'}" data-weekly-capability="${escapeHtml(group.capabilityRef.outcomeId)}" data-attempt-id="${escapeHtml(group.capabilityRef.attemptId)}" data-attempt-text="${escapeHtml(editable?resolved.attemptText:group.capabilityRef.attemptText)}" data-future-use="${escapeHtml(currentFutureUse)}"><header><div><strong>${escapeHtml(resolved.outcome?.capability||'Capacidade indisponível')}</strong><span>Tentativa atual: ${escapeHtml(resolved.attemptText)}</span></div><span>${group.executions.length} tentativas finalizadas</span></header>${historicalUses.length?`<p class="weekly-future-use-history"><b>Uso nas execuções:</b> ${historicalUses.map(escapeHtml).join(' · ')}</p>`:''}${evidence?`<p><b>Evidence:</b> ${evidence}</p>`:''}${signals?`<p><b>Sinais:</b> ${signals}</p>`:''}${editable?`${currentFutureUse?`<p class="weekly-current-future-use"><b>Uso da tentativa atual:</b> ${escapeHtml(learningOutcomeModel.futureUsePresentation(currentFutureUse).label)}</p>`:''}<div class="weekly-capability-fields"><label>Reflexão<textarea data-weekly-reflection maxlength="1000">${escapeHtml(reflection?.reflection||'')}</textarea></label><label>Decisão explícita<select data-weekly-decision aria-describedby="weeklyDecisionError"><option value="">Escolha manter ou revisar</option><option value="keep" ${reflection?.decision==='keep'?'selected':''}>Manter tentativa atual</option><option value="revise" ${revise?'selected':''}>Revisar tentativa</option></select></label><div class="weekly-attempt-revision" data-weekly-attempt-wrap ${revise?'':'hidden'}><label>Nova tentativa<input data-weekly-attempt maxlength="1000" value="${escapeHtml(revise?reflection.decidedAttemptText:resolved.attemptText)}" aria-describedby="weeklyDecisionError"></label><label>Como você precisará usar isso? <span class="learning-outcome-optional">Opcional</span><select data-weekly-future-use aria-describedby="weeklyDecisionError">${weeklyFutureUseOptions(currentFutureUse)}</select></label></div></div>`:`<p>${reflection?`${reflection.decision==='revise'?'Tentativa revisada':'Tentativa mantida'}: ${escapeHtml(reflection.decidedAttemptText)}`:'Contexto histórico; novas decisões exigem uma capacidade ativa com a tentativa atual.'}</p>`}</article>`;
+    return `<article class="weekly-capability-card${editable?'':' unavailable'}" data-weekly-capability="${escapeHtml(group.capabilityRef.outcomeId)}" data-attempt-id="${escapeHtml(group.capabilityRef.attemptId)}" data-attempt-text="${escapeHtml(editable?resolved.attemptText:group.capabilityRef.attemptText)}" data-future-use="${escapeHtml(currentFutureUse)}"><header><div><strong>${escapeHtml(resolved.outcome?.capability||'Capacidade indisponível')}</strong><span>Tentativa atual: ${escapeHtml(resolved.attemptText)}</span></div><span>${group.selectedInReview?'Selecionada nesta revisão':`${group.executions.length} tentativas finalizadas`}</span></header>${historicalUses.length?`<p class="weekly-future-use-history"><b>Uso nas execuções:</b> ${historicalUses.map(escapeHtml).join(' · ')}</p>`:''}${evidence?`<p><b>Evidence:</b> ${evidence}</p>`:''}${signals?`<p><b>Sinais:</b> ${signals}</p>`:''}${editable?`${currentFutureUse?`<p class="weekly-current-future-use"><b>Uso da tentativa atual:</b> ${escapeHtml(learningOutcomeModel.futureUsePresentation(currentFutureUse).label)}</p>`:''}<div class="weekly-capability-fields"><label>Reflexão<textarea data-weekly-reflection maxlength="1000">${escapeHtml(reflection?.reflection||'')}</textarea></label><label>Decisão explícita<select data-weekly-decision aria-describedby="weeklyDecisionError"><option value="">Escolha manter ou revisar</option><option value="keep" ${reflection?.decision==='keep'?'selected':''}>Manter tentativa atual</option><option value="revise" ${revise?'selected':''}>Revisar tentativa</option></select></label><div class="weekly-attempt-revision" data-weekly-attempt-wrap ${revise?'':'hidden'}><label>Nova tentativa<input data-weekly-attempt maxlength="1000" value="${escapeHtml(revise?reflection.decidedAttemptText:resolved.attemptText)}" aria-describedby="weeklyDecisionError"></label><label>Como você precisará usar isso? <span class="learning-outcome-optional">Opcional</span><select data-weekly-future-use aria-describedby="weeklyDecisionError">${weeklyFutureUseOptions(currentFutureUse)}</select></label></div></div>`:`<p>${reflection?`${reflection.decision==='revise'?'Tentativa revisada':'Tentativa mantida'}: ${escapeHtml(reflection.decidedAttemptText)}`:'Contexto histórico; novas decisões exigem uma capacidade ativa com a tentativa atual.'}</p>`}</article>`;
   }).join('');
 }
 
@@ -318,6 +336,9 @@ function renderWeeklyReview() {
   const view = document.getElementById('weeklyView');
   if (!view) return;
   const range = weeklyRange();
+  const preserveDraft=weeklyReviewRuntime.friction.range===range.key&&!weeklyReviewRuntime.saving&&(weeklyReviewRuntime.friction.refs.length||Object.values(weeklyFrictionFields()).some(field=>field.value.trim()));
+  const draft=preserveDraft?weeklyReviewDraft():null;
+  renderWeeklyFriction(range);
   const sessions = weeklyCompletedSessions(range);
   const evidence = weeklyEvidence(range, sessions);
   const itemSummaries = weeklyAggregateItems(sessions);
@@ -341,11 +362,16 @@ function renderWeeklyReview() {
   const currentReview = weeklyReviewFor(weeklyRange(0));
   const badge = document.getElementById('weeklyBadge');
   if (badge) badge.textContent = currentReview ? '✓' : '•';
+  if(draft)weeklyRestoreReviewDraft(draft);
+  weeklySetBusy(weeklyReviewRuntime.saving);
 }
 
 async function saveWeeklyReview() {
+  if(weeklyReviewRuntime.saving)return false;
   const range = weeklyRange();
-  const draft={fields:Object.fromEntries(['weeklyRepeatablePractice','weeklyEvidenceReflection','weeklyWins','weeklyLessons','weeklyBlockers','weeklyDecision','weeklyQuality','weeklyPriority1','weeklyPriority2','weeklyPriority3'].map(id=>[id,document.getElementById(id).value])),capabilities:[...document.querySelectorAll('[data-weekly-capability]')].map(card=>({id:card.dataset.weeklyCapability,reflection:card.querySelector('[data-weekly-reflection]')?.value||'',decision:card.querySelector('[data-weekly-decision]')?.value||'',attempt:card.querySelector('[data-weekly-attempt]')?.value||'',futureUse:card.querySelector('[data-weekly-future-use]')?.value||''}))};
+  if(weeklyFrictionPending()){weeklyFrictionError('Use o ajuste na revisão ou limpe os campos da ajuda antes de concluir.','adjustment');return false}
+  for(const ref of weeklyReviewRuntime.friction.refs){if(!weeklyFrictionModel.currentTarget(ref,state.data.learningOutcomes)){renderWeeklyFriction(range);weeklyFrictionError('A capacidade mudou. Selecione a tentativa atual e aplique o ajuste novamente.','target');return false}}
+  const draft=weeklyReviewDraft();
   weeklySetDecisionError('');
   for(const card of document.querySelectorAll('[data-weekly-capability]')){
     const decision=card.querySelector('[data-weekly-decision]');if(!decision)continue;
@@ -397,9 +423,66 @@ async function saveWeeklyReview() {
   const previous=state.data,candidate=typeof structuredClone==='function'?structuredClone(state.data):JSON.parse(JSON.stringify(state.data));candidate.learningOutcomes=outcomes;
   const existingIndex=candidate.weeklyReviews.findIndex(review=>review.weekStart===range.key);if(existingIndex>=0)candidate.weeklyReviews[existingIndex]=payload;else candidate.weeklyReviews.unshift(payload);
   const focusTitles=priorities.map(priority=>candidate[priority.domain]?.find(item=>item.id===priority.itemId)?.title).filter(Boolean);if(focusTitles.length)candidate.focus=focusTitles;
-  state.data=candidate;if(await saveData(existingIndex>=0?'Revisão semanal atualizada':'Revisão semanal concluída')){requestAnimationFrame(()=>{const target=document.getElementById('weeklyReviewMeta')||document.getElementById('weeklyDecisionRegion');target?.focus?.()});return true}
+  weeklySetBusy(true);state.data=candidate;if(await saveData(existingIndex>=0?'Revisão semanal atualizada':'Revisão semanal concluída')){weeklySetBusy(false);weeklyReviewRuntime.friction.refs=[];weeklyFrictionClear(false);requestAnimationFrame(()=>{const target=document.getElementById('weeklyReviewMeta')||document.getElementById('weeklyDecisionRegion');target?.focus?.()});return true}
   state.data=previous;try{await window.CompassoStorage.save(STORAGE_KEY,previous)}catch{}renderAll();showToast('Não foi possível salvar a revisão. Suas capacidades não foram alteradas.');
-  Object.entries(draft.fields).forEach(([id,value])=>{const field=document.getElementById(id);if(field)field.value=value});draft.capabilities.forEach(item=>{const card=document.querySelector(`[data-weekly-capability="${CSS.escape(item.id)}"]`);if(!card)return;const reflection=card.querySelector('[data-weekly-reflection]'),decision=card.querySelector('[data-weekly-decision]'),attempt=card.querySelector('[data-weekly-attempt]'),futureUse=card.querySelector('[data-weekly-future-use]');if(reflection)reflection.value=item.reflection;if(decision)decision.value=item.decision;if(attempt)attempt.value=item.attempt;if(futureUse)futureUse.value=item.futureUse;weeklyUpdateDecisionCard(card)});const meta=document.getElementById('weeklyReviewMeta');meta.hidden=false;meta.textContent='Não foi possível salvar. Revise e tente novamente.';requestAnimationFrame(()=>meta.focus());return false;
+  weeklyRestoreReviewDraft(draft);weeklySetBusy(false);const meta=document.getElementById('weeklyReviewMeta');meta.hidden=false;meta.textContent='Não foi possível salvar. Revise e tente novamente.';requestAnimationFrame(()=>meta.focus());return false;
+}
+
+
+function weeklySetBusy(value){
+  weeklyReviewRuntime.saving=value;
+  document.getElementById('weeklyReviewForm').setAttribute('aria-busy',String(value));
+  document.querySelectorAll('#weeklyReviewForm input,#weeklyReviewForm textarea,#weeklyReviewForm select,#weeklyReviewForm button,#weeklyDecisionRegion input,#weeklyDecisionRegion textarea,#weeklyDecisionRegion select').forEach(field=>field.disabled=value);
+}
+function weeklyReviewDraft(){return {fields:Object.fromEntries(['weeklyRepeatablePractice','weeklyEvidenceReflection','weeklyWins','weeklyLessons','weeklyBlockers','weeklyDecision','weeklyQuality','weeklyPriority1','weeklyPriority2','weeklyPriority3'].map(id=>[id,document.getElementById(id).value])),capabilities:weeklyCapabilityDraft()}}
+function weeklyRestoreReviewDraft(draft){Object.entries(draft.fields).forEach(([id,value])=>{const field=document.getElementById(id);if(field)field.value=value});weeklyRestoreCapabilityDraft(draft.capabilities)}
+function weeklyCapabilityDraft(){
+  return [...document.querySelectorAll('[data-weekly-capability]')].map(card=>({id:card.dataset.weeklyCapability,...Object.fromEntries(['reflection','decision','attempt','future-use'].map(name=>[name,card.querySelector(`[data-weekly-${name}]`)?.value||'']))}));
+}
+function weeklyRestoreCapabilityDraft(draft){
+  for(const item of draft){const card=document.querySelector(`[data-weekly-capability="${CSS.escape(item.id)}"]`);if(!card)continue;for(const name of ['reflection','decision','attempt','future-use']){const field=card.querySelector(`[data-weekly-${name}]`);if(field)field.value=item[name]}weeklyUpdateDecisionCard(card)}
+}
+function weeklyFrictionFields(){return Object.fromEntries(['task','reason','adjustment','target'].map(name=>[name,document.getElementById(`weeklyFriction${name[0].toUpperCase()+name.slice(1)}`)]))}
+function weeklyFrictionSignature(){return JSON.stringify(Object.values(weeklyFrictionFields()).map(field=>field.value))}
+function weeklyFrictionPending(){return Object.values(weeklyFrictionFields()).some(field=>field.value.trim())&&weeklyFrictionSignature()!==weeklyReviewRuntime.friction.applied}
+function weeklyFrictionError(message='',name){
+  const details=document.getElementById('weeklyFriction'),error=document.getElementById('weeklyFrictionError');error.textContent=message;error.hidden=!message;
+  document.querySelectorAll('#weeklyFriction [aria-invalid],#weeklyBlockers[aria-invalid],#weeklyDecision[aria-invalid]').forEach(field=>field.removeAttribute('aria-invalid'));
+  if(message){details.open=true;const field=weeklyFrictionFields()[name]||document.getElementById(name==='blockers'?'weeklyBlockers':name==='decision'?'weeklyDecision':'weeklyFrictionError');field.setAttribute('aria-invalid','true');requestAnimationFrame(()=>{field.scrollIntoView?.({block:'center'});field.focus()})}
+}
+function weeklyFrictionUpdate(){const fields=weeklyFrictionFields(),empty=!fields.task.value.trim();document.getElementById('weeklyFrictionFollowup').hidden=empty;if(empty){fields.reason.value='';fields.adjustment.value='';fields.target.value=''}}
+function weeklyFrictionClear(focus=true){
+  if(focus&&weeklyReviewRuntime.saving)return;
+  Object.values(weeklyFrictionFields()).forEach(field=>field.value='');weeklyReviewRuntime.friction.applied='';weeklyFrictionError();weeklyFrictionUpdate();
+  document.getElementById('weeklyFrictionStatus').textContent='';if(focus)weeklyFrictionFields().task.focus();
+}
+function renderWeeklyFriction(range){
+  const runtime=weeklyReviewRuntime.friction,select=weeklyFrictionFields().target;
+  if(runtime.range!==range.key){runtime.range=range.key;runtime.refs=[];weeklyFrictionClear(false);document.getElementById('weeklyFriction').open=false}
+  const selected=select.value,previous=runtime.targets;runtime.targets=new Map();
+  select.innerHTML='<option value="">Somente no fechamento geral</option>';
+  for(const outcome of state.data.learningOutcomes||[]){const ref=capabilityContextModel.createCapabilityRef(outcome);if(!ref||outcome.metadata?.conflictOf)continue;runtime.targets.set(outcome.id,{...ref,updatedAt:outcome.nextAttempt.updatedAt});select.insertAdjacentHTML('beforeend',`<option value="${escapeHtml(outcome.id)}">${escapeHtml(outcome.capability)} · ${escapeHtml(outcome.nextAttempt.text)}</option>`)}
+  if(selected&&!runtime.targets.has(selected)){runtime.targets.set(selected,previous.get(selected));select.insertAdjacentHTML('beforeend',`<option value="${escapeHtml(selected)}" disabled>Capacidade indisponível</option>`)}
+  select.value=selected;weeklyFrictionUpdate();
+}
+function weeklyFrictionApply(){
+  if(weeklyReviewRuntime.saving)return;
+  const fields=weeklyFrictionFields(),runtime=weeklyReviewRuntime.friction,range=weeklyRange();
+  try{
+    const ref=fields.target.value?runtime.targets.get(fields.target.value):null;
+    if(fields.target.value&&!weeklyFrictionModel.currentTarget(ref,state.data.learningOutcomes)){renderWeeklyFriction(range);throw Object.assign(new Error('A capacidade mudou. Selecione a tentativa atual e aplique o ajuste novamente.'),{field:'target'})}
+    const next=weeklyFrictionModel.compose({task:fields.task.value,reason:fields.reason.value,adjustment:fields.adjustment.value,blockers:document.getElementById('weeklyBlockers').value,decision:document.getElementById('weeklyDecision').value});
+    if(ref){
+      const draft=weeklyCapabilityDraft();runtime.refs=runtime.refs.filter(item=>item.outcomeId!==ref.outcomeId);runtime.refs.push(ref);
+      renderWeeklyCapabilities(range,weeklyReviewFor(range));weeklyRestoreCapabilityDraft(draft);
+      const card=document.querySelector(`[data-weekly-capability="${CSS.escape(ref.outcomeId)}"]`),decision=card?.querySelector('[data-weekly-decision]');
+      if(!decision)throw Object.assign(new Error('Esta tentativa não pode ser revisada neste contexto.'),{field:'target'});
+      decision.value='revise';card.querySelector('[data-weekly-attempt]').value=next.adjustment;weeklyUpdateDecisionCard(card,{focusAttempt:true});
+    }
+    document.getElementById('weeklyBlockers').value=next.blockers;document.getElementById('weeklyDecision').value=next.decision;
+    runtime.applied=weeklyFrictionSignature();weeklyFrictionError();document.getElementById('weeklyFrictionStatus').textContent='Ajuste aplicado ao rascunho. Confira os campos e conclua a revisão para salvar.';
+    if(!ref)document.getElementById('weeklyDecision').focus();
+  }catch(error){weeklyFrictionError(error.message,error.field)}
 }
 
 function weeklyOpenDecision(){weeklyReviewRuntime.offset=0;switchView('weekly');renderWeeklyReview();requestAnimationFrame(()=>{const unresolved=[...document.querySelectorAll('#weeklyDecisionRegion [data-weekly-decision]')].find(select=>!select.value);const target=unresolved||document.getElementById('weeklyWins')||document.getElementById('weeklyDecisionRegion')||document.getElementById('weeklyRangeTitle');target?.scrollIntoView?.({block:'nearest'});target?.focus?.()});return true}
@@ -420,13 +503,17 @@ document.addEventListener('click', event => {
   const weeklyAction = event.target.closest('[data-action="weekly"]');
   if (weeklyAction) switchView('weekly');
   const navigation = event.target.closest('[data-week-nav]');
-  if (navigation) {
+  if (navigation&&!weeklyReviewRuntime.saving) {
     weeklyReviewRuntime.offset = Math.min(0, weeklyReviewRuntime.offset + Number(navigation.dataset.weekNav));
     renderWeeklyReview();
   }
-  if (event.target.closest('[data-week-current]')) {
+  if (!weeklyReviewRuntime.saving&&event.target.closest('[data-week-current]')) {
     weeklyReviewRuntime.offset = 0;
     renderWeeklyReview();
   }
 });
 document.addEventListener('change',event=>{const decision=event.target.closest?.('[data-weekly-decision]');if(!decision)return;weeklySetDecisionError('');weeklyUpdateDecisionCard(decision.closest('[data-weekly-capability]'),{focusAttempt:decision.value==='revise'})});
+
+document.getElementById('weeklyFrictionTask').addEventListener('input',weeklyFrictionUpdate);
+document.getElementById('weeklyFrictionApply').addEventListener('click',weeklyFrictionApply);
+document.getElementById('weeklyFrictionClear').addEventListener('click',()=>weeklyFrictionClear());

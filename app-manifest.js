@@ -33,6 +33,7 @@
     ['outcomes-feature.js','/* Compasso · Planejado vs. realizado e síntese orientada de livros'],
     ['drive-sync-feature.js','/* Compasso · OAuth Google Drive e base de sincronização'],
     ['drive-reconcile-feature.js','/* Compasso · Conciliacao visual do Google Drive'],
+    ['weekly-friction-model.js','CompassoWeeklyFrictionModel'],
     ['weekly-review-feature.js','/* Compasso · Revisão semanal guiada por evidências'],
     ['weekly-plan-model.js','CompassoWeeklyPlanModel'],
     ['weekly-plan-feature.js','/* Compasso · Planejamento semanal guiado por resultados'],
@@ -62,7 +63,7 @@
     'state-foundation.js','feature-runtime.js','app-services.js','design-system-model.js','learning-outcome-model.js','capability-context-model.js','today-feature.js','session-timer-model.js','history-evidence-model.js','session-kind-model.js',
     'contingency-model.js','deep-work-model.js','ritual-model.js','execution-session-model.js','execution-session-feature.js','sessions-feature.js','goal-links-feature.js',
     'contingency-feature.js','deep-work-feature.js','session-companion-feature.js','ritual-feature.js','evidence-feature.js','recall-feature.js','weakness-feature.js','outcomes-feature.js',
-    'weekly-review-feature.js','weekly-plan-model.js','weekly-plan-feature.js','analytics-feature.js','history-edit-feature.js','capture-model.js','capture-feature.js','journal-model.js','journal-feature.js','learning-outcome-feature.js','behavioral-experiment-model.js','behavioral-experiment-feature.js',
+    'weekly-friction-model.js','weekly-review-feature.js','weekly-plan-model.js','weekly-plan-feature.js','analytics-feature.js','history-edit-feature.js','capture-model.js','capture-feature.js','journal-model.js','journal-feature.js','learning-outcome-feature.js','behavioral-experiment-model.js','behavioral-experiment-feature.js',
     'ux-consolidation-model.js','ux-consolidation-feature.js','information-architecture-model.js','information-architecture-feature.js','design-system-feature.js'
   ]);
   const moduleEntries = modules.map(([file,marker],order)=>({file,marker,order,required:order<3,browserJourney:browserJourneyModules.has(file)}));
@@ -97,7 +98,7 @@
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v93',
+    cacheName:'compasso-pages-v94',
     cachePrefix,
     isOwnedCacheName,
     composition,
