@@ -139,10 +139,17 @@ test('teclado, foco, contraste, 360px e zoom 200% com movimento reduzido',async(
   await fs.mkdir('test-results',{recursive:true});await panel(page).scrollIntoViewIfNeeded();await page.screenshot({path:`test-results/attempt-return-${testInfo.project.name}.png`});
   await page.setViewportSize({width:360,height:900});await page.evaluate(()=>document.body.style.zoom='2');await summary.scrollIntoViewIfNeeded();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  const wordSpace=await panel(page).locator('[data-today-attempt-adjust="firstStep"]').evaluate(button=>{
-    const style=getComputedStyle(button),canvas=document.createElement('canvas'),context=canvas.getContext('2d');context.font=style.font;
-    return {available:button.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight),required:context.measureText('Esclarecer').width};
-  });expect(wordSpace.available).toBeGreaterThanOrEqual(wordSpace.required);
+  async function expectReadableWords(){
+    const spaces=await panel(page).locator('button').evaluateAll(buttons=>buttons.map(button=>{
+      const style=getComputedStyle(button),context=document.createElement('canvas').getContext('2d');context.font=style.font;
+      return {label:button.textContent,available:button.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight),required:Math.max(...button.textContent.trim().split(/\s+/).map(word=>context.measureText(word).width))};
+    }));
+    for(const space of spaces)expect(space.available,space.label).toBeGreaterThanOrEqual(space.required);
+  }
+  await expectReadableWords();
+  // Wider generic glyphs reproduce the CI gap even on a Windows font stack.
+  await panel(page).locator('button').evaluateAll(buttons=>buttons.forEach(button=>{button.style.fontFamily='monospace';button.style.fontSize='16px'}));
+  await expectReadableWords();
   await panel(page).locator('[data-today-attempt-adjust="firstStep"]').scrollIntoViewIfNeeded();
   await page.screenshot({path:`test-results/attempt-return-zoom-${testInfo.project.name}.png`});
   await page.evaluate(()=>document.body.style.zoom='1');const trigger=panel(page).locator('[data-today-attempt-adjust="firstStep"]');await trigger.focus();await page.keyboard.press('Enter');await expect(page.locator('#outcomeSmallStart')).toBeFocused();await page.keyboard.press('Escape');await expect(trigger).toBeFocused();

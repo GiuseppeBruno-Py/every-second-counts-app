@@ -2139,5 +2139,5 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
 @media (max-width: 480px) {
   html[data-visual-system="notebook"] #todayView .today-primary:has(.today-attempt-return) { padding: .5rem; }
   .today-attempt-return { padding: .5rem 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
-  .today-attempt-return-actions button { width: 100%; padding-inline: .25rem; }
+  #todayView .today-attempt-return-actions button { width: 100%; padding-inline: .25rem; }
 }

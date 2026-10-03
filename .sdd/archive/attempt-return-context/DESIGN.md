@@ -1,7 +1,7 @@
 # Retornos da tentativa ao plano — Design
 
-**Status:** Shipped
-**Revisão:** 4
+**Status:** R5 built and verified locally; remote closure tracked in PR #94
+**Revisão:** 5
 **Data:** 2026-10-02
 **Define:** DEFINE.md validado, 15/15
 **Base:** origin/main@9bb97c3; codex/attempt-return-context
@@ -62,3 +62,17 @@ Comandos descobertos: npm test; npm run build:test antes de Playwright focado; n
 ## Iteração R4 — legibilidade no zoom
 
 2026-10-02: captura ampliada mostrou rótulos partidos dentro do novo details apesar de scrollWidth passar (overflow global usa clip). Reduzir padding/borda interna do contexto e do cartão principal que o contém em <=480px, sem mudar layout global. Browser mede se a maior palavra do rótulo cabe no espaço textual em zoom200%; captura foca o summary. Run completo inicial interrompido para recompor antes do gate final. Mesmos arquivos; sem mudança de requisitos ou dados.
+
+## Iteração R5 — correção de legibilidade no CI Ubuntu
+
+2026-10-02. Modifying, sem novo escopo: run GitHub 37051428940 sobre 895b13e concluiu Node 255 PASS, browser 420 PASS/2 FAIL/24 SKIP. Ambos os FAIL são AC-07: em zoom200% a palavra Esclarecer mede 81.5390625px e o espaço disponível é 72px. A evidência local R4 não cobre essa combinação de métricas; reabertos AC-07/08 e Ship enquanto validação está pendente. DEFINE e sua cópia arquivada permanecem válidos/intactos.
+
+Diagnóstico confirmado por estilos computados: o notebook já zera o padding de #todayView. A regra global do piloto com :is(#todayView, ...) button prevalecia sobre o seletor de classe do contexto e mantinha 12px de padding lateral. O primeiro ajuste da vista foi insuficiente e redundante. Correção dentro do manifesto: em <=480px, usar #todayView .today-attempt-return-actions button para aplicar efetivamente os 4px de padding lateral já previstos. Recuperar 16px no espaço textual do botão sem alterar os containers externos. Manter espaços de foco, tamanho da fonte e alvos existentes. Sem regra global, dados, navegação ou cache novo; v93 ainda candidata em PR aberta, não publicada.
+
+Fortalecer o teste: em zoom200% verificar as palavras de todos os seis rótulos com suas fontes computadas e também com fonte genérica monospace16px (métrica mais larga que o caso CI). Manter comparação da largura real, sem reduzir expectativa ou aumentar tolerância. Capturas e controles existentes preservados. Verificação local focada e npm test; gate canônico adicional será npm run test:all no Ubuntu/Node22 do GitHub, no novo commit exato, antes do handoff. Nenhum workflow/dependência/snapshot novo.
+
+Cascade: DESIGN R5 -> CSS/browser test -> BUILD_REPORT R5 -> archive Design/Build e SHIPPED. Revisar estados com resultados reais; conservar evidência histórica R4, runs falhos e links CI. Publicação autorizada pelo pedido de corrigir a PR existente; sem merge/deploy.
+
+## Evidência R5 local e gate de publicação
+
+Implementação limitada à prioridade do seletor mobile no CSS e ao teste de largura de todos os rótulos. npm test: 255 PASS/0 FAIL. Playwright focado: 20 PASS/0 FAIL (1.0m), incluindo os dois casos de zoom com fonte computada e fallback mais largo. Capturas desktop/mobile e zoom inspecionadas por Codex. Nenhum arquivo fora do manifesto. Este documento registra o checkpoint antes do push; fechamento remoto exige npm run test:all verde no novo head. A execução e o resultado finais serão registrados na [PR #94](https://github.com/GiuseppeBruno-Py/every-second-counts-app/pull/94), sem atribuir resultado futuro a esta evidência local.
