@@ -147,8 +147,12 @@ test('teclado, foco, contraste, 360px e zoom 200% com movimento reduzido',async(
     for(const space of spaces)expect(space.available,space.label).toBeGreaterThanOrEqual(space.required);
   }
   await expectReadableWords();
-  // Wider generic glyphs reproduce the CI gap even on a Windows font stack.
-  await panel(page).locator('button').evaluateAll(buttons=>buttons.forEach(button=>{button.style.fontFamily='monospace';button.style.fontSize='16px'}));
+  // Stress at least the wider Ubuntu glyph width, including on Windows.
+  await panel(page).locator('button').evaluateAll(buttons=>buttons.forEach(button=>{
+    button.style.fontFamily='monospace';button.style.fontSize='16px';
+    const context=document.createElement('canvas').getContext('2d');context.font=getComputedStyle(button).font;
+    button.style.fontSize=`${Math.max(16,16*97/context.measureText('Esclarecer').width)}px`;
+  }));
   await expectReadableWords();
   await panel(page).locator('[data-today-attempt-adjust="firstStep"]').scrollIntoViewIfNeeded();
   await page.screenshot({path:`test-results/attempt-return-zoom-${testInfo.project.name}.png`});

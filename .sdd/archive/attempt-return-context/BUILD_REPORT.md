@@ -1,8 +1,8 @@
 # Retornos da tentativa ao plano — Build report
 
-**Status:** R5 locally verified; remote closure tracked in PR #94
+**Status:** R6 locally verified; remote closure tracked in PR #94
 **Data:** 2026-10-02
-**Design:** revisão 5 (R4 histórica preservada)
+**Design:** revisão 6 (R4/R5 históricas preservadas)
 **Repository:** GiuseppeBruno-Py/every-second-counts-app
 **Worktree:** C:/Users/Giuse/.codex/worktrees/anti-procrastination-discovery/every-second-counts-app
 **Inspeção:** AGENTS.md raiz, README, docs Today/Capability, Gate 1, modelos/editor/Session/Ritual/foundation, manifesto/package/CI e testes. Sem .codegraph no checkout.
@@ -64,3 +64,15 @@ Causa: o seletor global :is(#todayView, ...) button tem maior prioridade que .to
 - Diff de produção: um seletor CSS; teste reforçado e documentação SDD R5 dentro do manifesto original. Schema, cache candidato v93, dados e requisitos intactos. Sem lint/typecheck configurados.
 
 AC-01–06: evidência Node e browser local válida. AC-07/08: nova evidência focada local válida; aprovação canônica externa exige npm run test:all no Ubuntu/Node22 do GitHub no novo head. Este é o checkpoint antes do push. O link do run, SHA e resultado canônico serão registrados na [PR #94](https://github.com/GiuseppeBruno-Py/every-second-counts-app/pull/94) após conclusão, evitando registrar execução futura como PASS. Fontes preservadas e cópias atualizadas; sem merge/deploy. Próxima ação: publicar a correção na mesma branch e concluir esse gate remoto antes do handoff.
+
+## R6 — confirmação remota e correção da fonte de stress
+
+[Run37083591457](https://github.com/GiuseppeBruno-Py/every-second-counts-app/actions/runs/37083591457) em315acb1 terminou com255 Node PASS, 420 browser PASS/2 FAIL/24 SKIP, 18.9m. A comparação com a fonte nativa da linha149 passou; as falhas foram no stress genérico da linha152:96.328125px >88px. A fonte genérica Ubuntu é mais larga que a Windows; isso confirma a correção R5 original e expõe a margem insuficiente para o stress ampliado. Nenhum PASS remoto foi alegado.
+
+Design R6 autoriza apenas reduzir padding horizontal do cartão com o contexto, em <=480px, de .5rem para .125rem; vertical .5rem mantido. Recupera12px, para100px de espaço textual em360px/zoom200%. Padding4px dos botões, gap, alvos44px, fonte de produção e margens externas intactos. Teste usa monospace mínimo16px e aumenta a fonte quando a largura de Esclarecer fica abaixo de97px; a fonte nunca é reduzida e a comparação real não recebe tolerância. Sem novo skip, workflow, dependência, cache ou dado.
+
+- Reprodução R6 local antes da correção:2 FAIL, 95.99578857421875px exigidos/88px disponíveis.
+- npm run build:test + npx playwright test tests/browser/attempt-return-context-flows.spec.js --retries=0: exit0, 20 PASS/0 FAIL, 56.6s, incluindo stress97px, fontes nativas e todos os contratos dos fluxos afetados.
+- Capturas R6 ampliadas desktop/mobile inspecionadas por Codex: Esclarecer inteira e rótulos quebrando por palavras. Node255 PASS/0 FAIL/0 SKIP do run canônico R5 continua válido para os módulos JS inalterados; gate completo será executado novamente no head R6.
+
+Este é o checkpoint R6 antes do push. AC-01–08 têm evidência local ou ainda válida nos módulos intactos, e o fechamento canônico externo continua obrigatório. Run/SHA/resultado e fechamento final serão registrados na [PR #94](https://github.com/GiuseppeBruno-Py/every-second-counts-app/pull/94) após execução Ubuntu/Node22 no novo head. Correção limitada aos mesmos7 caminhos do manifesto; fontes/cópias SDD preservadas. Sem merge/deploy.

@@ -2137,7 +2137,7 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
 .today-attempt-return-actions button { min-height: 44px; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 .today-attempt-return > summary:focus-visible, .today-attempt-return-actions button:focus-visible { outline: 3px solid var(--ds-color-focus,var(--violet)); outline-offset: 3px; }
 @media (max-width: 480px) {
-  html[data-visual-system="notebook"] #todayView .today-primary:has(.today-attempt-return) { padding: .5rem; }
+  html[data-visual-system="notebook"] #todayView .today-primary:has(.today-attempt-return) { padding: .5rem .125rem; }
   .today-attempt-return { padding: .5rem 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
   #todayView .today-attempt-return-actions button { width: 100%; padding-inline: .25rem; }
 }

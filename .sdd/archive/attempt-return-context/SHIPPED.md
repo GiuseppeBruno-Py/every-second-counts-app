@@ -1,9 +1,9 @@
 # Retornos da tentativa ao plano — Shipped
 
-**Status:** R5 locally verified; remote closure tracked in PR #94
+**Status:** R6 locally verified; remote closure tracked in PR #94
 **Data:** 2026-10-02
 **Branch/base:** codex/attempt-return-context / origin/main@9bb97c3
-**Escopo:** Delivery 5 do roadmap; Design R5; 16 arquivos do manifesto.
+**Escopo:** Delivery 5 do roadmap; Design R6; 16 arquivos do manifesto.
 
 ## Fechamento R4 local (histórico)
 
@@ -40,3 +40,11 @@ O seletor mobile foi corrigido para prevalecer sobre o padding global do piloto.
 O fechamento remoto depende de npm run test:all verde no head corrigido em Ubuntu/Node22. A [PR #94](https://github.com/GiuseppeBruno-Py/every-second-counts-app/pull/94) registrará run/SHA/resultado e a conclusão desse gate após execução. Este checkpoint não alega aprovação antecipada. Nenhuma migração, merge ou deploy.
 
 Lições adicionais: seletores :is contendo IDs participam da prioridade do CSS; conferir estilos efetivos, além de posição no arquivo. Um PASS com fonte do Windows não cobre métricas Ubuntu; verificar largura de cada palavra e incluir uma fonte genérica mais larga para reproduzir a regressão localmente.
+
+## Checkpoint R6 antes do push
+
+Run remoto37083591457 reprovou somente o stress com fonte genérica Ubuntu (96.328125px >88px); comparação nativa passou. Status remoto ainda depende de novo gate. Reduzido apenas padding lateral do cartão que contém o contexto no mobile; espaço textual100px, mantendo fonte de produção, alvos44px e margens externas. Stress ampliado para pelo menos aproximadamente97px mesmo no Windows, sem reduzir fonte16px no Ubuntu.
+
+Reprodução local2 FAIL antes; após ajuste20 PASS/0 FAIL, exit0, 56.6s. Capturas ampliadas desktop/mobile inspecionadas por Codex. JS/dados/cache/requisitos intactos. Este checkpoint preserva a observação local e não antecipa aprovação remota. A PR #94 registrará run/SHA/resultado do head R6 e fechamento canônico após conclusão.
+
+Lição: até fontes genéricas variam entre plataformas; normalizar a intensidade do stress aumentando a fonte nas métricas menores permite reproduzir o limite remoto localmente, mantendo a expectativa de legibilidade. Conferir o callsite do FAIL distingue a comparação nativa da fonte de stress.

@@ -1,7 +1,7 @@
 # Retornos da tentativa ao plano — Design
 
-**Status:** R5 built and verified locally; remote closure tracked in PR #94
-**Revisão:** 5
+**Status:** R6 built and verified locally; remote closure tracked in PR #94
+**Revisão:** 6
 **Data:** 2026-10-02
 **Define:** DEFINE.md validado, 15/15
 **Base:** origin/main@9bb97c3; codex/attempt-return-context
@@ -76,3 +76,13 @@ Cascade: DESIGN R5 -> CSS/browser test -> BUILD_REPORT R5 -> archive Design/Buil
 ## Evidência R5 local e gate de publicação
 
 Implementação limitada à prioridade do seletor mobile no CSS e ao teste de largura de todos os rótulos. npm test: 255 PASS/0 FAIL. Playwright focado: 20 PASS/0 FAIL (1.0m), incluindo os dois casos de zoom com fonte computada e fallback mais largo. Capturas desktop/mobile e zoom inspecionadas por Codex. Nenhum arquivo fora do manifesto. Este documento registra o checkpoint antes do push; fechamento remoto exige npm run test:all verde no novo head. A execução e o resultado finais serão registrados na [PR #94](https://github.com/GiuseppeBruno-Py/every-second-counts-app/pull/94), sem atribuir resultado futuro a esta evidência local.
+
+## Iteração R6 — maior métrica da fonte genérica Ubuntu
+
+Run37083591457 em315acb1: Node255 PASS, browser420 PASS/2 FAIL/24 SKIP, 18.9m. A comparação com a fonte padrão passou (linha149); ambas as falhas ocorreram no fallback da linha152: Esclarecer96.328125px > espaço88px. O CSS R5 corrigiu a causa original, mas a fonte genérica Ubuntu tem glifos mais largos que a genérica Windows (87.96875px). Status reaberto, sem alteração de DEFINE, dados ou fluxo.
+
+Plano dentro dos mesmos arquivos: no cartão .today-primary que contém o contexto, em <=480px manter padding vertical .5rem e reduzir apenas horizontal para .125rem. Recuperar12px de espaço textual, chegando a100px em viewport360/zoom200%, conservando margens externas, gap dos botões, padding interno4px, fontes de produção e alvos44px. Nenhuma mudança de layout global.
+
+Teste de stress mantém monospace com mínimo16px e aumenta proporcionalmente a fonte quando Esclarecer mede menos que97px. Isso reproduz no Windows o limite observado no CI; não reduz a fonte no Ubuntu nem relaxa expectativa. Todos os rótulos continuam medidos com fonte nativa e genérica. Primeiro exigir RED local em R5, depois GREEN R6 e os20 casos focados. Rodada completa Ubuntu no novo head continua obrigatória antes do handoff; publicar histórico e resultados reais na PR #94. Sem workflow/dependência/cache novos.
+
+Evidência R6: RED local2 FAIL (95.99578857421875px >88px) antes do ajuste; após CSS e stress97px, npm run build:test + Playwright focado20 PASS/0 FAIL, exit0, 56.6s. Capturas zoom desktop/mobile inspecionadas por Codex; palavra Esclarecer inteira. Node255 PASS no run canônico R5, módulos de produção JS intactos. Gate remoto do novo commit será registrado na PR #94 depois da execução.
