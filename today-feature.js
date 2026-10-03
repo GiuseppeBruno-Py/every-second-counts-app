@@ -7,6 +7,7 @@ const TODAY_FEATURE_VERSION = 2;
 state.data.dailyPlans = Array.isArray(state.data.dailyPlans) ? state.data.dailyPlans : [];
 let todayRestorePrimaryFocusAfterRender = false;
 let todayStartSmallBusy = false;
+let todayDismissedAttemptReturn = null;
 const todayRehearsalRuntime = { outcomeId:null, attemptId:null, refKey:null, trigger:null, starting:false, abandoned:false };
 const todayRehearsalFieldIds = ['todayRehearsalResult','todayRehearsalFirstAction','todayRehearsalDifficulty','todayRehearsalResponse'];
 labels.today = { title: 'Hoje', kicker: 'Próximas ações' };
@@ -178,6 +179,20 @@ function renderTodayPrimary(primary) {
   const activeCard = document.getElementById('todayActiveSession');
   const content = document.getElementById('todayPrimaryContent');
   if (!activeCard || !content) return;
+  const previousReturn=content.querySelector('.today-attempt-return');
+  const previousFocus=previousReturn?.contains(document.activeElement)?document.activeElement:null;
+  const previousAction=previousFocus?.dataset?.todayAttemptAdjust;
+  const returnContext=primary.kind==='capability'?capabilityContextModel.selectAttemptReturnContext(primary.resolved.outcome.id,state.data,{today:todayDateKey()}):null;
+  const showReturn=returnContext&&returnContext.signature!==todayDismissedAttemptReturn;
+  const sameReturn=showReturn&&previousReturn?.dataset.signature===returnContext.signature;
+  const restoreReturnFocus=()=>{
+    if(!previousFocus)return;
+    queueMicrotask(()=>{
+      const panel=content.querySelector('.today-attempt-return');
+      const target=sameReturn?previousAction?panel?.querySelector(`[data-today-attempt-adjust="${previousAction}"]`):panel?.querySelector('summary'):null;
+      if(target)target.focus();else todayFocusPrimary(primary);
+    });
+  };
   activeCard.hidden = primary.kind !== 'execution';
   content.hidden = primary.kind === 'execution';
   if (primary.kind === 'execution') {
@@ -186,15 +201,17 @@ function renderTodayPrimary(primary) {
     const finishing = active.session.state === 'finishing' || active.session.status === 'finishing';
     const small=active.type==='normal'&&sessionTimerModel.normalizeStartSmall(active.session.startSmall);
     activeCard.innerHTML = `<div class="today-session-copy"><span>${active.type === 'deep' ? 'Deep Work' : small ? 'Sessão normal · começo de 5 min' : 'Sessão normal'} ${finishing ? 'em encerramento' : 'em andamento'}</span><h3 id="todayPrimaryHeading">${escapeHtml(active.item?.title || 'Item removido')}</h3><small>${finishing ? 'Continue o encerramento antes de escolher outra ação.' : small&&sessionTimerModel.startSmallDue(active.session) ? 'Cinco minutos concluídos. Escolha como seguir no companheiro.' : active.session.state === 'paused' || active.session.status === 'paused' ? 'Pausada e pronta para retomar.' : 'Retome de onde parou.'}</small></div><button type="button" data-today-resume="${active.type}">${finishing ? 'Continuar encerramento' : 'Retomar sessão'}</button>`;
-    return;
+    restoreReturnFocus();return;
   }
   if (primary.kind === 'capability') {
     content.dataset.todayCapability = primary.resolved.outcome.id;
     const futureUse=learningOutcomeModel.futureUsePresentation(primary.resolved.outcome.nextAttempt?.futureUse);
     const recall=capabilityContextModel.selectRecentEvidence(primary.resolved.outcome.id,state.data);
     const recallHtml=recall?`<aside class="today-evidence-recall" aria-label="Uma evidência relacionada"><div><span>Uma evidência relacionada</span><small>${escapeHtml(todayEvidenceAge(recall.createdAt))}</small></div><blockquote>${escapeHtml(recall.summary)}</blockquote><button class="quiet-btn" type="button" data-today-open-evidence="${escapeHtml(recall.evidenceId)}" data-today-evidence-outcome="${escapeHtml(recall.outcomeId)}">Ver evidência</button></aside>`:'';
+    const returnHtml=showReturn?`<details class="today-attempt-return" data-signature="${escapeHtml(returnContext.signature)}"${sameReturn&&previousReturn.open?' open':''}><summary>Ajustar esta tentativa?</summary><p>Esta tentativa voltou ao plano em dias diferentes e continua sem conclusão marcada. Quer ajustá-la antes de tentar novamente?</p><div class="today-attempt-return-actions">${[['smaller','Tornar menor'],['firstStep','Esclarecer primeiro passo'],['context','Mudar contexto'],['environment','Preparar ambiente'],['benefit','Rever por que importa'],['keep','Manter como está']].map(([action,label])=>`<button class="quiet-btn" type="button" data-today-attempt-adjust="${action}">${label}</button>`).join('')}</div></details>`:'';
     content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima tentativa</div><h3 id="todayPrimaryHeading">${escapeHtml(primary.resolved.attemptText)}</h3><p>${escapeHtml(primary.resolved.outcome.capability)} · atual no seu plano</p>${futureUse?`<p class="today-future-use">Uso pretendido: ${escapeHtml(futureUse.label)}</p>`:''}${primary.resolved.outcome.benefit?`<p class="capability-benefit">Isso ajuda a: ${escapeHtml(primary.resolved.outcome.benefit)}</p>`:''}</div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-primary-start="${escapeHtml(primary.resolved.outcome.id)}">Iniciar agora</button><button class="secondary-btn" type="button" data-today-primary-small="${escapeHtml(primary.resolved.outcome.id)}" data-today-small-attempt="${escapeHtml(primary.resolved.outcome.nextAttempt.id)}">Começar por 5 min</button><button class="secondary-btn" type="button" data-today-primary-rehearse="${escapeHtml(primary.resolved.outcome.id)}">Ensaiar tentativa</button><button class="quiet-btn" type="button" data-today-primary-configure="${escapeHtml(primary.resolved.outcome.id)}">Ajustar sessão</button><button class="quiet-btn" type="button" data-today-open-capability="${escapeHtml(primary.resolved.outcome.id)}">Abrir capacidade</button><button class="quiet-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button><button class="quiet-btn remove" type="button" data-today-remove="${escapeHtml(primary.refKey)}">Remover do plano</button></div><p class="session-error" id="todayStartSmallError" role="alert" tabindex="-1" hidden></p>${recallHtml}`;
-    return;
+    content.insertAdjacentHTML('beforeend',returnHtml);
+    restoreReturnFocus();return;
   }
   delete content.dataset.todayCapability;
   if (primary.kind === 'action') {
@@ -203,9 +220,38 @@ function renderTodayPrimary(primary) {
     const detail = item ? `${item.title} · ${domainLabels[ref.domain] || 'Plano'}` : 'Ação manual independente';
     const primaryAction = item ? `<button class="primary-btn" type="button" data-today-primary-action data-today-open="${ref.domain}:${ref.itemId}">Abrir ação</button>` : `<button class="primary-btn" type="button" data-today-primary-action data-today-toggle="${escapeHtml(primary.refKey)}">Concluir ação</button>`;
     content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Próxima ação do plano</div><h3 id="todayPrimaryHeading">${escapeHtml(title)}</h3><p>${escapeHtml(detail)} · o Executar global apenas traz você até aqui.</p></div><div class="today-primary-actions">${primaryAction}${item ? `<button class="secondary-btn" type="button" data-today-toggle="${escapeHtml(primary.refKey)}">Concluir no plano</button>` : ''}</div>`;
-    return;
+    restoreReturnFocus();return;
   }
   content.innerHTML = `<div class="today-primary-copy"><div class="eyebrow">Comece pelo plano</div><h3 id="todayPrimaryHeading">Escolha a próxima ação</h3><p>Nenhuma ação executável está planejada. Nada será escolhido automaticamente.</p></div><div class="today-primary-actions"><button class="primary-btn" type="button" data-today-custom data-today-primary-action>${icon('plus')}Nova ação</button></div>`;
+  restoreReturnFocus();
+}
+
+function todayAdjustReturnedAttempt(trigger){
+  const primary=todayPrimaryState(),panel=trigger.closest('.today-attempt-return');
+  const context=primary.kind==='capability'?capabilityContextModel.selectAttemptReturnContext(primary.resolved.outcome.id,state.data,{today:todayDateKey()}):null;
+  if(!context||context.signature!==panel?.dataset.signature){renderToday();todayFocusPrimary(todayPrimaryState());showToast('A tentativa ou os registros do plano mudaram.');return}
+  const target=trigger.dataset.todayAttemptAdjust;
+  if(target==='keep'){todayDismissedAttemptReturn=context.signature;renderToday();todayFocusPrimary(primary);return}
+  if(target==='environment'){
+    todayStartCapability(context.capabilityRef.outcomeId,{trigger,expanded:true});
+    requestAnimationFrame(()=>{if(document.getElementById('sessionStartDialog')?.open)document.getElementById('ritualQuickSelect')?.focus()});
+    todayRestoreAdjustmentFocus(document.getElementById('sessionStartDialog'),context,target);
+    return;
+  }
+  if(CompassoFeatures.execute('capability.openAdjustment',{capabilityRef:context.capabilityRef,target,trigger})===true)todayRestoreAdjustmentFocus(document.getElementById('learningOutcomeDialog'),context,target);
+  else showToast('Não foi possível abrir o ajuste desta tentativa.');
+}
+
+function todayRestoreAdjustmentFocus(dialog,context,target){
+  if(!dialog?.open)return;
+  dialog.addEventListener('close',()=>requestAnimationFrame(()=>{
+    if(state.view!=='today')return;
+    const current=capabilityContextModel.selectAttemptReturnContext(context.capabilityRef.outcomeId,state.data,{today:todayDateKey()});
+    const panel=document.querySelector('.today-attempt-return');
+    if(current?.signature!==context.signature||panel?.dataset.signature!==context.signature)return;
+    // Escape also closes background disclosures; restore the still-valid opener.
+    panel.open=true;panel.querySelector(`[data-today-attempt-adjust="${target}"]`)?.focus();
+  }),{once:true});
 }
 
 function renderToday() {
@@ -384,7 +430,8 @@ CompassoFeatures.command('today.executePrimary',todayExecutePrimary);
 CompassoFeatures.command('today.openPrimary',todayOpenPrimary);
 CompassoFeatures.register('today',{order:10,afterRender:renderToday});
 CompassoFeatures.on('view:changed',({view})=>{
-  if(view==='today')return;
+  if(view==='today'){renderToday();return}
+  todayDismissedAttemptReturn=null;
   const dialog=document.getElementById('todayRehearsalDialog');
   // The abandoned opener is hidden; the route owns focus, not this preflight.
   if(dialog)delete dialog._dsOpener;
@@ -402,6 +449,7 @@ document.getElementById('todayRehearsalForm').addEventListener('submit',event=>{
 document.getElementById('todayRehearsalDialog').addEventListener('cancel',event=>{event.preventDefault();if(!todayRehearsalRuntime.starting)todayDiscardRehearsal()});
 document.getElementById('todayRehearsalDialog').addEventListener('close',()=>todayDiscardRehearsal({close:false,preservePending:true}));
 document.addEventListener('click', event => {
+  const attemptAdjustment=event.target.closest('[data-today-attempt-adjust]');if(attemptAdjustment)todayAdjustReturnedAttempt(attemptAdjustment);
   if (event.target.closest('[data-today-custom]')) openTodayDialog();
   if (event.target.closest('[data-today-close]')) document.getElementById('todayDialog').close();
   const add = event.target.closest('[data-today-add]');

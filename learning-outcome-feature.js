@@ -287,6 +287,9 @@ function outcomeOpen(outcome, trigger, options = {}) {
   outcomeElement('outcomeExecutablePanel').hidden = outcome?.status === 'archived';
   outcomeElement('outcomeExecutablePanel').open = false;
   outcomeElement('outcomePressurePanel').open = Boolean(options.pressure);
+  const adjustmentFields={smaller:'smallStart',firstStep:'smallStart',context:'startCue',benefit:'benefit'};
+  const adjustmentField=adjustmentFields[options.adjustment];
+  if(adjustmentField)outcomeElement(adjustmentField==='benefit'?'outcomeBenefitPanel':'outcomeExecutablePanel').open=true;
   outcomeUpdateFutureUseHint();
   form.querySelectorAll('[aria-invalid="true"]').forEach(field => field.removeAttribute('aria-invalid'));
   outcomeElement('learningOutcomeResourceOptions').innerHTML = outcomeResourceOptions(outcome?.resourceRefs || []);
@@ -295,7 +298,7 @@ function outcomeOpen(outcome, trigger, options = {}) {
   outcomeSetBusy(false);
   learningOutcomeRuntime.initialDraft = outcomeDraftSignature();
   dialog.showModal();
-  queueMicrotask(() => (options.pressure ? form.elements.pressureCondition : form.elements.capability).focus());
+  queueMicrotask(() => (adjustmentField?form.elements[adjustmentField]:options.pressure ? form.elements.pressureCondition : form.elements.capability).focus());
 }
 function outcomeClose(force = false) {
   const dialog = outcomeElement('learningOutcomeDialog');
@@ -583,6 +586,13 @@ function outcomeOpenEvidence({outcomeId,evidenceId}={}) {
 
 CompassoFeatures.command('learningSignal.open',payload=>outcomeOpenSignal(payload||{},payload?.trigger));
 CompassoFeatures.command('capability.openEvidence',outcomeOpenEvidence);
+CompassoFeatures.command('capability.openAdjustment',({capabilityRef,target,trigger}={})=>{
+  const ref=capabilityContextModel.normalizeCapabilityRef(capabilityRef),outcome=ref&&outcomeFind(ref.outcomeId);
+  if(!outcome||outcome.status!=='active'||outcome.nextAttempt.id!==ref.attemptId||outcome.nextAttempt.text.trim()!==ref.attemptText)return false;
+  if(!['smaller','firstStep','context','benefit'].includes(target)||learningOutcomeRuntime.busy||outcomeElement('learningOutcomeDialog')?.open)return false;
+  outcomeOpen(outcome,trigger,{adjustment:target});
+  return outcomeElement('learningOutcomeDialog')?.open===true;
+});
 
 CompassoFeatures.register('learning-outcomes', {
   order:68,

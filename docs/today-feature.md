@@ -94,3 +94,11 @@ Os planos são salvos em `state.data.dailyPlans`:
 - A central funciona em 360 px sem overflow horizontal.
 - O recall, quando existe, fica depois das ações principais, abre o registro exato e funciona offline.
 - O ensaio é opcional, descartável, acessível por teclado e inicia a mesma Session rápida online ou offline.
+
+## Retornos explícitos da tentativa ao plano
+
+Hoje pode mostrar **Ajustar esta tentativa?**, recolhido, apenas para a tentativa principal atual. A observação descreve planos registrados sem conclusão marcada; não afirma ausência de trabalho nem classifica procrastinação. Exige três dias anteriores distintos nos últimos 14 dias e uma referência atual hoje, com o mesmo ID e texto, após a última edição. Hoje não conta no limiar. IDs copiados, campos incompletos, datas incoerentes, conflitos relevantes, conclusão ou qualquer execução vinculada (inclusive interrompida) suprimem a observação. Ausência de Session sozinha não produz indicação. Limiar conservador é decisão de produto, sem eficácia comportamental comprovada.
+
+Dentro da seção, **Tornar menor** e **Esclarecer primeiro passo** abrem o primeiro passo no auxiliar existente; **Mudar contexto** abre a condição de início; **Rever por que importa** abre o benefício. O usuário aplica e salva pelo editor atual. **Preparar ambiente** abre a configuração opcional no seletor de Ritual; escolher preparação e iniciar continuam explícitos. Abrir e cancelar não gravam dados. **Manter como está** oculta durante a visita a Hoje, sem preferência persistida; sair da vista ou recarregar permite reavaliação. O disclosure aberto e seu foco sobrevivem a rerender enquanto os registros permanecem iguais; cliques são revalidados.
+
+Nenhum campo, coleção, contador ou snapshot novo. Selector puro `selectAttemptReturnContext` deriva contexto dos registros existentes; backup, restore e storage mantêm seus contratos. Manifesto candidato `compasso-pages-v93`. Rollback usa geração futura, sem apagar dados. Mudança de fuso/relógio e conflitos históricos podem impedir indicação; falsos negativos são preferíveis a conclusões sem evidência.
