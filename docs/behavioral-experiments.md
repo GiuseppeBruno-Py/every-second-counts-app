@@ -16,4 +16,12 @@ Ao revisar, registre o que de fato aconteceu e decida **Manter**, **Ajustar** ou
 
 `behavioralExperiments` é uma coleção local aditiva de registros `schemaVersion: 1`, vinculados ao snapshot de `capabilityRef`. Registros históricos continuam legíveis se a capacidade for arquivada, editada ou removida. Somente capacidades ativas podem iniciar novos planos. A coleção usa a persistência existente (IndexedDB ou fallback localStorage), o backup/restauração JSON completo e o merge por timestamp/tombstone do estado v3. Backups antigos sem a coleção carregam `[]`. Não há nova object store ou versão de banco.
 
-O Service Worker usa os módulos e assets declarados em `app-manifest.js`, geração `compasso-pages-v86`; não há dependência de rede para criar ou revisar depois que o app foi carregado/cacheado. Em rollback após exposição, publique uma geração posterior que preserve a coleção no estado e nos backups, mesmo que a interface seja desabilitada. Não limpe armazenamento local ou backups.
+O Service Worker usa os módulos e assets declarados em `app-manifest.js`, geração definida pelo manifesto; não há dependência de rede para criar ou revisar depois que o app foi carregado/cacheado. Em rollback após exposição, publique uma geração posterior que preserve a coleção no estado e nos backups, mesmo que a interface seja desabilitada. Não limpe armazenamento local ou backups.
+
+## Exemplos opcionais ao criar
+
+Em **Novo experimento**, abra **Começar com um exemplo (opcional)** e escolha Ambiente, Redução de escopo ou Gatilho contextual. **Aplicar exemplo** preenche somente os quatro textos: hipótese, prática, resultado esperado e plano de evidência. Não altera capacidade, início ou revisão e não grava dados. Adapte o exemplo à sua situação; no gatilho, X é o evento recorrente e Y a ação escolhida.
+
+Textos já preenchidos são preservados por padrão. Marque **Substituir os quatro textos do rascunho** se quiser trocá-los explicitamente. Todos continuam editáveis. **Salvar experimento** cria o registro normal; não existe templateId, subclasse ou resultado presumido. Cancelar, Escape ou recarregar descarta o rascunho; reabrir limpa a escolha. Edição e revisão de registros existentes não exibem esse auxiliar.
+
+Os mesmos limites, validação, bloqueio durante save e rollback/retry continuam valendo. Registros gerados pelo exemplo usam schema1, backup e persistência existentes e funcionam offline. O cache avança para geração95 para distribuir modelo/UI/CSS atualizados. Esta entrega7 foi explicitamente autorizada após Gate2, sem evidência nova de uso pessoal; entrega8 não está incluída.

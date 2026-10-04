@@ -25,6 +25,16 @@ function behavioralExperimentInstall(){
         <div class="learning-outcome-dialog-head"><div><div class="eyebrow">Prática e evidência</div><h2 id="behavioralExperimentDialogTitle">Novo experimento</h2></div><button class="icon-btn" type="button" data-experiment-cancel aria-label="Fechar">${icon('x')}</button></div>
         <div class="learning-outcome-form" id="behavioralExperimentPlanFields">
           <label for="behavioralExperimentCapability">Capacidade</label><select id="behavioralExperimentCapability" name="capabilityId"></select>
+          <details id="behavioralExperimentTemplates" class="behavioral-experiment-templates">
+            <summary>Começar com um exemplo (opcional)</summary>
+            <div class="experiment-template-body">
+              <p id="experimentTemplateHint">Use como ponto de partida. Adapte os quatro textos à sua situação; no gatilho contextual, troque X e Y pelo evento e pela ação. Aplicar apenas preenche o rascunho.</p>
+              <label for="experimentTemplateChoice">Exemplo</label><select id="experimentTemplateChoice" aria-describedby="experimentTemplateHint"><option value="">Selecione</option>${behavioralExperimentModel.TEMPLATES.map(item=>`<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}</option>`).join('')}</select>
+              <label class="experiment-template-replace" for="experimentTemplateReplace"><input id="experimentTemplateReplace" type="checkbox">Substituir os quatro textos do rascunho</label>
+              <button id="experimentTemplateApply" class="secondary-btn" type="button">Aplicar exemplo</button>
+              <p id="experimentTemplateStatus" role="status" aria-live="polite"></p>
+            </div>
+          </details>
           <label for="behavioralExperimentHypothesis">Hipótese: se eu fizer X…</label><textarea id="behavioralExperimentHypothesis" name="hypothesis" maxlength="1000"></textarea>
           <label for="behavioralExperimentPractice">Prática: o que será repetido?</label><textarea id="behavioralExperimentPractice" name="practice" maxlength="1000"></textarea>
           <label for="behavioralExperimentExpected">Resultado esperado: o que espero observar?</label><textarea id="behavioralExperimentExpected" name="expectedOutcome" maxlength="1000"></textarea>
@@ -46,11 +56,25 @@ function behavioralExperimentInstall(){
     </dialog>`);
   const form=behavioralExperimentElement('behavioralExperimentForm');
   form?.addEventListener('submit',behavioralExperimentSubmit);
+  behavioralExperimentElement('experimentTemplateApply')?.addEventListener('click',behavioralExperimentApplyTemplate);
   form?.elements.startDate.addEventListener('change',behavioralExperimentUpdateDate);
   form?.elements.preset.addEventListener('change',behavioralExperimentUpdateDate);
   form?.elements.reviewDate.addEventListener('change',()=>{form.elements.preset.value='custom'});
   behavioralExperimentElement('behavioralExperimentDialog')?.addEventListener('cancel',event=>{event.preventDefault();behavioralExperimentClose()});
   behavioralExperimentElement('behavioralExperimentDialog')?.addEventListener('click',event=>{if(event.target===event.currentTarget)behavioralExperimentClose()});
+}
+function behavioralExperimentApplyTemplate(){
+  if(behavioralExperimentRuntime.busy||behavioralExperimentRuntime.mode!=='create')return;
+  const form=behavioralExperimentElement('behavioralExperimentForm'),choice=behavioralExperimentElement('experimentTemplateChoice');
+  try{
+    const draft=Object.fromEntries(behavioralExperimentModel.TEMPLATE_FIELDS.map(field=>[field,form.elements[field].value]));
+    const replace=behavioralExperimentElement('experimentTemplateReplace').checked;
+    const next=behavioralExperimentModel.templateDraft(choice.value,draft,{replace});
+    for(const field of behavioralExperimentModel.TEMPLATE_FIELDS){form.elements[field].value=next[field];form.elements[field].removeAttribute('aria-invalid')}
+    choice.removeAttribute('aria-invalid');behavioralExperimentError();
+    behavioralExperimentElement('experimentTemplateStatus').textContent=replace?'Exemplo aplicado aos quatro textos. Confira e edite antes de salvar.':'Exemplo aplicado aos campos vazios. Textos preenchidos foram preservados; use a opção de substituir para trocá-los.';
+    form.elements.hypothesis.focus();
+  }catch(error){behavioralExperimentError(error.message,choice)}
 }
 function behavioralExperimentRender(){
   const list=behavioralExperimentElement('behavioralExperimentList');
@@ -94,6 +118,7 @@ function behavioralExperimentOpen(mode,id,trigger){
   if(!form||!dialog)return;
   form.reset();form.querySelectorAll('[aria-invalid]').forEach(field=>field.removeAttribute('aria-invalid'));
   behavioralExperimentError();
+  const templates=behavioralExperimentElement('behavioralExperimentTemplates');templates.hidden=mode!=='create';templates.open=false;behavioralExperimentElement('experimentTemplateStatus').textContent='';
   behavioralExperimentRuntime.mode=mode;behavioralExperimentRuntime.id=id||null;behavioralExperimentRuntime.returnFocus=trigger||null;
   const plan=mode!=='review';
   behavioralExperimentElement('behavioralExperimentPlanFields').hidden=!plan;

@@ -7,6 +7,18 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(context){
   const DECISIONS=Object.freeze(['keep','adjust','abandon']);
   const PRESETS=Object.freeze([7,14,21,30]);
+  const TEMPLATE_FIELDS=Object.freeze(['hypothesis','practice','expectedOutcome','evidencePlan']);
+  const TEMPLATES=Object.freeze([
+    {id:'environment',label:'Ambiente',hypothesis:'Se eu deixar o celular fora do cômodo, vou interromper menos as sessões.',practice:'Celular fora do cômodo durante a sessão.',expectedOutcome:'Menos interrupções para buscar o celular durante as sessões.',evidencePlan:'Número de sessões concluídas sem buscar o celular.'},
+    {id:'scope',label:'Redução de escopo',hypothesis:'Se eu reduzir a tentativa para uma ação menor, vou começar com menos adiamento.',practice:'Converter uma tarefa grande em uma ação de até 10 minutos.',expectedOutcome:'Começar a ação menor no contexto planejado.',evidencePlan:'Se comecei no contexto planejado.'},
+    {id:'context',label:'Gatilho contextual',hypothesis:'Se eu ligar a ação a um evento recorrente, vou depender menos de lembrar/decidir.',practice:'Depois de X, executar Y.',expectedOutcome:'Começar a ação após o evento recorrente escolhido.',evidencePlan:'Ocorrências em que comecei após o gatilho planejado.'}
+  ].map(template=>Object.freeze(template)));
+  function templateDraft(id,draft={},options={}){
+    const template=TEMPLATES.find(item=>item.id===id);
+    if(!template)throw failure('template-invalid','Escolha um exemplo disponível.');
+    return Object.fromEntries(TEMPLATE_FIELDS.map(field=>[field,!options.replace&&typeof draft[field]==='string'&&draft[field].trim()?draft[field]:template[field]]));
+  }
+
   const clean=value=>typeof value==='string'?value.trim():'';
   const clone=value=>value==null?value:JSON.parse(JSON.stringify(value));
   const iso=value=>typeof value==='string'&&!Number.isNaN(Date.parse(value))?value:'';
@@ -86,5 +98,5 @@
     sync.updatedAt=now;
     return{...state,behavioralExperiments:items.filter(item=>item.id!==key),_sync:sync};
   }
-  return Object.freeze({DECISIONS,PRESETS,date,reviewDateForPreset,normalize,normalizeCollection,create,update,review,deleteFromState});
+  return Object.freeze({DECISIONS,PRESETS,TEMPLATES,TEMPLATE_FIELDS,templateDraft,date,reviewDateForPreset,normalize,normalizeCollection,create,update,review,deleteFromState});
 });

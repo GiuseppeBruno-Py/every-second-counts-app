@@ -2156,3 +2156,21 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
   #weeklyView .weekly-closure:has(.weekly-friction) { padding-inline: .25rem; }
   #weeklyView .weekly-friction-body, #weeklyView .weekly-friction > summary { padding-inline: .25rem; }
 }
+
+/* Optional examples belong to the existing experiment form. */
+#behavioralExperimentTemplates { min-width: 0; border: 1px solid var(--line); border-radius: .75rem; }
+#behavioralExperimentTemplates > summary { min-height: 44px; padding: .5rem; color: var(--text); cursor: pointer; font-weight: 700; overflow-wrap: anywhere; }
+#behavioralExperimentTemplates .experiment-template-body { display: grid; gap: .5rem; min-width: 0; padding: .5rem; }
+#behavioralExperimentTemplates p { margin: 0; color: var(--text); font-size: .85rem; line-height: 1.6; overflow-wrap: anywhere; }
+#behavioralExperimentTemplates :is(select,button) { width: 100%; min-width: 0; min-height: 44px; white-space: normal; overflow-wrap: anywhere; }
+#behavioralExperimentTemplates button { padding-inline: .25rem; }
+#behavioralExperimentTemplates .experiment-template-replace { display: flex; align-items: center; gap: .5rem; min-height: 44px; color: var(--text); }
+#behavioralExperimentTemplates input[type="checkbox"] { flex: 0 0 auto; width: 24px; height: 24px; }
+#behavioralExperimentTemplates :focus-visible { outline: 3px solid var(--ds-color-focus,var(--violet)); outline-offset: 3px; }
+
+#behavioralExperimentDialog { width: min(46rem, calc(100% - 1rem)) !important; max-width: calc(100% - 1rem) !important; }
+
+@media (max-width: 480px) {
+  #behavioralExperimentDialog .learning-outcome-dialog-foot { display: grid; grid-template-columns: minmax(0, 1fr); padding: .5rem; }
+  #behavioralExperimentDialog .learning-outcome-dialog-foot button { width: 100%; padding-inline: .25rem; }
+}
