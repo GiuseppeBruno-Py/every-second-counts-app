@@ -146,3 +146,15 @@ As revisões são persistidas no IndexedDB, mantidas no fallback local e incluí
 - criação automática de nota Markdown;
 - revisão espaçada das evidências;
 - sincronização entre dispositivos.
+
+## Ajuda opcional para uma dificuldade de início
+
+Abra **Rever uma dificuldade de início (opcional)** no fechamento semanal. Informe a tarefa ou tentativa evitada/adiada; então aparecem a dificuldade percebida (opcional) e o ajuste concreto a testar. Nada é deduzido das sessões ausentes. A tarefa aceita até 240 caracteres; ajuste e campos finais aceitam até 600, sem truncamento silencioso.
+
+**Usar ajuste na revisão** acrescenta o relato aos bloqueios e o ajuste à decisão, preservando o texto existente e evitando duplicação na reaplicação. É possível escolher uma capacidade ativa, mesmo sem execução nesta semana: seu cartão recebe a tentativa atual, a opção de revisar e o ajuste como proposta da próxima tentativa. Confira e edite os textos e a decisão; pode escolher manter a tentativa. O histórico de execuções continua intacto.
+
+Aplicar prepara o rascunho; **Concluir revisão** confirma sua gravação junto às decisões por capacidade. Respostas ainda não aplicadas exigem aplicar ou **Limpar campos da ajuda** antes de concluir. Limpar ou apagar a resposta inicial remove apenas as respostas auxiliares; não desfaz textos já aplicados. Trocar de semana ou recarregar descarta a ajuda transitória. Novas renderizações na mesma semana preservam o rascunho em uso.
+
+Se a capacidade mudou, foi arquivada/removida ou ficou ambígua, a gravação é bloqueada para conferir e reaplicar à tentativa atual. Durante a gravação, os controles ficam indisponíveis para evitar reentrada. Uma falha restaura o estado anterior e o rascunho para retry.
+
+Não há nova entidade, coleção ou schema: os dados salvos usam bloqueios, decisão e reflexões/tentativas existentes. Revisões antigas continuam legíveis; IndexedDB, fallback, backup e acesso offline mantêm esses dados. O módulo local pertence ao manifesto, com cache v94. A avaliação do Gate 2 está em `.sdd/reports/anti-procrastination/GATE_2.md`; resultados de testes não demonstram benefício em uso pessoal.
