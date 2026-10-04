@@ -5,7 +5,7 @@
 **Worktree:** C:/Users/Giuse/.codex/worktrees/anti-procrastination-discovery/every-second-counts-app
 **Branch:** codex/behavioral-experiment-templates
 **Base:** db3fd0760edbdb3d1db665d48beac2a05d2ee86e (PR95 mesclada)
-**Design:** Revision2; manifesto de14 arquivos, sem expansão.
+**Design:** Revision3; manifesto de15 arquivos; expansão controlada R3 somente fixture de regressão.
 
 ## Resultado e decisões
 
@@ -56,4 +56,10 @@ Sem migração ou alteração de dados existentes. IndexedDB/localStorage, backu
 
 ## Fechamento
 
-Regressão completa aprovada. Design revision2 e manifesto14 arquivos conferidos; arquivo copy-only preserva working copies. Diff/check staged verificados antes do commit. Commit/push/PR autorizados pelo pedido até próxima PR; CI canônico no head final será registrado na descrição da PR, sem commit documental após execução. Checkout original com trabalho não rastreado preservado.
+Regressão completa aprovada. Design revision3 e manifesto15 arquivos conferidos; arquivo copy-only preserva working copies. Diff/check staged verificados antes do commit. Commit/push/PR autorizados pelo pedido até próxima PR; CI canônico no head final será registrado na descrição da PR, sem commit documental após execução. Checkout original com trabalho não rastreado preservado.
+
+## Iteração R3 — CI com retry
+
+CI37188422409 success,268 Node pass/0 fail,465 browser pass/24 skips/1 flaky (21.2m). Falha inicial de foco em capability-context-flows:149, fora dos novos templates; novos16 casos passaram de primeira. Design atualizado antes de editar fixture, manifesto15. Reabrir Build/Ship para corrigir espera/foco e executar focused/CI sem falha. Produto/DEFINE/schema inalterados; evidência local anterior continua válida para arquivos não modificados.
+
+R3 local: `npx playwright test tests/browser/capability-context-flows.spec.js --retries=0` exit0,26 pass/0 fail/0 skipped,1.1m. `npx playwright test tests/browser/capability-context-flows.spec.js --grep "controles críticos" --repeat-each=3 --retries=0` exit0,6 pass/0 fail,11.9s. Não foi repetida a regressão local inteira após esta única mudança de fixture: evidência dos arquivos de produto/Node permaneceu válida; o CI completo será repetido no novo head e seu resultado registrado na PR. Nenhum timeout/retry adicional ou supressão de assertion. Build/Ship revalidados contra Design R3; próxima etapa operacional é CI no head final.

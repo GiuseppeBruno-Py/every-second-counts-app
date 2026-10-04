@@ -7,7 +7,7 @@
 
 ## Aceite e evidências
 
-AC01–09 satisfeitos conforme matriz do BUILD_REPORT. Define15/15, Design revision2 e14 arquivos; sem desvios de escopo. `npm run test:all` exit0:268 Node pass/0 fail;466 browser pass,24 skips preexistentes,0 fail/0 flaky,16.8m. Focused28 pass/58.0s sem retries. Capturas desktop/mobile/zoom inspecionadas por Codex; correção geométrica R2 remove corte e mantém rodapé legível. Sem snapshots alterados. CI Ubuntu/Node22 no head final é gate operacional da PR; consultar descrição/Checks para resultado final.
+AC01–09 satisfeitos conforme matriz do BUILD_REPORT. Define15/15, Design revision3 e15 arquivos; sem desvios de escopo. `npm run test:all` exit0:268 Node pass/0 fail;466 browser pass,24 skips preexistentes,0 fail/0 flaky,16.8m. Focused28 pass/58.0s sem retries. Capturas desktop/mobile/zoom inspecionadas por Codex; correção geométrica R2 remove corte e mantém rodapé legível. Sem snapshots alterados. CI Ubuntu/Node22 no head final é gate operacional da PR; consultar descrição/Checks para resultado final.
 
 ## Dados e limites
 
@@ -23,3 +23,7 @@ Exemplos opcionais só preenchem quatro textos editáveis, sem persistir escolha
 ## Arquivo e próximo passo
 
 Copy-only: Define, Design e Build copiados, statuses Shipped; fontes conservadas. Cópias UTF8 legíveis verificadas. Ship é fechamento SDD; pedido autoriza commit/push/nova PR e verificação CI, sem merge/deploy. Próximo passo válido: revisão da PR após CI canônico verde. Checkout original preservado. Rollback após exposição exige geração posterior e preservação de dados.
+
+## Revalidação R3
+
+CI anterior37188422409 teve268 Node pass e465 browser pass/24 skips/1 flaky,21.2m. O retry em capability-context-flows:149 invalidou estabilidade do aceite de regressão. Iteração R3 adicionou apenas esta fixture ao manifesto: shell coherent, scroll e foco confirmado antes do Enter nativo. Arquivo completo26 pass/1.1m e cenário repetido3 vezes por perfil6 pass/11.9s, ambos sem retries. Produto/schema/DEFINE inalterados; evidência local268/466 continua válida para código inalterado. Novo CI completo no head final é gate operacional, com contadores reais na PR; nenhum sucesso sem retry é presumido antes da conclusão.

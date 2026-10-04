@@ -1,7 +1,7 @@
 # Templates de Experimentos Comportamentais — Design
 
 **Status:** Complete (Built)
-**Revisão:** 2
+**Revisão:** 3
 **Data:** 2026-10-04
 **Define:** clareza15/15
 **Worktree:** C:/Users/Giuse/.codex/worktrees/anti-procrastination-discovery/every-second-counts-app
@@ -27,6 +27,7 @@ Alternativas rejeitadas: nova entidade/engine (duplica dono), substituição aut
 | app-manifest.js | Modificar geração95 | AC09 | modelo/UI/CSS |
 | tests/behavioral-experiment-templates.test.js | Criar contratos puros e schema | AC02–04,09 | modelo/manifesto |
 | tests/browser/behavioral-experiment-templates-flows.spec.js | Criar fluxos e evidência visual/offline | AC01–08 | modelo/UI/CSS/manifesto |
+| tests/browser/capability-context-flows.spec.js | Modificar espera do shell/foco nativo após falha intermitente CI | AC08, regressão | lifecycle existente |
 | docs/behavioral-experiments.md | Modificar uso/compatibilidade | AC01–09 | modelo/UI |
 | .sdd/features/behavioral-experiment-templates/DEFINE.md | Criar requisitos/status | AC01–09 | demanda/roadmap |
 | .sdd/features/behavioral-experiment-templates/DESIGN.md | Criar design/status | AC01–09 | DEFINE |
@@ -45,3 +46,7 @@ Node: três catálogos/editabilidade/immutability/limites/unknown/preserve/repla
 ## Iteração R2 — zoom revelado pela inspeção
 
 2026-10-04, Modifying em CSS/evidência AC08 dentro do manifesto. Capturas R1 mostram diálogo cortado à direita em body zoom2 apesar de scrollWidth do documento e medida interna de palavras passarem. Invalidar aceite visual R1 e interromper regressão iniciada. Ajustar somente largura/max-width do behavioralExperimentDialog usando percentual do containing block, não vw que ignora zoom herdado. Reforçar browser com bounding boxes do diálogo/controle dentro do viewport físico e reinspecionar capturas. DEFINE intacto; outros AC/testes R1 continuam válidos, focused e regressão serão refeitos após correção. Sem novos arquivos/schema/runtime styles.
+
+## Iteração R3 — foco intermitente da regressão CI
+
+2026-10-04, Modifying em evidência/fixture AC08. CI37188422409 teve exit0 e268 Node,465 browser pass/24 skips/1 flaky (21.2m): teste existente capability-context-flows:149 recebeu textarea inactive no primeiro Enter e passou no retry. Não aceitar retry como estabilidade demonstrada. Expandir manifesto14→15 apenas para fixture existente. Aguardar lifecycle coherent em open, scroll/foco/assert antes de Enter; preservar ativação nativa, sem timeout maior ou click substituto. DEFINE e produto inalterados; Build/Ship reabertos para evidência final. Reusar Node/full local válidos (produção não mudou); rodar arquivo completo afetado sem retries e foco repetido3 vezes por perfil. CI canônico completo no novo head. Arquivos de archive atualizados após validação, working copies retidos.
