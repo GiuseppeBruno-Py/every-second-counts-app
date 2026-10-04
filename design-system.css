@@ -2174,3 +2174,20 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
   #behavioralExperimentDialog .learning-outcome-dialog-foot { display: grid; grid-template-columns: minmax(0, 1fr); padding: .5rem; }
   #behavioralExperimentDialog .learning-outcome-dialog-foot button { width: 100%; padding-inline: .25rem; }
 }
+
+/* Importance reflection reuses the capability editor and its existing actions. */
+#outcomeImportancePanel { min-width: 0; border: 1px solid var(--line); border-radius: .75rem; }
+#outcomeImportancePanel > summary { min-height: 44px; padding: .5rem; color: var(--text); cursor: pointer; font-weight: 700; overflow-wrap: anywhere; }
+#outcomeImportancePanel .outcome-importance-body { display: grid; gap: .5rem; min-width: 0; padding: .5rem; }
+#outcomeImportancePanel p { margin: 0; color: var(--text); font-size: .85rem; line-height: 1.6; overflow-wrap: anywhere; }
+#outcomeImportancePanel :is(select,button) { width: 100%; min-width: 0; min-height: 44px; white-space: normal; overflow-wrap: anywhere; }
+#outcomeImportancePanel button { padding-inline: .25rem; }
+#outcomeImportancePanel :focus-visible { outline: 3px solid var(--ds-color-focus,var(--violet)); outline-offset: 3px; }
+#learningOutcomeDialog { width: min(46rem, calc(100% - 1rem)) !important; max-width: calc(100% - 1rem) !important; max-height: calc(100% - 1rem) !important; }
+@media (max-width: 480px) {
+  #learningOutcomeDialog .learning-outcome-dialog-foot { display: grid; grid-template-columns: minmax(0, 1fr); padding: .5rem; position: static; }
+  #learningOutcomeDialog .learning-outcome-dialog-foot > span { display: none; }
+  #learningOutcomeDialog .learning-outcome-dialog-foot button { width: 100%; padding-inline: .25rem; }
+}
+
+#outcomeImportancePanel[hidden], #outcomeImportanceAction[hidden] { display: none !important; }
