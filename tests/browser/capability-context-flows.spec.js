@@ -6,7 +6,7 @@ async function open(page,view='capabilities'){
   await page.addInitScript(()=>localStorage.setItem('compasso.ux.mode.v1','advanced'));
   await page.addInitScript(()=>{globalThis.CompassoDriveSync||={prepareLocalState(input){return{data:structuredClone(input),baseline:new Map()}},activateLocalState(){}};});
   await page.goto(`/?view=${view}`,{waitUntil:'domcontentloaded'});
-  await page.waitForFunction(()=>globalThis.CompassoFeatures?.installed&&globalThis.CompassoCapabilityContextModel);
+  await page.waitForFunction(()=>globalThis.CompassoFeatures?.installed&&globalThis.CompassoCapabilityContextModel&&globalThis.CompassoPwaLifecycle?.snapshot().coherent);
   return external;
 }
 async function createCapability(page,values={}){
@@ -147,7 +147,7 @@ test('backup e canários de Notes/vault/Relations preservam dados sem dependênc
 });
 
 test('controles críticos mantêm foco, toque e geometria em mobile e 200% zoom',async({page},testInfo)=>{
-  await open(page);const card=await createCapability(page,{capability:'Uma capacidade '.repeat(30),attempt:'Uma tentativa '.repeat(35)});await card.locator('[data-signal-new]').last().focus();await page.keyboard.press('Enter');await expect(page.locator('#learningSignalText')).toBeFocused();await page.keyboard.press('Escape');await expect(card.locator('[data-signal-new]').last()).toBeFocused();
+  await open(page);const card=await createCapability(page,{capability:'Uma capacidade '.repeat(30),attempt:'Uma tentativa '.repeat(35)});await card.locator('[data-signal-new]').last().scrollIntoViewIfNeeded();await card.locator('[data-signal-new]').last().focus();await expect(card.locator('[data-signal-new]').last()).toBeFocused();await page.keyboard.press('Enter');await expect(page.locator('#learningSignalText')).toBeFocused();await page.keyboard.press('Escape');await expect(card.locator('[data-signal-new]').last()).toBeFocused();
   await page.evaluate(()=>{document.documentElement.style.zoom='2'});const geometry=await page.evaluate(()=>({page:document.documentElement.scrollWidth,viewport:document.documentElement.clientWidth}));expect(geometry.page).toBeLessThanOrEqual(geometry.viewport+1);await page.evaluate(()=>{document.documentElement.style.zoom=''});
   if(testInfo.project.name==='mobile'){const targets=await card.locator('button').evaluateAll(buttons=>buttons.filter(button=>button.offsetParent!==null).map(button=>{const box=button.getBoundingClientRect();return{name:button.textContent.trim()||button.getAttribute('aria-label'),w:box.width,h:box.height}}));expect(targets.length).toBeGreaterThan(0);expect(targets.filter(box=>box.w<44||box.h<44)).toEqual([])}
 });
