@@ -34,7 +34,7 @@ Autorização do usuário para continuar até próxima PR em04/10 permite avanç
 - `npm run build:test`: exit0.
 - `npx playwright test tests/browser/behavioral-experiment-templates-flows.spec.js tests/browser/behavioral-experiment-flows.spec.js --retries=0`: R1 exit0,28 pass/57.2s, mas inspeção invalidou AC08 visual.
 - Mesmo comando R2: exit0,28 pass/58.0s,0 fail,0 flaky,0 skipped. TEMP compasso-templates-focused-r2.log.
-- `npm run test:all`: execução final em andamento; TEMP compasso-templates-final-r2.log e compasso-templates-final-r2-exit.txt. Aceito após exit0 e conferência dos contadores.
+- `npm run test:all`: exit0:268 Node pass/0 fail (821.2415ms),466 browser pass/24 skips preexistentes/0 fail/0 flaky (16.8m); TEMP compasso-templates-final-r2.log e compasso-templates-final-r2-exit.txt. Aceito após exit0 e conferência dos contadores.
 - Sem lint/typecheck configurados. CI canônico Ubuntu/Node22 será verificado no head da PR, resultado operacional na descrição da PR.
 
 ## Inspeção visual e iteração
