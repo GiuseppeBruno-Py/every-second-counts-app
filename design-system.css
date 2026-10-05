@@ -2185,6 +2185,7 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
 #outcomeImportancePanel :focus-visible { outline: 3px solid var(--ds-color-focus,var(--violet)); outline-offset: 3px; }
 #learningOutcomeDialog { width: min(46rem, calc(100% - 1rem)) !important; max-width: calc(100% - 1rem) !important; max-height: calc(100% - 1rem) !important; }
 @media (max-width: 480px) {
+  #outcomeImportancePanel .outcome-importance-body { padding-inline: .25rem; }
   #learningOutcomeDialog .learning-outcome-dialog-foot { display: grid; grid-template-columns: minmax(0, 1fr); padding: .5rem; position: static; }
   #learningOutcomeDialog .learning-outcome-dialog-foot > span { display: none; }
   #learningOutcomeDialog .learning-outcome-dialog-foot button { width: 100%; padding-inline: .25rem; }

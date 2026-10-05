@@ -1,10 +1,10 @@
 # Revisão mínima de importância — Build
 
-**Status:** Complete (Built)
+**Status:** Complete (Built; operational CI pending)
 **Data:**2026-10-04
 **Worktree:**C:/Users/Giuse/.codex/worktrees/anti-procrastination-discovery/every-second-counts-app
 **Branch/base:**codex/capability-importance-review /386072d40970980c7d85f259cf8be4734d64a03e (PR96 mesclada)
-**Design:**Revision2, manifesto12 arquivos. Sem mudanças fora do manifesto.
+**Design:**Revision3, manifesto12 arquivos. Sem mudanças fora do manifesto.
 
 ## Entendimento e implementação
 
@@ -53,3 +53,11 @@ Sem migração/schema novo ou coleta remota. Arquivamento preserva nextAttempt/h
 AC01–09 satisfeitos, Define15/15, Design Revision2/manifesto12 arquivos comparados ao diff; evidência final-r4 aprovada. Build/Ship copy-only conserva fontes. Diff/staged check e arquivos UTF8/CRLF conferidos antes de commit. Pedido autoriza commit/push/PR e CI canônico no head final; resultado operacional será registrado na PR. Sem merge/deploy.
 
 Revisão final: lookup das respostas exige own property; fixture verifica invalid/constructor/__proto__. Ensaio específico `npx playwright test tests/browser/capability-importance-flows.spec.js --grep "optional answers" --retries=0` exit0,2 pass/0 fail,8.2s. Regressão inicial iniciada após focused foi abortada antes do gate para executar esta correção; runner/log/exit final-r4 são novos. Somente árvore do processo de teste identificado encerrada; sem limpeza de dados.
+
+## Reabertura por CI — 2026-10-05
+
+CI37241665144 em dfbba31 falhou:268 Node pass/0 fail;480 browser pass/24 skips/2 fail,22.3m; AC08 largura em zoom falhou nos dois perfis e retries (94px disponíveis versus96.328125px exigidos). Fechamento anterior e evidência AC08 Linux invalidados. Design R3 limita correção ao padding interno da ajuda em tela estreita; focused/capturas/CI final pendentes. Requisitos e demais evidências preservados como histórico, sem falsa conclusão verde.
+
+## Validação R3 e fechamento local
+
+2026-10-05: correção exclusiva do padding-inline da body da ajuda, .25rem em max-width480px; preservados teste/assertion, fonte, alvo44 e demais fluxos. `npm run build:test` exit0; `npx playwright test tests/browser/capability-importance-flows.spec.js tests/browser/learning-outcome-flows.spec.js --retries=0` exit0:35 pass/1 skip preexistente/0 fail/0 flaky,1.2m. AC08 local revalidado; quatro capturas regeneradas inspecionadas por Codex. AC01–07/09 permanecem cobertos pelo focused fresco e contratos de full-r4; full-r4 é histórico do head anterior, não suíte completa desta correção. A única mudança de produto após dfbba31 é uma regra CSS no manifesto. CI canônico `npm run test:all` Linux no novo head continua gate operacional da PR, com resultado/link na descrição/Checks; nenhuma alegação de CI aprovada antes do resultado. Fechamento SDD local copy-only, sem merge/deploy. Lição adicional: métricas de fonte variam entre Windows e Linux; manter assertion de palavra e corrigir espaço real, não aumentar tolerância.

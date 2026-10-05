@@ -1,7 +1,7 @@
 # Revisão mínima de importância — Design
 
-**Status:** Complete (Built)
-**Revisão:**2
+**Status:** Complete (Built; operational CI pending)
+**Revisão:**3
 **Data:**2026-10-04
 **Worktree:**C:/Users/Giuse/.codex/worktrees/anti-procrastination-discovery/every-second-counts-app
 **Branch/base:**codex/capability-importance-review /386072d40970980c7d85f259cf8be4734d64a03e
@@ -55,3 +55,9 @@ AC01–02: fluxo opcional/respostas sem mutação; AC03–05: continue/adjust/ar
 R2 adicional: rodapé sticky cobria parte da ajuda em zoom. Em editor estreito, manter ações em coluna e position static permite scroll/foco sem overlay. Teste usa elementFromPoint no centro do controle focado para provar ausência de obstrução, além de bounding boxes top/bottom; captura zoom registra ação focada, normal registra pergunta completa. Nenhuma dependência/arquivo adicionado.
 
 Revisão final do catálogo de respostas: lookup exige own property, evitando chaves inválidas de Object.prototype; fixture inclui constructor/__proto__. Mesmos AC02/manifesto, sem mudança de produto legítimo. Regressão iniciada foi abortada antes de usar como gate e será executada fresca.
+
+## Iteração R3 — largura Linux em zoom
+
+2026-10-05, Modifying AC08 dentro do manifesto, sem mudança de requisitos. CI 37241665144 no head dfbba31:268 Node pass;480 browser pass/24 skips/2 falhas reproduzidas também no retry. Em ambos os perfis, palavra monospace16 exige96.328125px e botão oferece94px no zoom200%/360px. Gate AC08 e Ship R2 invalidados para Linux; não remover assertion nem acrescentar tolerância/retries. Reduzir padding-inline da body da ajuda de .5rem para .25rem somente no media max-width480px, liberando8px no conteúdo sem diminuir fonte ou alvo44. Teste permanece idêntico. Validar focused sem retries, inspecionar capturas regeneradas e executar CI canônico completo no novo head. Evidência local full-r4 continua histórica, não valida esta correção. DEFINE, schema, manifesto de12 arquivos e demais AC inalterados; geração96 mantida porque PR ainda não foi mesclada/publicada.
+
+R3 implementada em uma regra CSS específica; teste de geometria intacto. Focused novo+learning-outcome sem retries exit0:35 pass/1 skip preexistente/0 fail/0 flaky,1.2m. Quatro capturas regeneradas inspecionadas por Codex; pergunta/ação/foco legíveis em normal e zoom. AC08 local revalidado; CI Linux continua gate operacional após push no head final.

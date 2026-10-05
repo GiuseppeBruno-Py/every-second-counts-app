@@ -1,6 +1,6 @@
 # Revisão mínima de importância — Shipped
 
-**Status:** Shipped
+**Status:** Shipped (local verification; operational CI pending)
 **Data:**2026-10-04
 **Entrega:**8 (última do roadmap original)
 **Branch/base:**codex/capability-importance-review /386072d40970980c7d85f259cf8be4734d64a03e
@@ -25,3 +25,11 @@ Entrega8 autorizada pelo usuário após escopo apresentado; Gate2 preservado, se
 ## Arquivo e próximo passo
 
 Copy-only: Define/Design/Build legíveis copiados com status Shipped, fontes mantidas. Pedido até próxima PR autoriza commit/push/PR/CI; Ship não implica merge/deploy. Próximo passo válido: revisar a PR após CI final aprovado. Sem outras entregas de implementação no roadmap original.
+
+## Reabertura por CI — 2026-10-05
+
+CI37241665144 em dfbba31 falhou:268 Node pass/0 fail;480 browser pass/24 skips/2 fail,22.3m; AC08 largura em zoom falhou nos dois perfis e retries (94px disponíveis versus96.328125px exigidos). Fechamento anterior e evidência AC08 Linux invalidados. Design R3 limita correção ao padding interno da ajuda em tela estreita; focused/capturas/CI final pendentes. Requisitos e demais evidências preservados como histórico, sem falsa conclusão verde.
+
+## Fechamento R3 — 2026-10-05
+
+Design Revision3 e mesma matriz/manifesto. Após correção específica de padding da ajuda estreita, focused fresco sem retries exit0:35 pass/1 skip preexistente/0 fail/0 flaky,1.2m; quatro capturas regeneradas e inspecionadas por Codex. AC08 local revalidado, demais AC preservados/focused fresco; full-r4 continua histórico anterior. CI Linux no novo head é gate operacional ainda pendente, resultado final na PR97/Checks antes do handoff. Não se afirma aprovação Linux com resultado pendente. A falha anterior permanece registrada acima. Copy-only retém fontes, sem mudança de dados/schema/cache96 ou publicação em main. Lição adicional: diferenças de métrica de fontes exigem espaço real para palavras; não enfraquecer teste para acomodar clipping.
