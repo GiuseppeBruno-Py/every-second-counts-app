@@ -85,6 +85,15 @@ function outcomeInstallShell() {
             <label for="learningOutcomeCapability">O que você quer conseguir fazer? <span aria-hidden="true">*</span></label>
             <textarea id="learningOutcomeCapability" name="capability" maxlength="1000" required></textarea>
             <p class="learning-outcome-hint">Descreva em linguagem natural. Não precisa usar termos pedagógicos.</p>
+            <details id="outcomeImportancePanel" class="outcome-importance-panel" hidden>
+              <summary>Rever importância <span>Opcional</span></summary>
+              <div class="outcome-importance-body">
+                <label for="outcomeImportanceChoice">Isso continua importante para você?</label>
+                <select id="outcomeImportanceChoice"><option value="">Não responder agora</option><option value="yes">Sim</option><option value="partial">Parcialmente</option><option value="no">Não</option></select>
+                <p id="outcomeImportanceStatus" role="status" aria-live="polite"></p>
+                <button id="outcomeImportanceAction" class="secondary-btn" data-ds-component="button" type="button" hidden></button>
+              </div>
+            </details>
             <label for="learningOutcomeProof">Como você vai saber que conseguiu? <span class="learning-outcome-optional">Opcional</span></label>
             <textarea id="learningOutcomeProof" name="proofCriterion" maxlength="1000"></textarea>
             <details class="learning-outcome-resources">
@@ -284,6 +293,9 @@ function outcomeOpen(outcome, trigger, options = {}) {
   form.elements.pressureCondition.value = '';
   learningOutcomeRuntime.pressureAppliedCondition = '';
   learningOutcomeRuntime.executableAppliedSignature = '';
+  const importance=outcomeElement('outcomeImportancePanel');
+  importance.hidden=outcome?.status!=='active';importance.open=false;
+  outcomeElement('outcomeImportanceChoice').value='';outcomeImportanceUpdate();
   outcomeElement('outcomeExecutablePanel').hidden = outcome?.status === 'archived';
   outcomeElement('outcomeExecutablePanel').open = false;
   outcomeElement('outcomePressurePanel').open = Boolean(options.pressure);
@@ -316,6 +328,27 @@ function outcomeClose(force = false) {
   learningOutcomeRuntime.pressureAppliedCondition = '';
   learningOutcomeRuntime.executableAppliedSignature = '';
   return true;
+}
+function outcomeImportanceUpdate(){
+  const choice=outcomeElement('outcomeImportanceChoice')?.value;
+  const options={yes:['Continuar com a capacidade','Você pode continuar sem alterar a capacidade. Se mudou o rascunho, confira antes de sair.'],partial:['Ajustar próxima tentativa','Reconsidere a próxima tentativa. Ajustar só abre o campo; suas alterações dependem de Salvar.'],no:['Arquivar capacidade','Você pode arquivar e reativar depois. A resposta não arquiva nada; a ação exige confirmação.']};
+  const option=Object.hasOwn(options,choice)?options[choice]:null,button=outcomeElement('outcomeImportanceAction');
+  button.hidden=!option;button.textContent=option?.[0]||'';button.setAttribute('aria-label',option?.[0]||'Escolha uma resposta');
+  outcomeElement('outcomeImportanceStatus').textContent=option?.[1]||'Responder é opcional e não salva dados. Você decide se continua, ajusta ou arquiva.';
+}
+async function outcomeImportanceAct(){
+  if(learningOutcomeRuntime.busy)return;
+  const panel=outcomeElement('outcomeImportancePanel'),id=learningOutcomeRuntime.editingId,current=outcomeFind(id);
+  if(panel?.hidden)return;
+  if(!current||current.status!=='active'){outcomeSetError('Esta capacidade não está mais ativa. Feche e abra a capacidade atual.');return}
+  const choice=outcomeElement('outcomeImportanceChoice').value;
+  if(choice==='yes'){outcomeClose();return}
+  if(choice==='partial'){outcomeElement('learningOutcomeAttempt').focus();return}
+  if(choice!=='no')return;
+  const changed=outcomeDraftSignature()!==learningOutcomeRuntime.initialDraft;
+  if(!confirm(changed?'Arquivar esta capacidade? As alterações não salvas serão descartadas. Você pode reativá-la depois.':'Arquivar esta capacidade? Você pode reativá-la depois.'))return;
+  if(outcomeFind(id)?.status!=='active'){outcomeSetError('Esta capacidade não está mais ativa. Feche e abra a capacidade atual.');return}
+  if(await outcomeToggleStatus(id))outcomeClose(true);
 }
 function outcomeExecutableSignature(form){
   return JSON.stringify([form.elements.smallStart.value,form.elements.startCue.value]);
@@ -442,7 +475,7 @@ async function outcomeToggleStatus(id) {
   if (!current) return;
   const updated = current.status === 'archived' ? learningOutcomeModel.reactivateOutcome(current) : learningOutcomeModel.archiveOutcome(current);
   const outcomes = (state.data.learningOutcomes || []).map(item => item.id === id ? updated : item);
-  await outcomePersist(outcomeCandidate(outcomes), current.status === 'archived' ? 'Capacidade reativada' : 'Capacidade arquivada');
+  return await outcomePersist(outcomeCandidate(outcomes), current.status === 'archived' ? 'Capacidade reativada' : 'Capacidade arquivada');
 }
 async function outcomeUnlink(id, type, resourceId) {
   const current = outcomeFind(id);
@@ -599,6 +632,8 @@ CompassoFeatures.register('learning-outcomes', {
   install() {
     outcomeInstallShell();
     outcomeElement('learningOutcomeForm')?.addEventListener('submit', outcomeSubmit);
+    outcomeElement('outcomeImportanceChoice')?.addEventListener('change',outcomeImportanceUpdate);
+    outcomeElement('outcomeImportanceAction')?.addEventListener('click',outcomeImportanceAct);
     outcomeElement('learningOutcomeFutureUse')?.addEventListener('change', outcomeUpdateFutureUseHint);
     outcomeElement('capabilityResourceForm')?.addEventListener('submit', outcomeSaveResourceLinks);
     outcomeElement('learningSignalForm')?.addEventListener('submit', outcomeSaveSignal);
