@@ -112,7 +112,7 @@ test('both themes preserve route readability, touch geometry and opaque reading 
     expect(reading.background).not.toBe('rgba(0, 0, 0, 0)');
     expect(reading.image).toBe('none');
     await page.evaluate(()=>CompassoInformationArchitecture.open('today'));
-    await page.screenshot({path:info.outputPath('today-'+theme+'.png'),fullPage:false});
+    await page.screenshot({path:info.outputPath('today-'+theme+'.png'),fullPage:false,animations:'disabled'});
   }
   await page.setViewportSize({width:360,height:900});
   const toggle=await page.locator('#themeToggle').boundingBox();
