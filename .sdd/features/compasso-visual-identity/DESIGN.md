@@ -1,5 +1,5 @@
 # DESIGN: Identidade Compasso e aparência
-Status: Ready for Build · revisão1.3 · 2026-10-07
+Status: Ready for Build · revisão1.4 · 2026-10-07
 Define: DEFINE.md, clareza14/15. Autorização: pedidos visuais e “suba essa pr”.
 
 ## Inspeção e base
@@ -80,6 +80,9 @@ Utilitários preservam convenções de ação; dimensões, labels e rotas perman
 Assets finais exigem novo render/revisão de snapshots e checks visuais; evidência
 anterior de aparência não fecha A1. Contratos funcionais inalterados continuam
 válidos, complementados por verificação de símbolos sem referências ausentes.
+Revisão1.4: revisão das capturas nativas Linux identificou labels da navegação
+móvel quebrando em duas linhas. Ajustar padding horizontal e impedir quebra
+dos quatro labels, preservando fonte14px e targets44px. Re-render em Linux.
 
 Revisão1.1 (Iterate): inspeção encontrou que o documento PiP possui raiz própria;
 incluído espelhamento de aparência inicial e no update existente, mais teste

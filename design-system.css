@@ -2456,6 +2456,8 @@ html[data-visual-system="notebook"][data-theme="dark"] :is(.compasso-bootstrap p
 html[data-visual-system="notebook"][data-theme="dark"] :is(.compasso-bootstrap-actions button,.ia-system-actions button,.tree-row) { background: var(--surface-strong); color: var(--ink); border-color: var(--line); }
 @media (max-width: 760px) {
   html[data-visual-system="notebook"] .topbar { height: auto; min-height: 72px; padding-block: 12px; }
+  html[data-visual-system="notebook"] .ia-primary-nav .nav-item { padding-inline: 4px; }
+  html[data-visual-system="notebook"] .ia-primary-nav .nav-item span { white-space: nowrap; overflow-wrap: normal; }
   html[data-visual-system="notebook"] #settingsMenu { top: var(--settings-menu-top, 76px); right: 16px; max-height: var(--settings-menu-height, calc(100dvh - 152px)); }
   html[data-visual-system="notebook"] .main::before { inset: 76px 0 0; mask-size: auto 950px; opacity: .035; }
 }
