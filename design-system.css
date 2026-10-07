@@ -2192,3 +2192,278 @@ html[data-visual-system="notebook"] #todayView .flow-result-actions {
 }
 
 #outcomeImportancePanel[hidden], #outcomeImportanceAction[hidden] { display: none !important; }
+
+
+/* Compasso · Conhecimento com direção: identidade e temas. */
+/* A paleta compartilhada também atende aos módulos carregados pelo Service Worker. */
+html[data-visual-system="notebook"]:root {
+  color-scheme: light;
+  --canvas: #f6f7f4;
+  --surface: #f1f4ef;
+  --surface-strong: #ffffff;
+  --ink: #20352d;
+  --muted: #5d6e63;
+  --line: #7b8d81;
+  --violet: #156c52;
+  --study: #595eb2;
+  --study-soft: #edecfa;
+  --violet-soft: #e0f0e6;
+  --orange: #a9502c;
+  --orange-soft: #fbece2;
+  --green: #246d52;
+  --green-soft: #e1f1e7;
+  --blue: #336f8b;
+  --blue-soft: #e5f1f6;
+  --red: #ad454d;
+  --red-soft: #fbe9eb;
+  --on-ink: #fff;
+  --surface-inset: #eaf0e8;
+  --text-secondary: #51665b;
+  --topbar-background: rgba(246, 247, 244, .94);
+  --brand: #156c52;
+  --brand-hover: #10573f;
+  --on-brand: #ffffff;
+  --brand-soft: #e0f0e6;
+  --sidebar-surface: #fcfdfa;
+  --hero-surface: #e4f0e7;
+  --hero-ink: #214c38;
+  --hero-muted: #496c58;
+  --shadow: 0 4px 20px rgba(32, 53, 45, .035);
+}
+
+html[data-visual-system="notebook"][data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #131c18;
+  --surface: #1a2520;
+  --surface-strong: #202d26;
+  --surface-inset: #29392f;
+  --ink: #e8f1e9;
+  --on-ink: #131c18;
+  --muted: #a3b7a9;
+  --text-secondary: #c1d0c4;
+  --line: #688574;
+  --violet: #96d8b4;
+  --study: #b6b4f2;
+  --study-soft: #35354d;
+  --violet-soft: #2a4535;
+  --orange: #f1b28e;
+  --orange-soft: #44352a;
+  --green: #90d4ac;
+  --green-soft: #284334;
+  --blue: #9ccadd;
+  --blue-soft: #293f49;
+  --red: #f1a4ab;
+  --red-soft: #472e34;
+  --brand: #96d8b4;
+  --brand-hover: #b3e7c9;
+  --on-brand: #163326;
+  --brand-soft: #2a4535;
+  --sidebar-surface: #18231d;
+  --hero-surface: #244333;
+  --hero-ink: #e4f3e8;
+  --hero-muted: #b1ceb9;
+  --shadow: 0 4px 20px rgba(0, 0, 0, .1);
+  --topbar-background: rgba(19, 28, 24, .94);
+}
+
+.topbar { background: var(--topbar-background); border-bottom-color: var(--line); }
+input, select, textarea { color: inherit; }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
+
+.theme-toggle {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-strong);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: .875rem;
+  font-weight: 700;
+}
+.theme-toggle:hover { background: var(--violet-soft); border-color: var(--violet); }
+.theme-toggle svg { width: 17px; height: 17px; color: var(--violet); }
+.theme-toggle .theme-sun { display: none; }
+html[data-theme="dark"] .theme-toggle .theme-sun { display: block; }
+html[data-theme="dark"] .theme-toggle .theme-moon { display: none; }
+.theme-toggle:focus-visible, .theme-preference select:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 3px;
+}
+.menu .theme-preference {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 5px;
+  cursor: default;
+  color: var(--muted);
+  font-size: .875rem;
+  font-weight: 700;
+}
+.menu .theme-preference:hover { background: transparent; }
+.theme-preference select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-strong);
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+/* Superfícies e textos legados que ainda usam cores literais. */
+html[data-theme="dark"] :is(.menu, .today-check, .today-actions button,
+  .today-candidate button, .today-new-action, .today-dialog-body input,
+  .today-dialog-body select, .today-dialog-foot .quiet-btn, .graph-search,
+  .graph-relation-button, .analytics-search, .recall-list-actions button,
+  .recall-source-row button, .recall-ratings button, .recall-dialog-body textarea, .weak-row button,
+  .error-actions button, .weak-dialog-body input, .weak-dialog-body textarea,
+  .weak-dialog-body select, .synthesis-book-row select, .synthesis-form textarea,
+  .weekly-review-form textarea, .weekly-review-form select, .session-dialog input,
+  .session-dialog textarea, .session-dialog select, .vault-actions button,
+  .vault-actions label) { background: var(--surface-strong); }
+
+html[data-theme="dark"] :is(.field input, .field select, .field textarea,
+  .folder-select, .markdown-input, .cover-editor, .metric-box, .insight,
+  .evidence-box, .weekly-evidence-card, .recall-card, .vault-panel,
+  .drive-sync-panel, .graph-stage, .graph-canvas) { background: var(--surface); }
+
+html[data-theme="dark"] :is(.more-btn:hover, .card-actions button:hover,
+  .note-actions button:hover, .close-btn, .note-tabs, .markdown-preview code,
+  .menu button:hover, .menu label:hover, .book-cover, .cover-preview,
+  .progress, .weak-bar) { background: var(--surface-inset); }
+
+html[data-theme="dark"] :is(.field label, .item-note, .insight,
+  .markdown-input, .markdown-preview, .recall-answer, .dictionary-intro p,
+  .dictionary-definition p, .graph-inspector-definition) { color: var(--text-secondary); }
+html[data-theme="dark"] .markdown-preview blockquote { color: var(--violet); }
+html[data-theme="dark"] :is(.evidence-history, .evidence-history span,
+  .analytics-history-evidence, .weekly-review-meta) { color: var(--green) !important; }
+html[data-theme="dark"] :is(.vault-warning, .weak-score) { color: var(--orange); }
+html[data-theme="dark"] .weak-score { background: var(--orange-soft); }
+html[data-theme="dark"] .weak-score.recovered { background: var(--green-soft); color: var(--green); }
+html[data-theme="dark"] .status.planned { background: var(--surface-inset); color: var(--muted); }
+
+html[data-theme="dark"] :is(.focus-item, .journey-item + .journey-item,
+  .note-toolbar, .editor-split, .markdown-input, .markdown-preview h2,
+  .context-stat, .menu-version, .empty-state, .item-card:hover,
+  .error-row.resolved) { border-color: var(--line); }
+
+html[data-theme="dark"] :is(.primary-btn, .filter.active,
+  .today-shell .today-action-primary,
+  .knowledge-mode-switch button.active, .graph-filter.active,
+  .recall-ratings [data-recall-rating="good"],
+  .vault-actions button.primary, .drive-sync-actions button:first-child,
+  .compasso-bootstrap-card button),
+html[data-theme="dark"] .today-shell[data-today-state="empty"] .today-new-action {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--on-ink);
+}
+html[data-theme="dark"] .today-shell .today-action-secondary,
+html[data-theme="dark"] .today-shell:not([data-today-state="empty"]) .today-new-action {
+  background: var(--surface-strong);
+  color: var(--ink);
+}
+html[data-theme="dark"] .dictionary-toolbar { background: var(--topbar-background); }
+html[data-theme="dark"] .graph-canvas::before {
+  background-image: radial-gradient(rgba(239, 238, 233, .13) .65px, transparent .65px);
+}
+html[data-theme="dark"] .graph-legend { background: var(--surface); border-color: var(--line); }
+html[data-theme="dark"] .graph-node-label { fill: var(--ink); stroke: var(--surface); }
+html[data-theme="dark"] .graph-edge { stroke: var(--muted); }
+html[data-theme="dark"] :is(.graph-edge.is-neighbor, .graph-node-halo,
+  .graph-node.is-selected .graph-node-circle, .graph-node.is-neighbor .graph-node-circle) { stroke: var(--violet); }
+
+@media (max-width: 760px), (pointer: coarse) {
+  .theme-toggle { width: 44px; min-width: 44px; min-height: 44px; padding: 0; }
+  .theme-toggle-label { display: none; }
+  .theme-preference select { min-height: 44px; }
+}
+
+/* Appearances extend the notebook contracts without changing geometry or type. */
+html[data-visual-system="notebook"]:root {
+  --ds-color-accent: var(--brand);
+  --ds-color-focus: var(--study);
+  --ds-color-success: var(--green);
+  --ds-color-warning: var(--orange);
+  --ds-color-danger: var(--red);
+  --identity-paper: rgba(231, 225, 209, .25);
+  --identity-light: rgba(170, 209, 187, .13);
+  --identity-pattern-opacity: .065;
+}
+html[data-visual-system="notebook"][data-theme="dark"] {
+  --identity-paper: rgba(154, 131, 95, .035);
+  --identity-light: rgba(109, 166, 137, .045);
+  --identity-pattern-opacity: .045;
+}
+html[data-visual-system="notebook"] :is(#todayView, #todayDialog, #todayRehearsalDialog,
+ #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) {
+  --pilot-canvas: var(--canvas); --pilot-surface: var(--surface-strong);
+  --pilot-subtle: var(--brand-soft); --pilot-text: var(--ink);
+  --pilot-muted: var(--muted); --pilot-border: var(--line);
+  --pilot-accent: var(--brand); --pilot-on-accent: var(--on-brand);
+  --pilot-success: var(--green); --pilot-warning: var(--orange);
+  --pilot-danger: var(--red); --pilot-focus: var(--study);
+}
+html[data-visual-system="notebook"] body {
+  background-image: radial-gradient(ellipse at 90% 5%, var(--identity-light), transparent 60%),
+    radial-gradient(ellipse at 15% 85%, var(--identity-paper), transparent 55%);
+  background-attachment: fixed;
+}
+html[data-visual-system="notebook"] .main { isolation: isolate; }
+html[data-visual-system="notebook"] .main::before {
+  content: ""; position: fixed; inset: 92px 0 0 var(--sidebar);
+  z-index: -1; pointer-events: none; background: var(--brand);
+  mask: url('./compasso-pattern.svg') center top / cover;
+  opacity: var(--identity-pattern-opacity);
+}
+html[data-visual-system="notebook"] .brand-mark { flex: 0 0 44px; width: 44px; height: 44px; border: 0; background: transparent; }
+html[data-visual-system="notebook"] .brand-mark img { display: block; width: 44px; height: 44px; }
+html[data-visual-system="notebook"] :is(.ia-primary-nav, .ia-card, .item-icon) { --icon-accent: var(--orange); }
+html[data-visual-system="notebook"] .ia-primary-nav .nav-item svg { width: 22px; height: 22px; }
+html[data-visual-system="notebook"] .sidebar .brand span { color: var(--muted); text-transform: none; letter-spacing: normal; }
+html[data-visual-system="notebook"] .sidebar .sidebar-card .eyebrow { color: var(--muted); font-size: .875rem; letter-spacing: .04em; }
+html[data-visual-system="notebook"] .mobile-brand { align-items: center; gap: 6px; }
+html[data-visual-system="notebook"] .mobile-brand img { vertical-align: middle; }
+html[data-visual-system="notebook"] :is([data-ds-role="primary"], .ux-execute) {
+  background: var(--brand) !important; color: var(--on-brand) !important; border-color: var(--brand) !important;
+}
+html[data-visual-system="notebook"] #iaExecuteBtn { background: var(--brand) !important; color: var(--on-brand) !important; border-color: var(--brand) !important; }
+html[data-visual-system="notebook"] :is(.note-workspace,.editor-panel,.markdown-input,.markdown-preview,.item-card,.recall-card) { background-image: none; }
+html[data-visual-system="notebook"] .graph-node-glyph { fill: var(--on-ink); }
+html[data-visual-system="notebook"] :is(.journal-private, .graph-help) { color: var(--muted); }
+html[data-visual-system="notebook"] #todayView .today-hero { flex-wrap: wrap; }
+html[data-visual-system="notebook"] #todayView .today-hero > div { flex: 1 1 12rem; }
+html[data-visual-system="notebook"] #todayView :is(.today-hero > button, .today-decision button) { flex-shrink: 0; white-space: nowrap; overflow-wrap: normal; }
+html[data-visual-system="notebook"] .theme-toggle { width: 44px; min-width: 44px; padding: 0; }
+html[data-visual-system="notebook"] .theme-toggle svg { color: var(--brand); }
+/* Theme changes keep foreground and background together instead of fading through gray. */
+html[data-visual-system="notebook"] :is(button, a, input, select, textarea, .nav-item) { transition-property: border-color, box-shadow, transform; }
+html[data-visual-system="notebook"] .ux-mode-tabs button.active { background: var(--brand) !important; color: var(--on-brand) !important; border-color: var(--brand) !important; }
+html[data-visual-system="notebook"] .status.planned { background: var(--surface-inset); color: var(--muted); }
+html[data-visual-system="notebook"] .theme-preference select { min-height: 48px; font-size: 1rem; }
+html[data-visual-system="notebook"] #settingsMenu { position: fixed; top: var(--settings-menu-top, 92px); right: 44px; max-height: var(--settings-menu-height, calc(100dvh - 108px)); overflow-y: auto; }
+html[data-visual-system="notebook"] .theme-preference select:focus-visible { outline: 3px solid var(--ds-color-focus); outline-offset: 3px; }
+html[data-visual-system="notebook"][data-theme="dark"] :is(.compasso-bootstrap,.compasso-bootstrap-card,.compasso-bootstrap-dialog,.ia-system,.ia-atlas .vault-explorer) { background: var(--surface); color: var(--ink); border-color: var(--line); }
+html[data-visual-system="notebook"][data-theme="dark"] :is(.compasso-bootstrap p,.compasso-bootstrap small,.compasso-bootstrap-progress,.compasso-bootstrap-dialog p) { color: var(--muted); }
+html[data-visual-system="notebook"][data-theme="dark"] :is(.compasso-bootstrap-actions button,.ia-system-actions button,.tree-row) { background: var(--surface-strong); color: var(--ink); border-color: var(--line); }
+@media (max-width: 760px) {
+  html[data-visual-system="notebook"] .topbar { height: auto; min-height: 72px; padding-block: 12px; }
+  html[data-visual-system="notebook"] #settingsMenu { top: var(--settings-menu-top, 76px); right: 16px; max-height: var(--settings-menu-height, calc(100dvh - 152px)); }
+  html[data-visual-system="notebook"] .main::before { inset: 76px 0 0; mask-size: auto 950px; opacity: .035; }
+}
+@media (forced-colors: active) {
+  html[data-visual-system="notebook"] { --ds-color-focus: Highlight; --line: CanvasText; --brand: LinkText; }
+  html[data-visual-system="notebook"] .main::before { display: none; }
+  html[data-visual-system="notebook"] :is(#todayView, #todayDialog, #todayRehearsalDialog,
+    #sessionStartDialog, #sessionFinishDialog, #executionCompletionPanel, #sessionCompanion) {
+    --pilot-focus: Highlight; --pilot-border: CanvasText;
+  }
+}

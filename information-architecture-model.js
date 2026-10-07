@@ -3,10 +3,10 @@
   const modes=Object.freeze(['essential','knowledge','advanced']);
   const rank=Object.freeze({essential:0,knowledge:1,advanced:2});
   const areas=Object.freeze([
-    {id:'today',label:'Hoje',icon:'calendar',level:'essential',order:10,route:'today'},
-    {id:'fronts',label:'Frentes',icon:'briefcase',level:'essential',order:20,route:'fronts'},
-    {id:'journal',label:'Journal',icon:'note',level:'essential',order:30,route:'journal'},
-    {id:'review',label:'Revisão',icon:'spark',level:'essential',order:40,route:'review'}
+    {id:'today',label:'Hoje',icon:'compasso-today',level:'essential',order:10,route:'today'},
+    {id:'fronts',label:'Frentes',icon:'compasso-fronts',level:'essential',order:20,route:'fronts'},
+    {id:'journal',label:'Journal',icon:'compasso-journal',level:'essential',order:30,route:'journal'},
+    {id:'review',label:'Revisão',icon:'compasso-review',level:'essential',order:40,route:'review'}
   ]);
   const views=Object.freeze([
     {id:'capabilities',area:'fronts',label:'Capacidades',description:'Defina o que quer conseguir fazer e sua próxima tentativa.',icon:'compass',level:'essential',order:10,route:'capabilities'},

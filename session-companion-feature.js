@@ -284,6 +284,8 @@
       runtime.pipWindow = null;
       return;
     }
+    pip.document.documentElement.dataset.theme = document.documentElement.dataset.theme || "light";
+    pip.document.documentElement.style.colorScheme = document.documentElement.dataset.theme || "light";
     const label = pip.document.querySelector("small"),
       title = pip.document.querySelector("strong"),
       time = pip.document.getElementById("pipClock");
@@ -305,6 +307,8 @@
       runtime.pipWindow = pip;
       const doc = pip.document;
       doc.documentElement.dataset.visualSystem = "notebook";
+      doc.documentElement.dataset.theme = document.documentElement.dataset.theme || "light";
+      doc.documentElement.style.colorScheme = document.documentElement.dataset.theme || "light";
       doc.body.dataset.compassoPip = "";
       doc.head.innerHTML = '<title>Compasso · sessão ativa</title>';
       const stylesheet = doc.createElement("link");

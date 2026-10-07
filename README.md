@@ -3,7 +3,7 @@
 
   # Compasso
 
-  **Every Second Counts**
+  **Conhecimento com direção**
 
   Um sistema pessoal, local-first, para transformar leitura, estudo e metas em progresso visível.
 
@@ -32,6 +32,10 @@ Cada área utiliza uma unidade concreta:
 O percentual e o restante são calculados automaticamente.
 
 ## Funcionalidades
+
+- Temas claro, escuro e seguindo o sistema, com preferência local.
+- Identidade jade com livro/bússola e fundo discreto para favorecer concentração.
+- [Guia da identidade visual](docs/visual-identity.md).
 
 - Dashboard com visão consolidada das frentes ativas.
 - Captura rápida global, sem classificação obrigatória, com persistência imediata na Caixa de entrada do Atlas.

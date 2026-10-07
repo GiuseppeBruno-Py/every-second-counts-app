@@ -5,10 +5,13 @@ test('arquitetura de informação assume a navegação depois da consolidação 
 test('design system é asset central e aprimora a interface por último',()=>{const files=manifest.modules.map(x=>x.file);assert.ok(manifest.assets.includes('./design-system.css'));assert.ok(files.indexOf('information-architecture-feature.js')<files.indexOf('design-system-feature.js'));assert.ok(manifest.isOwnedCacheName(manifest.cacheName))});
 test('geração, composição e propriedade de cache pertencem ao manifesto',()=>{
   assert.equal(manifest.version,1);
+  assert.ok(manifest.assets.includes('./theme.js'));
+  assert.ok(manifest.assets.includes('./compasso-pattern.svg'));
+  assert.ok(manifest.composition.supportPrerequisites.some(item=>item.id==='appearance'));
   assert.ok(manifest.assets.includes('./app-composition.js'));
   assert.equal(manifest.composition.moduleSlot,'/* COMPASSO:MODULES:SLOT */');
   assert.equal(manifest.composition.generationSlot,'<!-- COMPASSO:COMPOSITION:SLOT -->');
-  assert.equal(manifest.composition.supportPrerequisites.length,5);
+  assert.equal(manifest.composition.supportPrerequisites.length,6);
   assert.equal(manifest.isOwnedCacheName(manifest.cacheName),true);
   assert.equal(manifest.isOwnedCacheName('compasso-pages-v1'),true);
   assert.equal(manifest.isOwnedCacheName('compasso-pages-v69-backup'),false);

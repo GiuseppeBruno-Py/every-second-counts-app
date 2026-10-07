@@ -27,10 +27,10 @@ const graphRuntime = {
 };
 
 const graphDomainMeta = {
-  reading: { label: 'Leitura', glyph: 'L', color: '#d8783d', soft: '#f6e5d8' },
-  study: { label: 'Estudo', glyph: 'E', color: '#6b5fd1', soft: '#e9e6fb' },
-  goal: { label: 'Meta', glyph: 'M', color: '#2e816a', soft: '#dff1eb' },
-  note: { label: 'Nota', glyph: 'N', color: '#467f9c', soft: '#e0eef5' }
+  reading: { label: 'Leitura', glyph: 'L', color: 'var(--orange)', soft: 'var(--orange-soft)' },
+  study: { label: 'Estudo', glyph: 'E', color: 'var(--study)', soft: 'var(--study-soft)' },
+  goal: { label: 'Meta', glyph: 'M', color: 'var(--green)', soft: 'var(--green-soft)' },
+  note: { label: 'Nota', glyph: 'N', color: 'var(--blue)', soft: 'var(--blue-soft)' }
 };
 
 function graphHash(value = '') {
