@@ -73,6 +73,7 @@
     generationSlot:'<!-- COMPASSO:COMPOSITION:SLOT -->',
     moduleSlot:'/* COMPASSO:MODULES:SLOT */',
     supportPrerequisites:Object.freeze([
+      Object.freeze({id:'appearance',token:'src="./theme.js"'}),
       Object.freeze({id:'app-ui',token:'href="./app-ui.css"'}),
       Object.freeze({id:'design-system',token:'href="./design-system.css"'}),
       Object.freeze({id:'manifest',token:'src="./app-manifest.js"'}),
@@ -92,13 +93,13 @@
     {name:'dailyJournals',type:'keyed-map',identity:'date',merge:'entry-timestamp',sync:true}
   ];
   const assets = [
-    './','./index.html','./app-manifest.js','./app-composition.js','./bootstrap-diagnostics.js','./app-ui.css','./design-system.css','./service-worker.js','./storage.js',
+    './','./index.html','./app-manifest.js','./app-composition.js','./bootstrap-diagnostics.js','./app-ui.css','./design-system.css','./theme.js','./compasso-pattern.svg','./service-worker.js','./storage.js',
     ...moduleEntries.map(item=>`./${item.file}`),
     './manifest.webmanifest','./compasso-icon.svg','./compasso.ico','./compasso-icon-192.png','./compasso-icon-512.png'
   ];
   const api = Object.freeze({
     version:1,
-    cacheName:'compasso-pages-v96',
+    cacheName:'compasso-pages-v97',
     cachePrefix,
     isOwnedCacheName,
     composition,

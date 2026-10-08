@@ -168,6 +168,14 @@
         : "neutral";
     root.showToast?.(message);
   }
+  function positionSettingsMenu() {
+    const button = document.getElementById("settingsBtn"), menu = document.getElementById("settingsMenu");
+    if (!button || !menu) return;
+    const top = Math.max(button.getBoundingClientRect().bottom, document.querySelector(".topbar")?.getBoundingClientRect().bottom || 0) + 8;
+    const navigation = root.innerWidth <= 760 ? document.querySelector(".sidebar")?.getBoundingClientRect().height || 0 : 0;
+    menu.style.setProperty("--settings-menu-top", top + "px");
+    menu.style.setProperty("--settings-menu-height", Math.max(44, root.innerHeight - top - navigation - 16) + "px");
+  }
   function install() {
     document.body.classList.add("ds-installed");
     enhance();
@@ -182,6 +190,7 @@
     document.addEventListener("click", (event) => {
       const button = event.target.closest("button");
       if (!button) return;
+      if (button.id === "settingsBtn") positionSettingsMenu();
       const tabs = button.closest(tabsSelector);
       if (tabs) queueMicrotask(() => enhanceTabs(tabs));
       if (button.matches("[data-ux-more]"))
@@ -197,6 +206,9 @@
           enhanceDialog(dialog);
         }),
       );
+    });
+    root.addEventListener("resize", () => {
+      if (document.getElementById("settingsMenu")?.classList.contains("open")) positionSettingsMenu();
     });
     document.addEventListener("keydown", (event) => {
       const dialog = event.target.closest("dialog[open]");

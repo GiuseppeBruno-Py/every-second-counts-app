@@ -1,5 +1,12 @@
 # Design system do Compasso
 
+A extensão **Conhecimento com direção** mantém a composição Caderno de trabalho
+e os tamanhos de leitura. Tokens dos dois temas e fundo estático estão na seção
+final de `design-system.css`; `theme.js` aplica a preferência local antes da
+pintura e sincroniza abas. Opções → Aparência permite seguir o sistema.
+O pedido atual inclui tema escuro, ampliando o escopo do piloto descrito abaixo.
+Consulte [Identidade visual](visual-identity.md) para paleta, símbolo e contratos.
+
 O design system é a camada comum de aparência, responsividade e acessibilidade do aplicativo. Ele não altera dados locais, backups ou integrações: transforma os controles já renderizados em uma experiência coerente.
 
 ## Arquitetura
