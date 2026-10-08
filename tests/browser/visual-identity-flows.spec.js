@@ -117,8 +117,12 @@ test('both themes preserve route readability, touch geometry and opaque reading 
   await page.setViewportSize({width:360,height:900});
   const toggle=await page.locator('#themeToggle').boundingBox();
   expect(toggle.width).toBeGreaterThanOrEqual(44);expect(toggle.height).toBeGreaterThanOrEqual(44);
-  await page.locator('#themeToggle').focus();
-  expect(await page.locator('#themeToggle').evaluate(n=>getComputedStyle(n).outlineWidth)).toBe('3px');
+  // Navigate from the adjacent control so :focus-visible reflects keyboard use.
+  await page.locator('#settingsBtn').focus();
+  await page.keyboard.press('Shift+Tab');
+  await expect(page.locator('#themeToggle')).toBeFocused();
+  expect(await page.locator('#themeToggle').evaluate(n=>n.matches(':focus-visible'))).toBe(true);
+  await expect(page.locator('#themeToggle')).toHaveCSS('outline-width','3px');
   await page.evaluate(()=>{document.documentElement.style.zoom='2'});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth+1)).toBe(true);
   await page.evaluate(()=>{document.documentElement.style.zoom=''});
@@ -159,10 +163,9 @@ test('invalid stored appearance falls back to system before boot', async ({page}
 test('session floating document mirrors appearance using existing updates', async ({page,context}) => {
   await open(page);
   await preference(page,'dark');
-  await context.route('**/__pip_theme_test__',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html><head></head><body></body></html>'}));
   await page.evaluate(() => Object.defineProperty(window,'documentPictureInPicture',{configurable:true,value:{requestWindow:async()=>{
-    const target=window.open('/__pip_theme_test__','compasso-pip-theme','width=360,height=240');
-    await new Promise(resolve=>target.addEventListener('load',resolve,{once:true}));
+    // A PiP window starts empty; a URL inside the SW scope can load the app shell.
+    const target=window.open('about:blank','compasso-pip-theme','width=360,height=240');
     return target;
   }}}));
   await page.evaluate(()=>CompassoInformationArchitecture.open('study'));
@@ -173,6 +176,8 @@ test('session floating document mirrors appearance using existing updates', asyn
   const popupEvent=context.waitForEvent('page');
   await page.locator('#sessionCompanionFloat').click();
   const popup=await popupEvent;
+  await expect(popup).toHaveURL('about:blank');
+  await expect(popup.locator('body')).toHaveAttribute('data-compasso-pip','');
   await expect(popup.locator('html')).toHaveAttribute('data-theme','dark');
   await expect(popup.locator('#pipReturn')).toBeVisible();
   await page.locator('#themeToggle').click();

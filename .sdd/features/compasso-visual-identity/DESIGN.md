@@ -1,5 +1,5 @@
 # DESIGN: Identidade Compasso e aparência
-Status: Shipped · revisão1.4 · 2026-10-07 · critérios verificados no BUILD_REPORT
+Status: Shipped · revisão1.6 · 2026-10-07 · correção de evidência A5 validada em Chromium
 Define: DEFINE.md, clareza14/15. Autorização: pedidos visuais e “suba essa pr”.
 
 ## Inspeção e base
@@ -62,6 +62,25 @@ Em falha de storage permanece em memória. Não logar conteúdo.
     (criar/atualizar): gate/evidência/fechamento; todos; A1-A6.
 
 ## Verificação e gate
+Revisão1.6: Chromium local revelou race no mock PiP: URL sob controle do SW
+carregou o aplicativo na janela de teste e substituiu o documento PiP.
+A simulação deve retornar about:blank de mesma origem, como um documento vazio,
+sem navegação de shell. Manter asserções de tema,controle de retorno e sessão.
+Somente visual-identity-flows.spec.js; módulo PiP/SW e teste histórico intactos.
+
+Revisão1.5 (Iterate, correção de evidência): CI37697016850 terminou com
+492 pass,25 skip,1 fail na expectativa de outline após focus() programático.
+Classificação: modifying, somente procedimento do teste A5; requisitos e
+apresentação permanecem. Testar navegação real Shift+Tab de Opções para Tema,
+confirmar elemento focado, :focus-visible e outline3px. Não tornar foco por mouse
+equivalente a teclado nem reduzir a expectativa. Reproduzir com Chromium nativo,
+validar visual-identity local e CI Linux canônica. Nenhum novo arquivo de runtime.
+Evidência local histórica preservada; A5 foi reaberto até a prova do procedimento
+corrigido. Reprodução antes/depois no Chromium nativo: antes1 fail (outline0px),
+depois11 pass/1 skip/0 retry no arquivo completo. A5 restabelecido por teclado
+real; confirmação Linux da CI canônica será acompanhada na PR, sem antecipar
+seu resultado. A1–A4,A6 não mudam; DEFINE permanece histórico.
+
 npm test: contratos/modelos; npm run build:test: composição/cache de fixtures.
 Playwright visual-identity, design-system, core/full-visual e pwa-lifecycle:
 comportamento e contraste nos temas, menus/foco/layout e offline.

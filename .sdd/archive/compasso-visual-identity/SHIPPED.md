@@ -1,5 +1,5 @@
 # SHIPPED: Identidade Compasso e aparência
-Status: Shipped (fechamento SDD; sem merge/deploy) · 2026-10-07
+Status: Shipped · correção de evidência A5 validada localmente · revisão1.6 · 2026-10-07
 
 ## Resultado
 Marca e família de ícones próprias, paleta jade/terracota, fundo discreto e temas
@@ -10,6 +10,15 @@ C:/Users/Giuse/.codex/worktrees/compasso-visual-identity/every-second-counts-app
 Checkout original intacto. Feedback sobre ícones incorporado via Iterate.
 
 ## Verificação
+Revisão1.6: CI37697016850 terminou com1 falha na verificação de foco programático.
+Falha reproduzida no Chromium nativo; teste corrigido para Shift+Tab real e
+asserts de elemento focado,:focus-visible,outline3px. Mock PiP agora retorna
+about:blank,evitando navegação do SW que substituía o documento de teste.
+Revalidação local:11 pass/1 skip/0 retry,29.6s. A5 restabelecido; CI Linux remota
+será acompanhada na PR e seu resultado não é antecipado neste registro.
+Requisitos e código de produção intactos; correção restrita ao teste existente.
+Registro anterior abaixo preserva evidência histórica.
+
 A1–A6 aprovados conforme tabela e comandos exatos em BUILD_REPORT.md.
 Node268; suíte completa490 passaram/25 skipped/3 flaky; checks finais78 passaram/
 20 skipped sem retry; três cenários flaky repetidos nos dois projetos passaram

@@ -1,10 +1,31 @@
 # BUILD REPORT: Identidade Compasso e aparência
-Status: Complete · verificado para Ship · 2026-10-07
+Status: Complete · correção A5 validada localmente · revisão1.6 · 2026-10-07
 Base: origin/main f6fe73f · branch codex/compasso-visual-identity.
 Design revisão1.4, clareza14/15. Autorização: pedidos visuais, refinamento de marca/
 ícones e “suba essa pr”. PR: https://github.com/GiuseppeBruno-Py/every-second-counts-app/pull/98
 
 ## Resultado e compatibilidade
+Follow-up da PR98: CI37697016850 falhou apenas na asserção de outline do tema
+após foco programático (0px no Chromium Linux). Node268 e browser492 passaram,
+25 skip,1 fail; esta execução não foi aprovada. Corrigido o procedimento de
+teclado conforme Design1.6, mantendo foco3px e acrescentando :focus-visible.
+Reprodução no Chromium nativo Windows: comando abaixo com grep da matriz
+falhou antes com o mesmo0px; arquivo completo após correção teve11 pass/1 skip/
+0 fail/0 retry (29.6s). A5 restabelecido localmente; CI Linux será conferida na PR
+sem antecipar aprovação. Interface e contratos de dados intactos.
+
+Comandos desta correção (PLAYWRIGHT_EXECUTABLE_PATH vazio, Chromium1187):
+- npm run build:test — exit0.
+- npx playwright test tests/browser/visual-identity-flows.spec.js --project=chromium --grep 'both themes preserve' --retries=0 — exit1 antes da correção; mesma falha CI.
+- npx playwright test tests/browser/visual-identity-flows.spec.js --retries=0 — primeira execução exit1,10 pass/1 skip: foco corrigido passou, mock PiP carregou shell do SW no popup.
+- Após mock PiP retornar about:blank sem navegação de shell, mesmo comando — exit0,11 pass/1 skip/0 retry,29.6s.
+- git diff --check — exit0.
+Logs: TEMP/compasso-pr98-focus-before.log,compasso-pr98-focus-after.log,
+compasso-pr98-focus-after2.log. Não reduzidos critérios nem adicionado skip.
+Popup continua verificando tema inicial e mudança,controle de retorno,diálogos
+e sessão; novo assert exige documento vazio com body[data-compasso-pip].
+Histórico anterior abaixo é mantido; nova correção altera só o teste e documentos.
+
 Marca própria em C/livro/bússola, quatro ícones de navegação e ícones de domínio
 desenhados em SVG; PNG/ICO derivados do mesmo master. Paleta jade/terracota,
 fundo vetorial estático e superfícies opacas nos temas claro/escuro/sistema.
